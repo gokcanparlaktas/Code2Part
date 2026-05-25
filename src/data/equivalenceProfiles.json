@@ -1,0 +1,16 @@
+[
+  {
+    "sourceSeriesId": "festo_dsbc",
+    "targetSeriesId": "smc_cp96",
+    "matchLevelTr": "Mekanik muadil adayı",
+    "riskLevel": "medium",
+    "summaryTr": "Aynı ISO 15552 ailesinde, çap ve strok değerleri eşleşen bir muadil adayıdır. Mil ucu, port ölçüsü, sensör ve sönümleme seçenekleri sipariş öncesi doğrulanmalıdır."
+  },
+  {
+    "sourceSeriesId": "smc_cp96",
+    "targetSeriesId": "festo_dsbc",
+    "matchLevelTr": "Mekanik muadil adayı",
+    "riskLevel": "medium",
+    "summaryTr": "Aynı ISO 15552 ailesinde, çap ve strok değerleri eşleşen bir muadil adayıdır. Mil ucu, port ölçüsü, sensör ve sönümleme seçenekleri sipariş öncesi doğrulanmalıdır."
+  }
+]

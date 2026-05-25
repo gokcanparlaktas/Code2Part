@@ -6,7 +6,8 @@
     "productType": "Pnömatik silindir",
     "standardFamily": "ISO 15552",
     "codePrefix": "DSBC",
-    "confidenceWhenMatched": "high"
+    "confidenceWhenMatched": "high",
+    "equivalenceGroupId": "pneumatic_iso_15552_cylinder"
   },
   {
     "id": "smc_cp96",
@@ -15,6 +16,7 @@
     "productType": "Pnömatik silindir",
     "standardFamily": "ISO 15552",
     "codePrefix": "CP96",
-    "confidenceWhenMatched": "high"
+    "confidenceWhenMatched": "high",
+    "equivalenceGroupId": "pneumatic_iso_15552_cylinder"
   }
 ]

@@ -3,6 +3,7 @@ import parsingRulesData from '@/data/parsingRules.json';
 import productSeriesData from '@/data/productSeries.json';
 import type {
   ConfidenceLevel,
+  IdentificationOutcome,
   ParsingRuleRecord,
   ProductIdentification,
   ProductSeriesRecord,
@@ -40,39 +41,48 @@ function findSeriesByCode(normalizedCode: string): ProductSeriesRecord | null {
   );
 }
 
+function hasParserRule(seriesId: string): boolean {
+  return parsingRules.some((rule) => rule.seriesId === seriesId);
+}
+
 function parseDimensions(
   normalizedCode: string,
   seriesId: string
-): { bore: TechnicalAttribute<number>; stroke: TechnicalAttribute<number> } {
+): { bore: TechnicalAttribute<number>; stroke: TechnicalAttribute<number>; parsed: boolean } {
   const rule = parsingRules.find((r) => r.seriesId === seriesId);
   if (!rule) {
-    return { bore: unknownAttribute(), stroke: unknownAttribute() };
+    return { bore: unknownAttribute(), stroke: unknownAttribute(), parsed: false };
   }
 
   const regex = new RegExp(rule.pattern);
   const match = normalizedCode.match(regex);
   if (!match) {
-    return { bore: unknownAttribute(), stroke: unknownAttribute() };
+    return { bore: unknownAttribute(), stroke: unknownAttribute(), parsed: false };
   }
 
   const boreValue = Number(match[rule.boreGroup]);
   const strokeValue = Number(match[rule.strokeGroup]);
 
   if (Number.isNaN(boreValue) || Number.isNaN(strokeValue)) {
-    return { bore: unknownAttribute(), stroke: unknownAttribute() };
+    return { bore: unknownAttribute(), stroke: unknownAttribute(), parsed: false };
   }
 
   return {
     bore: attributeFromCode(boreValue, 'mm'),
     stroke: attributeFromCode(strokeValue, 'mm'),
+    parsed: true,
   };
 }
 
 function resolveConfidence(
   series: ProductSeriesRecord,
   bore: TechnicalAttribute<number>,
-  stroke: TechnicalAttribute<number>
+  stroke: TechnicalAttribute<number>,
+  parsed: boolean
 ): ConfidenceLevel {
+  if (!parsed) {
+    return 'unknown';
+  }
   if (bore.evidence === 'code' && stroke.evidence === 'code') {
     return series.confidenceWhenMatched;
   }
@@ -80,6 +90,19 @@ function resolveConfidence(
     return 'low';
   }
   return 'medium';
+}
+
+function resolveOutcome(
+  series: ProductSeriesRecord | null,
+  parsed: boolean
+): IdentificationOutcome {
+  if (!series) {
+    return 'not_found';
+  }
+  if (!hasParserRule(series.id) || !parsed) {
+    return 'series_only';
+  }
+  return 'full';
 }
 
 export function identifyProduct(
@@ -94,6 +117,7 @@ export function identifyProduct(
       normalizedCode,
       seriesId: null,
       matched: false,
+      outcome: 'not_found',
       brand: unknownAttribute(),
       series: unknownAttribute(),
       productType: unknownAttribute(),
@@ -104,13 +128,15 @@ export function identifyProduct(
     };
   }
 
-  const { bore, stroke } = parseDimensions(normalizedCode, series.id);
+  const { bore, stroke, parsed } = parseDimensions(normalizedCode, series.id);
+  const outcome = resolveOutcome(series, parsed);
 
   return {
     inputCode,
     normalizedCode,
     seriesId: series.id,
-    matched: true,
+    matched: outcome !== 'not_found',
+    outcome,
     brand: attributeFromSeries(series.brand),
     series: attributeFromSeries(series.series),
     productType: attributeFromSeries(series.productType),
@@ -121,7 +147,7 @@ export function identifyProduct(
     },
     bore,
     stroke,
-    confidence: resolveConfidence(series, bore, stroke),
+    confidence: resolveConfidence(series, bore, stroke, parsed),
   };
 }
 
@@ -133,11 +159,16 @@ export function buildSuggestedEquivalentCode(
     source.bore.value === null ||
     source.stroke.value === null ||
     source.bore.requiresCheck ||
-    source.stroke.requiresCheck
+    source.stroke.requiresCheck ||
+    source.bore.evidence !== 'code' ||
+    source.stroke.evidence !== 'code'
   ) {
     return null;
   }
-  return `${targetSeries.codePrefix}-${source.bore.value}-${source.stroke.value}`;
+
+  const bore = Math.round(source.bore.value);
+  const stroke = Math.round(source.stroke.value);
+  return `${targetSeries.codePrefix}-${bore}-${stroke}`;
 }
 
 export function getProductSeriesById(id: string): ProductSeriesRecord | undefined {

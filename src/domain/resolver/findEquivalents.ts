@@ -15,7 +15,7 @@ const equivalentGroups = equivalentSeriesData as EquivalentGroupRecord[];
 export function findEquivalents(
   source: ProductIdentification
 ): EquivalentCandidate[] {
-  if (!source.seriesId || !source.matched) {
+  if (!source.seriesId || source.outcome === 'not_found') {
     return [];
   }
 

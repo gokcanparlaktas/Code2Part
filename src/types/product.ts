@@ -1,3 +1,9 @@
+import type {
+  CheckSeverity,
+  MatchLevelTr,
+  RiskLevel,
+} from './compatibility';
+
 export type EvidenceLevel =
   | 'code'
   | 'series_table'
@@ -6,6 +12,8 @@ export type EvidenceLevel =
   | 'unknown';
 
 export type ConfidenceLevel = 'high' | 'medium' | 'low' | 'unknown';
+
+export type IdentificationOutcome = 'full' | 'series_only' | 'not_found';
 
 export interface TechnicalAttribute<T = string | number> {
   value: T | null;
@@ -19,6 +27,7 @@ export interface ProductIdentification {
   normalizedCode: string;
   seriesId: string | null;
   matched: boolean;
+  outcome: IdentificationOutcome;
   brand: TechnicalAttribute<string>;
   series: TechnicalAttribute<string>;
   productType: TechnicalAttribute<string>;
@@ -36,6 +45,7 @@ export interface ProductSeriesRecord {
   standardFamily: string;
   codePrefix: string;
   confidenceWhenMatched: ConfidenceLevel;
+  equivalenceGroupId?: string;
 }
 
 export interface ParsingRuleRecord {
@@ -49,4 +59,25 @@ export interface EquivalentGroupRecord {
   id: string;
   name: string;
   seriesIds: string[];
+}
+
+export interface CylinderCheckItemRecord {
+  field: string;
+  sourceValue: string;
+  targetValue: string;
+  reasonTr: string;
+  severity: CheckSeverity;
+}
+
+export interface EquivalenceProfileRecord {
+  sourceSeriesId: string;
+  targetSeriesId: string;
+  matchLevelTr: MatchLevelTr;
+  summaryTr: string;
+  riskLevel: RiskLevel;
+}
+
+export interface CylinderCheckItemsRecord {
+  equivalenceGroupId: string;
+  items: CylinderCheckItemRecord[];
 }

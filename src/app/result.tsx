@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { CompatibilityTable } from '@/components/CompatibilityTable';
+import { NotFoundCard } from '@/components/NotFoundCard';
 import { ProductCard } from '@/components/ProductCard';
 import { compareProducts } from '@/domain/resolver/compareProducts';
 import { findEquivalents } from '@/domain/resolver/findEquivalents';
@@ -13,7 +14,7 @@ export default function ResultScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
   const inputCode = typeof code === 'string' ? code : '';
 
-  const { identification, compatibilityResults } = useMemo(() => {
+  const { identification, compatibilityResults, showNotFound } = useMemo(() => {
     const normalizedCode = normalizeCode(inputCode);
     const identified = identifyProduct(inputCode, normalizedCode);
     const equivalents = findEquivalents(identified);
@@ -23,6 +24,8 @@ export default function ResultScreen() {
     return {
       identification: identified,
       compatibilityResults: comparisons,
+      showNotFound:
+        identified.outcome === 'not_found' || identified.outcome === 'series_only',
     };
   }, [inputCode]);
 
@@ -40,25 +43,46 @@ export default function ResultScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <ProductCard identification={identification} />
+      {showNotFound ? (
+        <NotFoundCard
+          normalizedCode={identification.normalizedCode}
+          variant={identification.outcome === 'series_only' ? 'series_only' : 'not_found'}
+        />
+      ) : null}
 
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Muadil seri adayları</Text>
-        <Text style={styles.sectionSubtitle}>
-          Aynı standart grubundaki diğer üretici serileri
-        </Text>
-      </View>
+      {identification.outcome === 'full' ? (
+        <ProductCard identification={identification} />
+      ) : identification.outcome === 'series_only' ? (
+        <ProductCard
+          identification={identification}
+          title="Kısmen tanınan seri"
+        />
+      ) : null}
 
-      {compatibilityResults.length === 0 ? (
-        <View style={styles.noEquivalentsCard}>
-          <Text style={styles.noEquivalentsText}>
-            Bu ürün için tanımlı muadil seri bulunamadı veya ürün tanınamadı.
-          </Text>
-        </View>
-      ) : (
-        compatibilityResults.map((result) => (
-          <CompatibilityTable key={result.candidate.seriesId} result={result} />
-        ))
+      {!showNotFound && (
+        <>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Muadil seri adayları</Text>
+            <Text style={styles.sectionSubtitle}>
+              Aynı standart grubundaki diğer üretici serileri
+            </Text>
+          </View>
+
+          {compatibilityResults.length === 0 ? (
+            <View style={styles.noEquivalentsCard}>
+              <Text style={styles.noEquivalentsText}>
+                Bu ürün için tanımlı muadil seri bulunamadı.
+              </Text>
+            </View>
+          ) : (
+            compatibilityResults.map((result) => (
+              <CompatibilityTable
+                key={result.candidate.seriesId}
+                result={result}
+              />
+            ))
+          )}
+        </>
       )}
     </ScrollView>
   );
@@ -84,7 +108,8 @@ const styles = StyleSheet.create({
   },
   sectionSubtitle: {
     color: '#64748B',
-    fontSize: 14,
+    fontSize: 15,
+    lineHeight: 21,
   },
   noEquivalentsCard: {
     backgroundColor: '#FFFFFF',
@@ -93,8 +118,8 @@ const styles = StyleSheet.create({
   },
   noEquivalentsText: {
     color: '#64748B',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 22,
   },
   emptyContainer: {
     flex: 1,

@@ -80,10 +80,11 @@ export function ProductCard({ identification, title = 'Tanımlanan ürün' }: Pr
       <Text style={styles.codeLabel}>Normalize kod</Text>
       <Text style={styles.code}>{identification.normalizedCode}</Text>
 
-      {!identification.matched && (
+      {identification.outcome === 'series_only' && (
         <View style={styles.alertBox}>
           <Text style={styles.alertText}>
-            Bu kod tanınmadı. Seri veya format kontrol edilmeli.
+            Seri tanındı; çap ve strok kod formatından okunamadı. Değerler kesin
+            değildir.
           </Text>
         </View>
       )}

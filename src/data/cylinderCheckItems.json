@@ -1,0 +1,40 @@
+{
+  "equivalenceGroupId": "pneumatic_iso_15552_cylinder",
+  "items": [
+    {
+      "field": "Mil ucu / diş",
+      "sourceValue": "Ürün kodundan net okunamadı",
+      "targetValue": "Ürün kodundan net okunamadı",
+      "reasonTr": "Mil ucu tipi ürün kodundan net okunamadı. Eski bağlantı elemanının yeni silindire uyup uymadığı kontrol edilmelidir.",
+      "severity": "high"
+    },
+    {
+      "field": "Port ölçüsü",
+      "sourceValue": "Doğrulanmalı",
+      "targetValue": "Doğrulanmalı",
+      "reasonTr": "Hava bağlantı ölçüsü seri ve çapa göre değişebilir. Sipariş öncesinde port ölçüsü doğrulanmalıdır.",
+      "severity": "medium"
+    },
+    {
+      "field": "Sensör uyumu",
+      "sourceValue": "Marka bazında farklı olabilir",
+      "targetValue": "Marka bazında farklı olabilir",
+      "reasonTr": "Her iki seri sensörlü kullanım için uygun olabilir, ancak sensör kanalı ve sensör modeli marka bazında farklılık gösterebilir.",
+      "severity": "medium"
+    },
+    {
+      "field": "Sönümleme seçeneği",
+      "sourceValue": "Kodda farklı ifade edilebilir",
+      "targetValue": "Kodda farklı ifade edilebilir",
+      "reasonTr": "Sönümleme seçeneği ürün kodunda farklı kodlarla ifade edilebilir. Aynı sönümleme tipi seçilmelidir.",
+      "severity": "medium"
+    },
+    {
+      "field": "Montaj aksesuarları",
+      "sourceValue": "Marka bazında değişebilir",
+      "targetValue": "Marka bazında değişebilir",
+      "reasonTr": "Standart aile aynı olsa bile ayak, flanş ve mafsal gibi aksesuarlar marka bazında değişebilir.",
+      "severity": "medium"
+    }
+  ]
+}
