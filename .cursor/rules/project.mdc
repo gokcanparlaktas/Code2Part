@@ -1,0 +1,68 @@
+---
+description: Code2Part project rules
+alwaysApply: true
+---
+
+This is Code2Part, a React Native Expo TypeScript app for industrial product code identification and equivalent product comparison.
+
+Target users:
+- Technical salespeople
+- Suppliers
+- Purchasing staff with limited technical knowledge
+
+Product goal:
+The app should help users enter an industrial product code, understand what the product is, and compare possible equivalent product series.
+
+This app is not:
+- A CAD viewer
+- A technical drawing tool
+- A PDF parser
+- A full ERP system
+- A procurement marketplace
+
+Current MVP scope:
+- Local JSON mock data only
+- No backend
+- No Firebase
+- No Supabase
+- No authentication
+- No payments
+- No file upload
+
+Initial supported products:
+- Festo DSBC
+- SMC CP96
+- Product category: pneumatic cylinder
+- Standard family: ISO 15552
+
+Core flow:
+1. Normalize product code.
+2. Identify brand, series, category, standard family, and measurable attributes.
+3. Extract bore and stroke from code when possible.
+4. Find equivalent series using equivalence groups.
+5. Show compatibility in simple Turkish.
+
+Every technical attribute must include an evidence level:
+- code
+- series_table
+- standard
+- inferred
+- unknown
+
+Compatibility results must be separated into:
+- compatible
+- different
+- unknownOrCheck
+- warnings
+
+Important:
+Never show uncertain technical data as certain.
+If a field cannot be verified, mark it as unknown or check required.
+Avoid generic warnings when possible. Prefer field-level explanations.
+
+Architecture rules:
+- UI components must not contain domain logic.
+- Resolver logic must live under src/domain/resolver.
+- Mock catalog data must live under src/data.
+- Shared types must live under src/types.
+- Keep code modular, readable, and testable.

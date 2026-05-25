@@ -1,0 +1,7 @@
+[
+  {
+    "id": "pneumatic_iso_15552_cylinder",
+    "name": "ISO 15552 pnömatik silindir",
+    "seriesIds": ["festo_dsbc", "smc_cp96"]
+  }
+]

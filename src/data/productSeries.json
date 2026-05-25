@@ -1,0 +1,20 @@
+[
+  {
+    "id": "festo_dsbc",
+    "brand": "Festo",
+    "series": "DSBC",
+    "productType": "Pnömatik silindir",
+    "standardFamily": "ISO 15552",
+    "codePrefix": "DSBC",
+    "confidenceWhenMatched": "high"
+  },
+  {
+    "id": "smc_cp96",
+    "brand": "SMC",
+    "series": "CP96",
+    "productType": "Pnömatik silindir",
+    "standardFamily": "ISO 15552",
+    "codePrefix": "CP96",
+    "confidenceWhenMatched": "high"
+  }
+]

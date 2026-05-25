@@ -1,0 +1,14 @@
+[
+  {
+    "seriesId": "festo_dsbc",
+    "pattern": "^DSBC-(\\d+)-(\\d+)",
+    "boreGroup": 1,
+    "strokeGroup": 2
+  },
+  {
+    "seriesId": "smc_cp96",
+    "pattern": "^CP96-(\\d+)-(\\d+)",
+    "boreGroup": 1,
+    "strokeGroup": 2
+  }
+]
