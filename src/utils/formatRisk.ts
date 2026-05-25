@@ -14,10 +14,21 @@ export function formatRiskLevel(risk: RiskLevel): string {
 export function formatCheckSeverity(severity: CheckSeverity): string {
   switch (severity) {
     case 'low':
-      return 'Düşük öncelik';
+      return 'Düşük risk';
     case 'medium':
-      return 'Orta öncelik';
+      return 'Kontrol gerekli';
     case 'high':
-      return 'Yüksek öncelik';
+      return 'Kritik kontrol';
   }
+}
+
+export function formatCollapsedRiskHint(
+  risk: RiskLevel,
+  hasCheckItems: boolean
+): string {
+  const riskLabel = formatRiskLevel(risk);
+  if (hasCheckItems) {
+    return `${riskLabel} · Kontrol gerekli`;
+  }
+  return riskLabel;
 }

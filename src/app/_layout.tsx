@@ -17,6 +17,7 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="search" options={{ title: 'Ürün kodu ara' }} />
         <Stack.Screen name="result" options={{ title: 'Sonuç' }} />
+        <Stack.Screen name="equivalents" options={{ title: 'Muadiller' }} />
       </Stack>
     </SafeAreaProvider>
   );
