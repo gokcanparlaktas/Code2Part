@@ -37,6 +37,7 @@ export interface EquivalentCandidate {
   brand: string;
   series: string;
   productType: string;
+  productCategory: string;
   standardFamily: string;
   suggestedCode: string | null;
   targetIdentification: ProductIdentification | null;

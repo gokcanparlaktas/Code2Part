@@ -2,6 +2,23 @@
   {
     "id": "pneumatic_iso_15552_cylinder",
     "name": "ISO 15552 pnömatik silindir",
-    "seriesIds": ["festo_dsbc", "smc_cp96"]
+    "seriesIds": [
+      "festo_dsbc",
+      "smc_cp96",
+      "smc_c96",
+      "parker_p1d",
+      "aventics_pra",
+      "airtac_si"
+    ]
+  },
+  {
+    "id": "pneumatic_compact_cylinder",
+    "name": "Kompakt pnömatik silindir",
+    "seriesIds": ["festo_adn", "smc_cq2"]
+  },
+  {
+    "id": "pneumatic_round_mini_cylinder",
+    "name": "Yuvarlak mini pnömatik silindir",
+    "seriesIds": ["festo_dsnu", "smc_c85"]
   }
 ]

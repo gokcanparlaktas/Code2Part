@@ -1,14 +1,15 @@
 [
-  {
-    "seriesId": "festo_dsbc",
-    "pattern": "^DSBC-(\\d+)-(\\d+)",
-    "boreGroup": 1,
-    "strokeGroup": 2
-  },
-  {
-    "seriesId": "smc_cp96",
-    "pattern": "^CP96-(\\d+)-(\\d+)",
-    "boreGroup": 1,
-    "strokeGroup": 2
-  }
+  { "seriesId": "festo_dsbc", "pattern": "^DSBC-(\\d+)-(\\d+)", "boreGroup": 1, "strokeGroup": 2 },
+  { "seriesId": "festo_adn", "pattern": "^ADN-(\\d+)-(\\d+)", "boreGroup": 1, "strokeGroup": 2 },
+  { "seriesId": "festo_dsnu", "pattern": "^DSNU-(\\d+)-(\\d+)", "boreGroup": 1, "strokeGroup": 2 },
+  { "seriesId": "smc_cp96", "pattern": "^CP96SDB(\\d+)-(\\d+)", "boreGroup": 1, "strokeGroup": 2 },
+  { "seriesId": "smc_cp96", "pattern": "^CP96-(\\d+)-(\\d+)", "boreGroup": 1, "strokeGroup": 2 },
+  { "seriesId": "smc_c96", "pattern": "^C96SDB(\\d+)-(\\d+)", "boreGroup": 1, "strokeGroup": 2 },
+  { "seriesId": "smc_cq2", "pattern": "^CQ2B(\\d+)-(\\d+)D?", "boreGroup": 1, "strokeGroup": 2 },
+  { "seriesId": "smc_c85", "pattern": "^C85N(\\d+)-(\\d+)", "boreGroup": 1, "strokeGroup": 2 },
+  { "seriesId": "airtac_si", "pattern": "^SI(\\d+)X(\\d+)", "boreGroup": 1, "strokeGroup": 2 },
+  { "seriesId": "airtac_si", "pattern": "^SI-(\\d+)-(\\d+)", "boreGroup": 1, "strokeGroup": 2 },
+  { "seriesId": "parker_p1d", "pattern": "^P1D-S(\\d{3})MS-(\\d+)", "boreGroup": 1, "strokeGroup": 2 },
+  { "seriesId": "parker_p1d", "pattern": "^P1D-(\\d+)-(\\d+)", "boreGroup": 1, "strokeGroup": 2 },
+  { "seriesId": "aventics_pra", "pattern": "^PRA-(\\d+)-(\\d+)", "boreGroup": 1, "strokeGroup": 2 }
 ]

@@ -55,6 +55,12 @@ export function ProductCard({ identification, title = 'Tanımlanan ürün' }: Pr
       requiresCheck: identification.productType.requiresCheck,
     },
     {
+      label: 'Ürün kategorisi',
+      value: formatAttributeValue(identification.productCategory.value),
+      evidence: formatEvidence(identification.productCategory.evidence),
+      requiresCheck: identification.productCategory.requiresCheck,
+    },
+    {
       label: 'Standart ailesi',
       value: formatAttributeValue(identification.standardFamily.value),
       evidence: formatEvidence(identification.standardFamily.evidence),

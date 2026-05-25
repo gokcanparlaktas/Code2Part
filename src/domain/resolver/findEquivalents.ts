@@ -44,6 +44,7 @@ export function findEquivalents(
         brand: series.brand,
         series: series.series,
         productType: series.productType,
+        productCategory: series.productCategory,
         standardFamily: series.standardFamily,
         suggestedCode,
         targetIdentification,

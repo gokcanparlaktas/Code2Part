@@ -9,7 +9,14 @@ import {
   View,
 } from 'react-native';
 
-const EXAMPLES = ['DSBC-50-100-PPVA-N3', 'CP96-50-100'];
+const EXAMPLES = [
+  'DSBC-50-100-PPVA-N3',
+  'CP96SDB50-100',
+  'CQ2B32-50D',
+  'SI50X100',
+  'P1D-S050MS-0100',
+  'DSNU-25-80-P-A',
+];
 
 export function ProductCodeSearchCard() {
   const [code, setCode] = useState('');
@@ -29,7 +36,7 @@ export function ProductCodeSearchCard() {
     <View style={styles.card}>
       <Text style={styles.label}>Ürün kodu</Text>
       <Text style={styles.hint}>
-        Festo, SMC ve benzeri kodları buraya yazın
+        Festo, SMC, Parker, Aventics, AirTAC ve benzeri kodları buraya yazın
       </Text>
 
       <TextInput

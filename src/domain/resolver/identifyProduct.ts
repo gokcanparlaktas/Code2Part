@@ -31,14 +31,22 @@ function attributeFromCode<T extends string | number>(
   return { value, unit, evidence: 'code', requiresCheck: false };
 }
 
+function getSeriesPrefixes(series: ProductSeriesRecord): string[] {
+  const prefixes = series.matchPrefixes ?? [series.codePrefix];
+  return [...new Set([series.codePrefix, ...prefixes])].sort(
+    (a, b) => b.length - a.length
+  );
+}
+
 function findSeriesByCode(normalizedCode: string): ProductSeriesRecord | null {
-  const sorted = [...productSeries].sort(
-    (a, b) => b.codePrefix.length - a.codePrefix.length
-  );
-  return (
-    sorted.find((series) => normalizedCode.startsWith(series.codePrefix)) ??
-    null
-  );
+  const candidates = productSeries
+    .flatMap((series) =>
+      getSeriesPrefixes(series).map((prefix) => ({ series, prefix }))
+    )
+    .sort((a, b) => b.prefix.length - a.prefix.length);
+
+  const match = candidates.find(({ prefix }) => normalizedCode.startsWith(prefix));
+  return match?.series ?? null;
 }
 
 function hasParserRule(seriesId: string): boolean {
@@ -49,29 +57,30 @@ function parseDimensions(
   normalizedCode: string,
   seriesId: string
 ): { bore: TechnicalAttribute<number>; stroke: TechnicalAttribute<number>; parsed: boolean } {
-  const rule = parsingRules.find((r) => r.seriesId === seriesId);
-  if (!rule) {
-    return { bore: unknownAttribute(), stroke: unknownAttribute(), parsed: false };
+  const rules = parsingRules.filter((r) => r.seriesId === seriesId);
+
+  for (const rule of rules) {
+    const regex = new RegExp(rule.pattern);
+    const match = normalizedCode.match(regex);
+    if (!match) {
+      continue;
+    }
+
+    const boreValue = Number(match[rule.boreGroup]);
+    const strokeValue = Number(match[rule.strokeGroup]);
+
+    if (Number.isNaN(boreValue) || Number.isNaN(strokeValue)) {
+      continue;
+    }
+
+    return {
+      bore: attributeFromCode(boreValue, 'mm'),
+      stroke: attributeFromCode(strokeValue, 'mm'),
+      parsed: true,
+    };
   }
 
-  const regex = new RegExp(rule.pattern);
-  const match = normalizedCode.match(regex);
-  if (!match) {
-    return { bore: unknownAttribute(), stroke: unknownAttribute(), parsed: false };
-  }
-
-  const boreValue = Number(match[rule.boreGroup]);
-  const strokeValue = Number(match[rule.strokeGroup]);
-
-  if (Number.isNaN(boreValue) || Number.isNaN(strokeValue)) {
-    return { bore: unknownAttribute(), stroke: unknownAttribute(), parsed: false };
-  }
-
-  return {
-    bore: attributeFromCode(boreValue, 'mm'),
-    stroke: attributeFromCode(strokeValue, 'mm'),
-    parsed: true,
-  };
+  return { bore: unknownAttribute(), stroke: unknownAttribute(), parsed: false };
 }
 
 function resolveConfidence(
@@ -105,6 +114,39 @@ function resolveOutcome(
   return 'full';
 }
 
+function applySuggestedCodeTemplate(
+  template: string,
+  bore: number,
+  stroke: number,
+  codePrefix: string
+): string {
+  return template
+    .replace(/\{bore\}/g, String(bore))
+    .replace(/\{stroke\}/g, String(stroke))
+    .replace(/\{prefix\}/g, codePrefix);
+}
+
+function emptyIdentification(
+  inputCode: string,
+  normalizedCode: string
+): ProductIdentification {
+  return {
+    inputCode,
+    normalizedCode,
+    seriesId: null,
+    matched: false,
+    outcome: 'not_found',
+    brand: unknownAttribute(),
+    series: unknownAttribute(),
+    productType: unknownAttribute(),
+    productCategory: unknownAttribute(),
+    standardFamily: unknownAttribute(),
+    bore: unknownAttribute(),
+    stroke: unknownAttribute(),
+    confidence: 'unknown',
+  };
+}
+
 export function identifyProduct(
   inputCode: string,
   normalizedCode: string
@@ -112,20 +154,7 @@ export function identifyProduct(
   const series = findSeriesByCode(normalizedCode);
 
   if (!series) {
-    return {
-      inputCode,
-      normalizedCode,
-      seriesId: null,
-      matched: false,
-      outcome: 'not_found',
-      brand: unknownAttribute(),
-      series: unknownAttribute(),
-      productType: unknownAttribute(),
-      standardFamily: unknownAttribute(),
-      bore: unknownAttribute(),
-      stroke: unknownAttribute(),
-      confidence: 'unknown',
-    };
+    return emptyIdentification(inputCode, normalizedCode);
   }
 
   const { bore, stroke, parsed } = parseDimensions(normalizedCode, series.id);
@@ -140,6 +169,7 @@ export function identifyProduct(
     brand: attributeFromSeries(series.brand),
     series: attributeFromSeries(series.series),
     productType: attributeFromSeries(series.productType),
+    productCategory: attributeFromSeries(series.productCategory),
     standardFamily: {
       value: series.standardFamily,
       evidence: 'standard',
@@ -168,7 +198,10 @@ export function buildSuggestedEquivalentCode(
 
   const bore = Math.round(source.bore.value);
   const stroke = Math.round(source.stroke.value);
-  return `${targetSeries.codePrefix}-${bore}-${stroke}`;
+  const template =
+    targetSeries.suggestedCodeTemplate ?? '{prefix}-{bore}-{stroke}';
+
+  return applySuggestedCodeTemplate(template, bore, stroke, targetSeries.codePrefix);
 }
 
 export function getProductSeriesById(id: string): ProductSeriesRecord | undefined {

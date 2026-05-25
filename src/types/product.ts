@@ -31,6 +31,7 @@ export interface ProductIdentification {
   brand: TechnicalAttribute<string>;
   series: TechnicalAttribute<string>;
   productType: TechnicalAttribute<string>;
+  productCategory: TechnicalAttribute<string>;
   standardFamily: TechnicalAttribute<string>;
   bore: TechnicalAttribute<number>;
   stroke: TechnicalAttribute<number>;
@@ -42,8 +43,11 @@ export interface ProductSeriesRecord {
   brand: string;
   series: string;
   productType: string;
+  productCategory: string;
   standardFamily: string;
   codePrefix: string;
+  matchPrefixes?: string[];
+  suggestedCodeTemplate?: string;
   confidenceWhenMatched: ConfidenceLevel;
   equivalenceGroupId?: string;
 }

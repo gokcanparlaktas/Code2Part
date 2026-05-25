@@ -122,30 +122,17 @@ function getCylinderCheckItems(
   const sourceSeries = source.seriesId ? getProductSeriesById(source.seriesId) : undefined;
   const groupId = sourceSeries?.equivalenceGroupId;
 
-  if (groupId !== cylinderChecks.equivalenceGroupId) {
+  if (!groupId?.startsWith('pneumatic_')) {
     return [];
   }
 
-  const sourceLabel = brandLabel(source, sourceSeries?.brand ?? 'Kaynak');
-  const targetLabel = brandLabel(
-    candidate.targetIdentification,
-    candidate.brand
-  );
-
   return cylinderChecks.items.map((item) => ({
     field: item.field,
-    sourceValue: personalizeCheckValue(item.sourceValue, sourceLabel),
-    targetValue: personalizeCheckValue(item.targetValue, targetLabel),
+    sourceValue: item.sourceValue,
+    targetValue: item.targetValue,
     reasonTr: item.reasonTr,
     severity: item.severity,
   }));
-}
-
-function personalizeCheckValue(template: string, seriesLabel: string): string {
-  if (template.includes('marka')) {
-    return template.replace('marka', seriesLabel);
-  }
-  return `${seriesLabel} — ${template}`;
 }
 
 function lookupEquivalenceSummary(
@@ -230,8 +217,11 @@ export function compareProducts(
 ): CompatibilityResult {
   const target = candidate.targetIdentification;
   const comparisons: AttributeComparison[] = [
-    compareAttribute('Standart ailesi', source.standardFamily, candidate.standardFamily),
-    compareAttribute('Ürün tipi', source.productType, candidate.productType),
+    compareAttribute(
+      'Ürün kategorisi',
+      source.productCategory,
+      candidate.productCategory
+    ),
     compareAttribute(
       'Çap (bore)',
       source.bore,

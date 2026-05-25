@@ -18,7 +18,6 @@ function CompatibleRow({ item }: { item: AttributeComparison }) {
     <View style={styles.compatibleRow}>
       <Text style={styles.rowLabel}>{item.label}</Text>
       <Text style={styles.rowValue}>{item.sourceDisplay}</Text>
-      <Text style={styles.rowMeta}>Muadil: {item.targetDisplay}</Text>
     </View>
   );
 }
@@ -41,14 +40,6 @@ function CheckRow({ item }: { item: CheckItem }) {
         <Text style={styles.checkField}>{item.field}</Text>
         <SeverityBadge severity={item.severity} />
       </View>
-      <Text style={styles.checkValue}>
-        <Text style={styles.checkValueLabel}>Kaynak: </Text>
-        {item.sourceValue}
-      </Text>
-      <Text style={styles.checkValue}>
-        <Text style={styles.checkValueLabel}>Muadil: </Text>
-        {item.targetValue}
-      </Text>
       <Text style={styles.checkReason}>{item.reasonTr}</Text>
     </View>
   );
@@ -250,10 +241,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
-  rowMeta: {
-    color: '#475569',
-    fontSize: 14,
-  },
   checkRow: {
     backgroundColor: '#FFFBEB',
     borderColor: '#FDE68A',
@@ -271,14 +258,6 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     flex: 1,
     fontSize: 15,
-    fontWeight: '700',
-  },
-  checkValue: {
-    color: '#334155',
-    fontSize: 15,
-    lineHeight: 21,
-  },
-  checkValueLabel: {
     fontWeight: '700',
   },
   checkReason: {
