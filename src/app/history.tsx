@@ -90,6 +90,12 @@ export default function HistoryScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
+      <Link href="/diagnostics" asChild>
+        <Pressable style={({ pressed }) => [styles.diagnosticsLink, pressed && styles.rowPressed]}>
+          <Text style={styles.diagnosticsLinkText}>Veri Kontrolü</Text>
+        </Pressable>
+      </Link>
+
       <Text style={styles.subtitle}>Son yapılan ürün kodu aramaları</Text>
 
       {searches.length === 0 ? (
@@ -132,6 +138,20 @@ const styles = StyleSheet.create({
     gap: 14,
     padding: 20,
     paddingBottom: 40,
+  },
+  diagnosticsLink: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#EFF6FF',
+    borderColor: '#BFDBFE',
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  diagnosticsLinkText: {
+    color: '#1E40AF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   subtitle: {
     color: '#64748B',

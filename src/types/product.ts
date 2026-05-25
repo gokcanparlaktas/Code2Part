@@ -53,6 +53,7 @@ export interface ProductSeriesRecord {
 }
 
 export interface ParsingRuleRecord {
+  id?: string;
   seriesId: string;
   pattern: string;
   boreGroup: number;
