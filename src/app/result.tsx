@@ -6,8 +6,10 @@ import { EvidenceDetails } from '@/components/EvidenceDetails';
 import { LowConfidenceWarningCard } from '@/components/LowConfidenceWarningCard';
 import { ProductCard } from '@/components/ProductCard';
 import { ReliabilityNote } from '@/components/ReliabilityNote';
+import { PartialSuggestionsPanel } from '@/components/PartialSuggestionsPanel';
 import { UnresolvedResultCard } from '@/components/UnresolvedResultCard';
 import { resolveProductSearch } from '@/domain/resolver/resolveProductSearch';
+import { suggestProducts } from '@/domain/resolver/suggestProducts';
 import {
   isUnresolvedSaved,
   recordSearch,
@@ -21,16 +23,18 @@ export default function ResultScreen() {
   const inputCode = typeof code === 'string' ? code : '';
   const [alreadySaved, setAlreadySaved] = useState(false);
 
-  const { identification, hasEquivalents, isUnresolved } = useMemo(() => {
+  const { identification, hasEquivalents, isUnresolved, suggestions } = useMemo(() => {
     const resolved = resolveProductSearch(inputCode);
     const unresolved =
       resolved.identification.outcome === 'not_found' ||
       resolved.identification.outcome === 'series_only';
+    const partialSuggestions = unresolved ? suggestProducts(inputCode) : [];
 
     return {
       identification: resolved.identification,
       hasEquivalents: resolved.hasEquivalents,
       isUnresolved: unresolved,
+      suggestions: partialSuggestions,
     };
   }, [inputCode]);
 
@@ -81,14 +85,28 @@ export default function ResultScreen() {
       showsVerticalScrollIndicator={false}
     >
       {isUnresolved ? (
-        <UnresolvedResultCard
-          originalInput={identification.inputCode}
-          normalizedCode={identification.normalizedCode}
-          brand={identification.brand.value}
-          series={identification.series.value}
-          initiallySaved={alreadySaved}
-          onSave={handleSaveUnresolved}
-        />
+        <>
+          {suggestions.length > 0 ? (
+            <>
+              <Text style={styles.partialIntro}>
+                Tam ürün kodu tanınamadı, ancak aşağıdaki seriler olası görünüyor.
+              </Text>
+              <PartialSuggestionsPanel
+                title="Olası seriler"
+                suggestions={suggestions}
+              />
+            </>
+          ) : null}
+          <UnresolvedResultCard
+            originalInput={identification.inputCode}
+            normalizedCode={identification.normalizedCode}
+            brand={identification.brand.value}
+            series={identification.series.value}
+            initiallySaved={alreadySaved}
+            hasPartialSuggestions={suggestions.length > 0}
+            onSave={handleSaveUnresolved}
+          />
+        </>
       ) : (
         <>
           {showLowConfidence ? <LowConfidenceWarningCard /> : null}
@@ -134,6 +152,12 @@ const styles = StyleSheet.create({
     gap: 16,
     padding: 20,
     paddingBottom: 40,
+  },
+  partialIntro: {
+    color: '#0F172A',
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 24,
   },
   primaryButton: {
     alignItems: 'center',

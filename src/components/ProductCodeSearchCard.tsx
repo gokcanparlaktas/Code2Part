@@ -1,5 +1,5 @@
 import { Link, router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Platform,
   Pressable,
@@ -8,6 +8,11 @@ import {
   TextInput,
   View,
 } from 'react-native';
+
+import { suggestProducts } from '@/domain/resolver/suggestProducts';
+import type { SuggestedProduct } from '@/types/suggestion';
+
+import { PartialSuggestionsPanel } from './PartialSuggestionsPanel';
 
 const EXAMPLES = [
   'DSBC-50-100-PPVA-N3',
@@ -20,6 +25,31 @@ const EXAMPLES = [
 
 export function ProductCodeSearchCard() {
   const [code, setCode] = useState('');
+  const [strokeHint, setStrokeHint] = useState(false);
+
+  const suggestions = useMemo(() => {
+    const trimmed = code.trim();
+    if (trimmed.length < 2) {
+      return [];
+    }
+    return suggestProducts(trimmed);
+  }, [code]);
+
+  const handleSelectSuggestion = (suggestion: SuggestedProduct) => {
+    const hasBoreOnly =
+      suggestion.detectedAttributes.boreMm !== undefined &&
+      suggestion.missingFields.includes('stroke');
+
+    if (hasBoreOnly) {
+      setStrokeHint(true);
+      return;
+    }
+
+    setStrokeHint(false);
+    if (suggestion.exampleCodeFormat) {
+      setCode(suggestion.exampleCodeFormat);
+    }
+  };
 
   const handleSearch = () => {
     const trimmed = code.trim();
@@ -44,7 +74,10 @@ export function ProductCodeSearchCard() {
         placeholder="Örn. DSBC-50-100-PPVA-N3"
         placeholderTextColor="#64748B"
         value={code}
-        onChangeText={setCode}
+        onChangeText={(value) => {
+          setCode(value);
+          setStrokeHint(false);
+        }}
         autoCapitalize="characters"
         autoCorrect={false}
         returnKeyType="search"
@@ -52,6 +85,20 @@ export function ProductCodeSearchCard() {
         selectionColor="#1E40AF"
         underlineColorAndroid="#1E40AF"
       />
+
+      {suggestions.length > 0 ? (
+        <PartialSuggestionsPanel
+          title="Bunlar olabilir"
+          suggestions={suggestions}
+          onSelectSuggestion={handleSelectSuggestion}
+        />
+      ) : null}
+
+      {strokeHint ? (
+        <Text style={styles.strokeHint}>
+          Strok değerini de girerseniz ürün daha net tanımlanır.
+        </Text>
+      ) : null}
 
       <Pressable
         style={({ pressed }) => [
@@ -116,6 +163,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     marginTop: -4,
+  },
+  strokeHint: {
+    color: '#1E40AF',
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 20,
   },
   input: {
     backgroundColor: '#FFFFFF',

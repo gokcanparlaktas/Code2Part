@@ -7,6 +7,7 @@ interface UnresolvedResultCardProps {
   brand?: string | null;
   series?: string | null;
   initiallySaved?: boolean;
+  hasPartialSuggestions?: boolean;
   onSave: () => Promise<void>;
 }
 
@@ -16,6 +17,7 @@ export function UnresolvedResultCard({
   brand,
   series,
   initiallySaved = false,
+  hasPartialSuggestions = false,
   onSave,
 }: UnresolvedResultCardProps) {
   const [saved, setSaved] = useState(initiallySaved);
@@ -36,10 +38,15 @@ export function UnresolvedResultCard({
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Ürün kodu tanınamadı</Text>
+      <Text style={styles.title}>
+        {hasPartialSuggestions
+          ? 'Tam ürün kodu tanınamadı'
+          : 'Ürün kodu tanınamadı'}
+      </Text>
       <Text style={styles.body}>
-        Kod formatı henüz desteklenmiyor olabilir. Bu kodu daha sonra veri setine
-        eklemek için kaydedebiliriz.
+        {hasPartialSuggestions
+          ? 'Kod tam olarak çözümlenemedi. Olası seriler yukarıda listelenmiştir. İsterseniz bu kodu veri setine eklemek için kaydedebilirsiniz.'
+          : 'Kod formatı henüz desteklenmiyor olabilir. Bu kodu daha sonra veri setine eklemek için kaydedebiliriz.'}
       </Text>
 
       <View style={styles.detailBox}>
