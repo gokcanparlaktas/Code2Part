@@ -39,6 +39,10 @@ function getSeriesPrefixes(series: ProductSeriesRecord): string[] {
 }
 
 function findSeriesByCode(normalizedCode: string): ProductSeriesRecord | null {
+  if (!normalizedCode) {
+    return null;
+  }
+
   const candidates = productSeries
     .flatMap((series) =>
       getSeriesPrefixes(series).map((prefix) => ({ series, prefix }))
