@@ -1,31 +1,64 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { NotFoundCard } from '@/components/NotFoundCard';
+import { LowConfidenceWarningCard } from '@/components/LowConfidenceWarningCard';
 import { ProductCard } from '@/components/ProductCard';
+import { UnresolvedResultCard } from '@/components/UnresolvedResultCard';
 import { resolveProductSearch } from '@/domain/resolver/resolveProductSearch';
+import {
+  isUnresolvedSaved,
+  recordSearch,
+  saveUnresolvedSearch,
+} from '@/services/localSearchStore';
+import { isLowConfidence } from '@/utils/confidenceScore';
 
 export default function ResultScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
   const inputCode = typeof code === 'string' ? code : '';
+  const [alreadySaved, setAlreadySaved] = useState(false);
 
-  const { identification, hasEquivalents, showNotFound } = useMemo(() => {
+  const { identification, hasEquivalents, isUnresolved } = useMemo(() => {
     const resolved = resolveProductSearch(inputCode);
+    const unresolved =
+      resolved.identification.outcome === 'not_found' ||
+      resolved.identification.outcome === 'series_only';
+
     return {
       identification: resolved.identification,
       hasEquivalents: resolved.hasEquivalents,
-      showNotFound:
-        resolved.identification.outcome === 'not_found' ||
-        resolved.identification.outcome === 'series_only',
+      isUnresolved: unresolved,
     };
   }, [inputCode]);
+
+  useEffect(() => {
+    if (!inputCode) {
+      return;
+    }
+
+    void recordSearch(identification);
+
+    if (isUnresolved) {
+      void isUnresolvedSaved(identification.normalizedCode).then(setAlreadySaved);
+    }
+  }, [inputCode, identification, isUnresolved]);
+
+  const showLowConfidence =
+    !isUnresolved && isLowConfidence(identification.confidence);
 
   const openEquivalents = () => {
     router.push({
       pathname: '/equivalents',
       params: { code: inputCode },
     });
+  };
+
+  const handleSaveUnresolved = async () => {
+    await saveUnresolvedSearch(
+      identification.inputCode,
+      identification.normalizedCode
+    );
+    setAlreadySaved(true);
   };
 
   if (!inputCode) {
@@ -42,37 +75,40 @@ export default function ResultScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      {showNotFound ? (
-        <NotFoundCard
+      {isUnresolved ? (
+        <UnresolvedResultCard
+          originalInput={identification.inputCode}
           normalizedCode={identification.normalizedCode}
-          variant={
-            identification.outcome === 'series_only' ? 'series_only' : 'not_found'
-          }
+          brand={identification.brand.value}
+          series={identification.series.value}
+          initiallySaved={alreadySaved}
+          onSave={handleSaveUnresolved}
         />
-      ) : null}
+      ) : (
+        <>
+          {showLowConfidence ? <LowConfidenceWarningCard /> : null}
 
-      {identification.outcome === 'full' ? (
-        <ProductCard identification={identification} />
-      ) : identification.outcome === 'series_only' ? (
-        <ProductCard identification={identification} title="Kısmen tanınan seri" />
-      ) : null}
+          <ProductCard identification={identification} />
 
-      {!showNotFound && hasEquivalents ? (
-        <Pressable
-          style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
-          onPress={openEquivalents}
-        >
-          <Text style={styles.primaryButtonText}>Muadilleri Gör</Text>
-        </Pressable>
-      ) : null}
-
-      {!showNotFound && !hasEquivalents ? (
-        <View style={styles.noEquivalentsCard}>
-          <Text style={styles.noEquivalentsText}>
-            Bu ürün için henüz muadil aday eklenmemiş.
-          </Text>
-        </View>
-      ) : null}
+          {hasEquivalents ? (
+            <Pressable
+              style={({ pressed }) => [
+                styles.primaryButton,
+                pressed && styles.buttonPressed,
+              ]}
+              onPress={openEquivalents}
+            >
+              <Text style={styles.primaryButtonText}>Muadilleri Gör</Text>
+            </Pressable>
+          ) : (
+            <View style={styles.noEquivalentsCard}>
+              <Text style={styles.noEquivalentsText}>
+                Bu ürün için henüz muadil aday eklenmemiş.
+              </Text>
+            </View>
+          )}
+        </>
+      )}
     </ScrollView>
   );
 }

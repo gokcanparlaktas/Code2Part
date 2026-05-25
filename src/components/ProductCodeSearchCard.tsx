@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import {
   Platform,
@@ -64,6 +64,12 @@ export function ProductCodeSearchCard() {
       >
         <Text style={styles.buttonText}>Tanımla ve karşılaştır</Text>
       </Pressable>
+
+      <Link href="/history" asChild>
+        <Pressable style={({ pressed }) => [styles.historyLink, pressed && styles.historyLinkPressed]}>
+          <Text style={styles.historyLinkText}>Son Aramalar</Text>
+        </Pressable>
+      </Link>
 
       <Text style={styles.examplesTitle}>Hızlı örnekler</Text>
       <View style={styles.examplesRow}>
@@ -144,6 +150,23 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
+  },
+  historyLink: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderColor: '#CBD5E1',
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  historyLinkPressed: {
+    backgroundColor: '#F1F5F9',
+  },
+  historyLinkText: {
+    color: '#1E40AF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   examplesTitle: {
     color: '#475569',
