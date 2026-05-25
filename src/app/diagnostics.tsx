@@ -81,6 +81,25 @@ export default function DiagnosticsScreen() {
         </Text>
       </View>
 
+      <View style={styles.countsCard}>
+        <Text style={styles.countsTitle}>Veri güvenilirliği özeti</Text>
+        <Text style={styles.countRow}>
+          Toplam kayıt: {validation.summary.reliability.totalRecords}
+        </Text>
+        <Text style={styles.countRow}>
+          Kaynak doğrulanmış: {validation.summary.reliability.sourceVerifiedCount}
+        </Text>
+        <Text style={styles.countRow}>
+          Manuel doğrulanmış: {validation.summary.reliability.manualVerifiedCount}
+        </Text>
+        <Text style={styles.countRow}>
+          Manuel doğrulanmamış: {validation.summary.reliability.manualUnverifiedCount}
+        </Text>
+        <Text style={styles.countRow}>
+          Mock: {validation.summary.reliability.mockCount}
+        </Text>
+      </View>
+
       <IssueList
         title={`Hatalar (${validation.errors.length})`}
         items={validation.errors}

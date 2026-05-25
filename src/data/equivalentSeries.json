@@ -1,5 +1,10 @@
 [
   {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": "Muadil eşleştirme MVP için manuel eklenmiştir. Gerçek uygulamada teknik katalog ve saha doğrulaması gerekir.",
     "id": "pneumatic_iso_15552_cylinder",
     "name": "ISO 15552 pnömatik silindir",
     "seriesIds": [
@@ -12,13 +17,29 @@
     ]
   },
   {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": "Muadil eşleştirme MVP için manuel eklenmiştir. Gerçek uygulamada teknik katalog ve saha doğrulaması gerekir.",
     "id": "pneumatic_compact_cylinder",
     "name": "Kompakt pnömatik silindir",
-    "seriesIds": ["festo_adn", "smc_cq2"]
+    "seriesIds": [
+      "festo_adn",
+      "smc_cq2"
+    ]
   },
   {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": "Muadil eşleştirme MVP için manuel eklenmiştir. Gerçek uygulamada teknik katalog ve saha doğrulaması gerekir.",
     "id": "pneumatic_round_mini_cylinder",
     "name": "Yuvarlak mini pnömatik silindir",
-    "seriesIds": ["festo_dsnu", "smc_c85"]
+    "seriesIds": [
+      "festo_dsnu",
+      "smc_c85"
+    ]
   }
 ]

@@ -3,8 +3,10 @@ import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { EquivalentAccordionCard } from '@/components/EquivalentAccordionCard';
+import { ReliabilityNote } from '@/components/ReliabilityNote';
 import { SourceProductSummary } from '@/components/SourceProductSummary';
 import { resolveProductSearch } from '@/domain/resolver/resolveProductSearch';
+import { isEquivalenceMappingUnverified } from '@/utils/catalogReliability';
 
 function EquivalentsScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
@@ -44,6 +46,10 @@ function EquivalentsScreen() {
       </Text>
 
       <SourceProductSummary identification={identification} />
+
+      {isEquivalenceMappingUnverified(identification.seriesId) ? (
+        <ReliabilityNote message="Bu muadil eşleştirme manuel eklenmiştir, sipariş öncesi teknik doğrulama önerilir." />
+      ) : null}
 
       {compatibilityResults.length === 0 ? (
         <View style={styles.emptyCard}>

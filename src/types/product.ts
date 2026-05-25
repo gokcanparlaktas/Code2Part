@@ -3,6 +3,7 @@ import type {
   MatchLevelTr,
   RiskLevel,
 } from './compatibility';
+import type { DataReliabilityMetadata } from './catalogMetadata';
 
 export type EvidenceLevel =
   | 'code'
@@ -38,10 +39,13 @@ export interface ProductIdentification {
   confidence: ConfidenceLevel;
 }
 
-export interface ProductSeriesRecord {
+export interface ProductSeriesRecord extends DataReliabilityMetadata {
   id: string;
   brand: string;
   series: string;
+  technology: string;
+  category: string;
+  equivalenceGroup: string;
   productType: string;
   productCategory: string;
   standardFamily: string;
@@ -52,7 +56,7 @@ export interface ProductSeriesRecord {
   equivalenceGroupId?: string;
 }
 
-export interface ParsingRuleRecord {
+export interface ParsingRuleRecord extends DataReliabilityMetadata {
   id?: string;
   seriesId: string;
   pattern: string;
@@ -60,7 +64,7 @@ export interface ParsingRuleRecord {
   strokeGroup: number;
 }
 
-export interface EquivalentGroupRecord {
+export interface EquivalentGroupRecord extends DataReliabilityMetadata {
   id: string;
   name: string;
   seriesIds: string[];

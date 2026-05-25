@@ -7,11 +7,14 @@ export interface ValidationIssue {
   relatedId?: string;
 }
 
+import type { ReliabilitySummary } from './catalogMetadata';
+
 export interface CatalogValidationSummary {
   productSeriesCount: number;
   parsingRulesCount: number;
   equivalenceGroupCount: number;
   equivalentLinksCount: number;
+  reliability: ReliabilitySummary;
 }
 
 export interface CatalogValidationResult {

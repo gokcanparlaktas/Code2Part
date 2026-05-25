@@ -1,5 +1,10 @@
 [
   {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": "MVP veri seti için manuel eklenmiştir. Gerçek katalog kaynağıyla doğrulanmalıdır.",
     "id": "festo_dsbc",
     "brand": "Festo",
     "series": "DSBC",
@@ -10,12 +15,19 @@
     "productCategory": "ISO 15552 pnömatik silindir",
     "standardFamily": "ISO 15552",
     "codePrefix": "DSBC",
-    "matchPrefixes": ["DSBC"],
+    "matchPrefixes": [
+      "DSBC"
+    ],
     "suggestedCodeTemplate": "DSBC-{bore}-{stroke}",
     "confidenceWhenMatched": "high",
     "equivalenceGroupId": "pneumatic_iso_15552_cylinder"
   },
   {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": "MVP veri seti için manuel eklenmiştir. Gerçek katalog kaynağıyla doğrulanmalıdır.",
     "id": "festo_adn",
     "brand": "Festo",
     "series": "ADN",
@@ -26,12 +38,19 @@
     "productCategory": "Kompakt pnömatik silindir",
     "standardFamily": "ISO 21287",
     "codePrefix": "ADN",
-    "matchPrefixes": ["ADN"],
+    "matchPrefixes": [
+      "ADN"
+    ],
     "suggestedCodeTemplate": "ADN-{bore}-{stroke}",
     "confidenceWhenMatched": "high",
     "equivalenceGroupId": "pneumatic_compact_cylinder"
   },
   {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": "MVP veri seti için manuel eklenmiştir. Gerçek katalog kaynağıyla doğrulanmalıdır.",
     "id": "festo_dsnu",
     "brand": "Festo",
     "series": "DSNU",
@@ -42,12 +61,19 @@
     "productCategory": "Yuvarlak mini pnömatik silindir",
     "standardFamily": "ISO 6432",
     "codePrefix": "DSNU",
-    "matchPrefixes": ["DSNU"],
+    "matchPrefixes": [
+      "DSNU"
+    ],
     "suggestedCodeTemplate": "DSNU-{bore}-{stroke}",
     "confidenceWhenMatched": "high",
     "equivalenceGroupId": "pneumatic_round_mini_cylinder"
   },
   {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": "MVP veri seti için manuel eklenmiştir. Gerçek katalog kaynağıyla doğrulanmalıdır.",
     "id": "smc_cp96",
     "brand": "SMC",
     "series": "CP96",
@@ -58,12 +84,20 @@
     "productCategory": "ISO 15552 pnömatik silindir",
     "standardFamily": "ISO 15552",
     "codePrefix": "CP96",
-    "matchPrefixes": ["CP96SDB", "CP96"],
+    "matchPrefixes": [
+      "CP96SDB",
+      "CP96"
+    ],
     "suggestedCodeTemplate": "CP96-{bore}-{stroke}",
     "confidenceWhenMatched": "high",
     "equivalenceGroupId": "pneumatic_iso_15552_cylinder"
   },
   {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": "MVP veri seti için manuel eklenmiştir. Gerçek katalog kaynağıyla doğrulanmalıdır.",
     "id": "smc_c96",
     "brand": "SMC",
     "series": "C96",
@@ -74,12 +108,20 @@
     "productCategory": "ISO 15552 pnömatik silindir",
     "standardFamily": "ISO 15552",
     "codePrefix": "C96",
-    "matchPrefixes": ["C96SDB", "C96"],
+    "matchPrefixes": [
+      "C96SDB",
+      "C96"
+    ],
     "suggestedCodeTemplate": "C96SDB{bore}-{stroke}",
     "confidenceWhenMatched": "high",
     "equivalenceGroupId": "pneumatic_iso_15552_cylinder"
   },
   {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": "MVP veri seti için manuel eklenmiştir. Gerçek katalog kaynağıyla doğrulanmalıdır.",
     "id": "smc_cq2",
     "brand": "SMC",
     "series": "CQ2",
@@ -90,12 +132,19 @@
     "productCategory": "Kompakt pnömatik silindir",
     "standardFamily": "ISO 21287",
     "codePrefix": "CQ2",
-    "matchPrefixes": ["CQ2B"],
+    "matchPrefixes": [
+      "CQ2B"
+    ],
     "suggestedCodeTemplate": "CQ2B{bore}-{stroke}D",
     "confidenceWhenMatched": "high",
     "equivalenceGroupId": "pneumatic_compact_cylinder"
   },
   {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": "MVP veri seti için manuel eklenmiştir. Gerçek katalog kaynağıyla doğrulanmalıdır.",
     "id": "smc_c85",
     "brand": "SMC",
     "series": "C85",
@@ -106,12 +155,19 @@
     "productCategory": "Yuvarlak mini pnömatik silindir",
     "standardFamily": "ISO 6432",
     "codePrefix": "C85",
-    "matchPrefixes": ["C85N"],
+    "matchPrefixes": [
+      "C85N"
+    ],
     "suggestedCodeTemplate": "C85N{bore}-{stroke}",
     "confidenceWhenMatched": "high",
     "equivalenceGroupId": "pneumatic_round_mini_cylinder"
   },
   {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": "MVP veri seti için manuel eklenmiştir. Gerçek katalog kaynağıyla doğrulanmalıdır.",
     "id": "parker_p1d",
     "brand": "Parker",
     "series": "P1D",
@@ -122,12 +178,20 @@
     "productCategory": "ISO 15552 pnömatik silindir",
     "standardFamily": "ISO 15552",
     "codePrefix": "P1D",
-    "matchPrefixes": ["P1D-S", "P1D"],
+    "matchPrefixes": [
+      "P1D-S",
+      "P1D"
+    ],
     "suggestedCodeTemplate": "P1D-{bore}-{stroke}",
     "confidenceWhenMatched": "high",
     "equivalenceGroupId": "pneumatic_iso_15552_cylinder"
   },
   {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": "MVP veri seti için manuel eklenmiştir. Gerçek katalog kaynağıyla doğrulanmalıdır.",
     "id": "aventics_pra",
     "brand": "Aventics",
     "series": "PRA",
@@ -138,12 +202,19 @@
     "productCategory": "ISO 15552 pnömatik silindir",
     "standardFamily": "ISO 15552",
     "codePrefix": "PRA",
-    "matchPrefixes": ["PRA"],
+    "matchPrefixes": [
+      "PRA"
+    ],
     "suggestedCodeTemplate": "PRA-{bore}-{stroke}",
     "confidenceWhenMatched": "high",
     "equivalenceGroupId": "pneumatic_iso_15552_cylinder"
   },
   {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": "MVP veri seti için manuel eklenmiştir. Gerçek katalog kaynağıyla doğrulanmalıdır.",
     "id": "airtac_si",
     "brand": "AirTAC",
     "series": "SI",
@@ -154,7 +225,9 @@
     "productCategory": "ISO 15552 pnömatik silindir",
     "standardFamily": "ISO 15552",
     "codePrefix": "SI",
-    "matchPrefixes": ["SI"],
+    "matchPrefixes": [
+      "SI"
+    ],
     "suggestedCodeTemplate": "SI-{bore}-{stroke}",
     "confidenceWhenMatched": "high",
     "equivalenceGroupId": "pneumatic_iso_15552_cylinder"

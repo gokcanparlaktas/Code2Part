@@ -2,10 +2,12 @@ import equivalentSeriesData from '@/data/equivalentSeries.json';
 import equivalenceProfilesData from '@/data/equivalenceProfiles.json';
 import parsingRulesData from '@/data/parsingRules.json';
 import productSeriesData from '@/data/productSeries.json';
+import type { DataReliabilityMetadata } from '@/types/catalogMetadata';
 import type {
   CatalogValidationResult,
   ValidationIssue,
 } from '@/types/validation';
+import { computeReliabilitySummary } from '@/utils/catalogReliability';
 
 const REQUIRED_SERIES_FIELDS = [
   'id',
@@ -16,8 +18,11 @@ const REQUIRED_SERIES_FIELDS = [
   'equivalenceGroup',
 ] as const;
 
-interface CatalogProductSeries {
+type CatalogRecordWithReliability = DataReliabilityMetadata & {
   id?: string;
+};
+
+interface CatalogProductSeries extends CatalogRecordWithReliability {
   brand?: string;
   series?: string;
   technology?: string;
@@ -26,16 +31,14 @@ interface CatalogProductSeries {
   equivalenceGroupId?: string;
 }
 
-interface CatalogParsingRule {
-  id?: string;
+interface CatalogParsingRule extends CatalogRecordWithReliability {
   seriesId?: string;
   pattern?: string;
   boreGroup?: number;
   strokeGroup?: number;
 }
 
-interface CatalogEquivalenceGroup {
-  id?: string;
+interface CatalogEquivalenceGroup extends CatalogRecordWithReliability {
   name?: string;
   seriesIds?: string[];
 }
@@ -56,6 +59,76 @@ function issue(
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
+}
+
+const VERIFICATION_STATUSES = [
+  'mock',
+  'manual_unverified',
+  'manual_verified',
+  'source_verified',
+] as const;
+
+const SOURCE_TYPES = ['mock', 'catalog', 'manufacturer_page', 'standard', 'manual'] as const;
+
+function validateReliabilityMetadata(
+  record: Partial<DataReliabilityMetadata>,
+  relatedId: string
+): ValidationIssue[] {
+  const warnings: ValidationIssue[] = [];
+
+  if (
+    !record.verificationStatus ||
+    !VERIFICATION_STATUSES.includes(
+      record.verificationStatus as (typeof VERIFICATION_STATUSES)[number]
+    )
+  ) {
+    warnings.push(
+      issue(
+        'warning',
+        'RELIABILITY_MISSING_STATUS',
+        'Bu kayıt için doğrulama durumu eksik.',
+        relatedId
+      )
+    );
+  }
+
+  if (
+    !record.sourceType ||
+    !SOURCE_TYPES.includes(record.sourceType as (typeof SOURCE_TYPES)[number])
+  ) {
+    warnings.push(
+      issue(
+        'warning',
+        'RELIABILITY_MISSING_SOURCE_TYPE',
+        'Bu kayıt için kaynak tipi eksik.',
+        relatedId
+      )
+    );
+  }
+
+  if (record.verificationStatus === 'source_verified' && !isNonEmptyString(record.sourceUrl)) {
+    warnings.push(
+      issue(
+        'warning',
+        'RELIABILITY_MISSING_SOURCE_URL',
+        'Kaynak doğrulamalı kayıt için kaynak linki bulunmalı.',
+        relatedId
+      )
+    );
+  }
+
+  if (record.verificationStatus === 'manual_unverified') {
+    warnings.push(
+      issue(
+        'warning',
+        'RELIABILITY_MANUAL_UNVERIFIED',
+        'Bu kayıt manuel eklenmiş ve henüz doğrulanmamış.',
+        relatedId
+      )
+    );
+  }
+
+  return warnings;
 }
 
 function validateProductSeries(
@@ -103,6 +176,8 @@ function validateProductSeries(
         )
       );
     }
+
+    warnings.push(...validateReliabilityMetadata(item, rowId));
   });
 
   seenIds.forEach((count, id) => {
@@ -196,6 +271,8 @@ function validateParsingRules(
         )
       );
     }
+
+    warnings.push(...validateReliabilityMetadata(rule, ruleKey));
   });
 
   seenRuleIds.forEach((count, id) => {
@@ -290,6 +367,8 @@ function validateEquivalenceGroups(
         assignedSeries.set(seriesId, groupId);
       }
     });
+
+    warnings.push(...validateReliabilityMetadata(group, groupId));
   });
 
   return { errors, warnings };
@@ -387,6 +466,12 @@ export function validateCatalog(): CatalogValidationResult {
 
   errors.push(...validateEquivalentLinks(equivalentLinks, seriesIds));
 
+  const reliability = computeReliabilitySummary(
+    productSeries,
+    parsingRules,
+    equivalenceGroups
+  );
+
   return {
     isValid: errors.length === 0,
     errors,
@@ -396,6 +481,7 @@ export function validateCatalog(): CatalogValidationResult {
       parsingRulesCount: parsingRules.length,
       equivalenceGroupCount: equivalenceGroups.length,
       equivalentLinksCount: equivalentLinks.length,
+      reliability,
     },
   };
 }

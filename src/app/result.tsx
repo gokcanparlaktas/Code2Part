@@ -2,8 +2,10 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { EvidenceDetails } from '@/components/EvidenceDetails';
 import { LowConfidenceWarningCard } from '@/components/LowConfidenceWarningCard';
 import { ProductCard } from '@/components/ProductCard';
+import { ReliabilityNote } from '@/components/ReliabilityNote';
 import { UnresolvedResultCard } from '@/components/UnresolvedResultCard';
 import { resolveProductSearch } from '@/domain/resolver/resolveProductSearch';
 import {
@@ -12,6 +14,7 @@ import {
   saveUnresolvedSearch,
 } from '@/services/localSearchStore';
 import { isLowConfidence } from '@/utils/confidenceScore';
+import { isSeriesDataUnverified } from '@/utils/catalogReliability';
 
 export default function ResultScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
@@ -45,6 +48,8 @@ export default function ResultScreen() {
 
   const showLowConfidence =
     !isUnresolved && isLowConfidence(identification.confidence);
+  const showSeriesReliabilityNote =
+    !isUnresolved && isSeriesDataUnverified(identification.seriesId);
 
   const openEquivalents = () => {
     router.push({
@@ -89,6 +94,14 @@ export default function ResultScreen() {
           {showLowConfidence ? <LowConfidenceWarningCard /> : null}
 
           <ProductCard identification={identification} />
+
+          {showSeriesReliabilityNote ? (
+            <ReliabilityNote message="Bu seri bilgisi henüz katalog kaynağıyla doğrulanmamış olabilir." />
+          ) : null}
+
+          {identification.outcome === 'full' ? (
+            <EvidenceDetails identification={identification} />
+          ) : null}
 
           {hasEquivalents ? (
             <Pressable
