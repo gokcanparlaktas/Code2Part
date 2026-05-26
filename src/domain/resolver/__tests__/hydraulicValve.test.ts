@@ -19,7 +19,7 @@ describe('hydraulic_valve category', () => {
     expect(result.series.value).toBe('4WE6');
     expect(result.cetopNgSize?.value).toContain('NG6');
     expect(result.valveCoilVoltage?.evidence).toBe('code');
-    expect(result.confidence).not.toBe('high');
+    expect(result.confidence).toBe('high');
   });
 
   it('identifies DSG-01 as hydraulic_valve', () => {
@@ -53,13 +53,24 @@ describe('hydraulic_valve category', () => {
 
     const result = compareProducts(source, candidate);
     const checkFields = result.checkItems.map((c) => c.field);
+    const compatibleLabels = result.compatible.map((c) => c.label);
+    const differentLabels = result.different.map((c) => c.label);
 
-    expect(checkFields).toContain('Sürgü sembolü / fonksiyon');
-    expect(checkFields).toContain('Bobin voltajı');
-    expect(checkFields).toContain('Konnektör tipi');
     expect(checkFields).toContain('Basınç değeri');
     expect(checkFields).toContain('Debi değeri');
-    expect(result.warnings.some((w) => w.includes('bobin voltajı'))).toBe(true);
+
+    // Known-equal attributes should be compatible (not "kontrol gerekli")
+    expect(compatibleLabels).toContain('CETOP / NG ölçüsü');
+    expect(compatibleLabels).toContain('Bobin voltajı');
+
+    // Known-different attributes should be different (not "kontrol gerekli")
+    expect(differentLabels).toContain('Konnektör kodu');
+    // Cross-manufacturer function tokens require catalog check, not full compatibility
+    expect(compatibleLabels).not.toContain('Sürgü / fonksiyon kodu');
+    expect(checkFields).toContain('Sürgü sembolü / fonksiyon');
+    const spoolCheck = result.checkItems.find((c) => c.field === 'Sürgü sembolü / fonksiyon');
+    expect(spoolCheck?.reasonTr).toContain('benzer olabilir');
+    expect(spoolCheck?.reasonTr).toContain('Katalog sembolleriyle doğrulanmalıdır');
   });
 
   it('NG6 equivalents do not include NG10 series', () => {

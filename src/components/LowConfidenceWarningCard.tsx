@@ -1,12 +1,18 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-export function LowConfidenceWarningCard() {
+interface LowConfidenceWarningCardProps {
+  title?: string;
+  message?: string;
+}
+
+export function LowConfidenceWarningCard({
+  title = 'Bu sonuç düşük güvenle tahmin edildi.',
+  message = 'Marka, seri veya teknik özellikler doğrulanmalıdır.',
+}: LowConfidenceWarningCardProps) {
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Bu sonuç düşük güvenle tahmin edildi.</Text>
-      <Text style={styles.message}>
-        Marka, seri veya teknik özellikler doğrulanmalıdır.
-      </Text>
+      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.message}>{message}</Text>
     </View>
   );
 }

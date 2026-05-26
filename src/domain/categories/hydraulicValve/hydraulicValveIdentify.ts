@@ -67,7 +67,7 @@ export function parseHydraulicSpoolFunction(
     return attributeFromCode(`Spool ${rexroth10Match[1]}`);
   }
 
-  const yukenMatch = normalizedCode.match(/3C\d/);
+  const yukenMatch = normalizedCode.match(/3C\d{1,2}/);
   if (yukenMatch && series.series.startsWith('DSG')) {
     return attributeInferred(yukenMatch[0]);
   }
@@ -108,8 +108,10 @@ export function resolveHydraulicValveConfidence(
   series: ProductSeriesRecord,
   parsedFromCode: boolean
 ): ConfidenceLevel {
+  // Kept for backwards compatibility; real confidence is now category-specific and
+  // computed in the identify flow. This function returns a safe default.
   if (!parsedFromCode) {
-    return 'unknown';
+    return 'medium';
   }
-  return series.confidenceWhenMatched === 'high' ? 'medium' : 'low';
+  return 'medium';
 }

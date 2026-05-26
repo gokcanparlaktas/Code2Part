@@ -1,25 +1,11 @@
 import type { CheckItem } from '@/types/compatibility';
 import type { EquivalentCandidate } from '@/types/compatibility';
 import type { ProductIdentification } from '@/types/product';
-import { formatAttributeValue } from '@/utils/formatConfidence';
 
-const HYDRAULIC_VALVE_CHECK_ITEMS: Omit<CheckItem, 'sourceValue' | 'targetValue'>[] = [
-  {
-    field: 'Sürgü sembolü / fonksiyon',
-    reasonTr:
-      'Sürgü tipi ve sembolü ürün kodundan her zaman net okunamaz. Hidrolik şemada doğrulanmalıdır.',
-    severity: 'high',
-  },
-  {
-    field: 'Bobin voltajı',
-    reasonTr: 'Bobin voltajı ve bağlantı tipi sipariş öncesi mutlaka kontrol edilmelidir.',
-    severity: 'high',
-  },
-  {
-    field: 'Konnektör tipi',
-    reasonTr: 'Konnektör ve bobin bağlantısı seri ve üreticiye göre değişebilir.',
-    severity: 'medium',
-  },
+const HYDRAULIC_VALVE_BASE_CHECK_ITEMS: Omit<
+  CheckItem,
+  'sourceValue' | 'targetValue'
+>[] = [
   {
     field: 'Manuel kumanda',
     reasonTr: 'Manuel kumanda veya mekanik kilit seçeneği kodda farklı ifade edilebilir.',
@@ -53,35 +39,74 @@ export const HYDRAULIC_VALVE_WARNINGS = [
   'Basınç, debi, conta malzemesi ve bağlantı tipi katalogdan doğrulanmalıdır.',
 ];
 
+export interface HydraulicValveDynamicCheckValues {
+  spool?: {
+    source: string;
+    target: string;
+    status: 'unknownOrCheck' | 'different' | 'compatible';
+    reasonTr?: string;
+  };
+  voltage?: { source: string; target: string; status: 'unknownOrCheck' | 'different' | 'compatible' };
+  connector?: { source: string; target: string; status: 'unknownOrCheck' | 'different' | 'compatible' };
+}
+
 export function getHydraulicValveCheckItems(
   source: ProductIdentification,
-  candidate: EquivalentCandidate
+  candidate: EquivalentCandidate,
+  dynamic: HydraulicValveDynamicCheckValues = {}
 ): CheckItem[] {
   const unknown = 'Ürün kodundan net okunamadı';
 
-  return HYDRAULIC_VALVE_CHECK_ITEMS.map((item) => {
-    if (item.field === 'Bobin voltajı') {
-      return {
-        ...item,
-        sourceValue: formatAttributeValue(source.valveCoilVoltage?.value ?? null),
-        targetValue: formatAttributeValue(
-          candidate.targetIdentification?.valveCoilVoltage?.value ?? null
-        ),
-      };
-    }
-    if (item.field === 'Sürgü sembolü / fonksiyon') {
-      return {
-        ...item,
-        sourceValue: formatAttributeValue(source.valveSpoolFunction?.value ?? null),
-        targetValue: formatAttributeValue(
-          candidate.targetIdentification?.valveSpoolFunction?.value ?? null
-        ),
-      };
-    }
-    return {
+  const checks: CheckItem[] = [];
+
+  if (dynamic.spool?.status === 'unknownOrCheck') {
+    checks.push({
+      field: 'Sürgü sembolü / fonksiyon',
+      sourceValue: dynamic.spool.source,
+      targetValue: dynamic.spool.target,
+      reasonTr:
+        dynamic.spool.reasonTr ??
+        'Sürgü tipi ve sembolü ürün kodundan her zaman net okunamaz. Hidrolik şemada doğrulanmalıdır.',
+      severity: 'high',
+    });
+  }
+
+  if (dynamic.voltage?.status === 'unknownOrCheck') {
+    checks.push({
+      field: 'Bobin voltajı',
+      sourceValue: dynamic.voltage.source,
+      targetValue: dynamic.voltage.target,
+      reasonTr:
+        'Bobin voltajı ve bağlantı tipi sipariş öncesi mutlaka kontrol edilmelidir.',
+      severity: 'high',
+    });
+  }
+
+  if (dynamic.connector?.status === 'unknownOrCheck') {
+    checks.push({
+      field: 'Konnektör tipi',
+      sourceValue: dynamic.connector.source,
+      targetValue: dynamic.connector.target,
+      reasonTr: 'Konnektör ve bobin bağlantısı seri ve üreticiye göre değişebilir.',
+      severity: 'medium',
+    });
+  }
+
+  checks.push(
+    ...HYDRAULIC_VALVE_BASE_CHECK_ITEMS.map((item) => ({
       ...item,
       sourceValue: unknown,
       targetValue: unknown,
-    };
-  });
+    }))
+  );
+
+  // Still show the identification-level attributes in the check list if needed by UI.
+  // (They are only used for display; actual compatibility is determined in comparisons.)
+  if (dynamic.voltage?.status === 'unknownOrCheck') {
+    // already present with dynamic values
+  } else if (dynamic.voltage?.status === undefined) {
+    // keep nothing
+  }
+
+  return checks;
 }

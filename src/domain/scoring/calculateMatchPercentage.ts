@@ -20,10 +20,35 @@ const LEVEL_LABELS: Record<MatchPercentageLevel, string> = {
   high: 'Yüksek',
 };
 
-const SCORE_PER_COMPATIBLE = 25;
-const SCORE_PER_CHECK = 10;
-const SCORE_PER_WARNING = 5;
-const SCORE_PER_DIFFERENT = 30;
+const START_SCORE = 100;
+
+const PENALTY_DIFFERENT_NORMAL = 20;
+const PENALTY_DIFFERENT_CRITICAL = 30;
+
+const PENALTY_CHECK_NORMAL = 7;
+const PENALTY_CHECK_CRITICAL = 12;
+
+const PENALTY_WARNING = 5;
+
+const CRITICAL_DIFFERENT_KEYWORDS = [
+  // Pneumatic cylinder
+  'ÇAP',
+  'STROK',
+  'MONTAJ',
+  'SÖNÜMLEME',
+  'PORT',
+  'DİŞ',
+  'SENSÖR',
+  // Hydraulic valve
+  'VOLTAJ',
+  'BOBİN',
+  'FONKSİYON',
+  'SPOOL',
+  'KONNEKTÖR',
+  'BASINÇ',
+  'DEBİ',
+  'AKIŞ',
+];
 
 export function clampMatchPercentage(value: number): number {
   return Math.max(0, Math.min(100, Math.round(value)));
@@ -47,13 +72,28 @@ export function getMatchColorForLevel(level: MatchPercentageLevel): string {
   return LEVEL_COLORS[level];
 }
 
-export function calculateRawMatchScore(result: CompatibilityResult): number {
-  const compatibleScore = result.compatible.length * SCORE_PER_COMPATIBLE;
-  const checkScore = result.checkItems.length * SCORE_PER_CHECK;
-  const warningPenalty = result.warnings.length * SCORE_PER_WARNING;
-  const differentPenalty = result.different.length * SCORE_PER_DIFFERENT;
+function isCriticalDifferent(label: string): boolean {
+  const key = label.toUpperCase();
+  return CRITICAL_DIFFERENT_KEYWORDS.some((kw) => key.includes(kw));
+}
 
-  return compatibleScore + checkScore - warningPenalty - differentPenalty;
+export function calculateRawMatchScore(result: CompatibilityResult): number {
+  let score = START_SCORE;
+
+  for (const diff of result.different) {
+    score -= isCriticalDifferent(diff.label)
+      ? PENALTY_DIFFERENT_CRITICAL
+      : PENALTY_DIFFERENT_NORMAL;
+  }
+
+  for (const check of result.checkItems) {
+    const isCritical = check.severity === 'high';
+    score -= isCritical ? PENALTY_CHECK_CRITICAL : PENALTY_CHECK_NORMAL;
+  }
+
+  score -= result.warnings.length * PENALTY_WARNING;
+
+  return score;
 }
 
 export function calculateMatchPercentage(

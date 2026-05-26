@@ -11,7 +11,9 @@ function buildResult(
   overrides: Partial<{
     compatible: number;
     different: number;
+    differentLabels: string[];
     checkItems: number;
+    checkSeverities: Array<'low' | 'medium' | 'high'>;
     warnings: number;
   }> = {}
 ): CompatibilityResult {
@@ -19,6 +21,8 @@ function buildResult(
   const differentCount = overrides.different ?? 0;
   const checkCount = overrides.checkItems ?? 0;
   const warningCount = overrides.warnings ?? 0;
+  const differentLabels = overrides.differentLabels ?? [];
+  const checkSeverities = overrides.checkSeverities ?? [];
 
   return {
     candidate: {
@@ -43,7 +47,7 @@ function buildResult(
       status: 'compatible' as const,
     })),
     different: Array.from({ length: differentCount }, (_, index) => ({
-      label: `Farklı ${index + 1}`,
+      label: differentLabels[index] ?? `Farklı ${index + 1}`,
       sourceDisplay: 'A',
       targetDisplay: 'B',
       status: 'different' as const,
@@ -53,7 +57,7 @@ function buildResult(
       sourceValue: '?',
       targetValue: '?',
       reasonTr: 'Kontrol edin',
-      severity: 'medium' as const,
+      severity: (checkSeverities[index] ?? 'medium') as const,
     })),
     warnings: Array.from({ length: warningCount }, (_, index) => `Uyarı ${index + 1}`),
   };
@@ -69,44 +73,74 @@ describe('calculateMatchPercentage', () => {
   it('assigns low level for 0-49', () => {
     expect(resolveMatchPercentageLevel(0)).toBe('low');
     expect(resolveMatchPercentageLevel(49)).toBe('low');
-    expect(calculateMatchPercentage(buildResult({ different: 4 })).level).toBe('low');
+    expect(
+      calculateMatchPercentage(
+        buildResult({ different: 3, differentLabels: ['Çap', 'Strok', 'Montaj'] })
+      ).level
+    ).toBe('low');
   });
 
   it('assigns medium level for 50-79', () => {
     expect(resolveMatchPercentageLevel(50)).toBe('medium');
     expect(resolveMatchPercentageLevel(79)).toBe('medium');
-    expect(
-      calculateMatchPercentage(buildResult({ compatible: 2, checkItems: 1 })).level
-    ).toBe('medium');
+    expect(calculateMatchPercentage(buildResult({ checkItems: 5 })).level).toBe('medium');
   });
 
   it('assigns high level for 80-100', () => {
     expect(resolveMatchPercentageLevel(80)).toBe('high');
     expect(resolveMatchPercentageLevel(100)).toBe('high');
-    expect(calculateMatchPercentage(buildResult({ compatible: 4 })).percentage).toBe(100);
-    expect(calculateMatchPercentage(buildResult({ compatible: 4 })).level).toBe('high');
+    expect(calculateMatchPercentage(buildResult({})).percentage).toBe(100);
+    expect(calculateMatchPercentage(buildResult({})).level).toBe('high');
   });
 
-  it('adds score for compatible and check items', () => {
-    const score = calculateRawMatchScore(buildResult({ compatible: 2, checkItems: 2 }));
-    expect(score).toBe(70);
+  it('returns 100 only when there are no different/check/warning items', () => {
+    expect(calculateMatchPercentage(buildResult({})).percentage).toBe(100);
+    expect(calculateMatchPercentage(buildResult({ checkItems: 1 })).percentage).toBeLessThan(100);
+    expect(calculateMatchPercentage(buildResult({ warnings: 1 })).percentage).toBeLessThan(100);
+    expect(calculateMatchPercentage(buildResult({ different: 1 })).percentage).toBeLessThan(100);
   });
 
-  it('reduces score for warnings and different items', () => {
-    const score = calculateRawMatchScore(
-      buildResult({ compatible: 3, different: 2, warnings: 2, checkItems: 1 })
+  it('reduces score for 5 unknown/check items (not 100)', () => {
+    const score = calculateRawMatchScore(buildResult({ checkItems: 5 }));
+    expect(score).toBeLessThan(100);
+    expect(calculateMatchPercentage(buildResult({ checkItems: 5 })).percentage).toBeLessThan(100);
+  });
+
+  it('reduces score for warnings', () => {
+    expect(calculateMatchPercentage(buildResult({ warnings: 2 })).percentage).toBe(90);
+  });
+
+  it('critical different item drops score significantly', () => {
+    const match = calculateMatchPercentage(buildResult({ different: 1, differentLabels: ['Çap'] }));
+    expect(match.percentage).toBe(70);
+    expect(match.level).toBe('medium');
+  });
+
+  it('critical unknown/check items use heavier penalty', () => {
+    const normal = calculateMatchPercentage(buildResult({ checkItems: 1, checkSeverities: ['medium'] }));
+    const critical = calculateMatchPercentage(buildResult({ checkItems: 1, checkSeverities: ['high'] }));
+    expect(normal.percentage).toBe(93);
+    expect(critical.percentage).toBe(88);
+  });
+
+  it('hydraulic-like critical unknowns should not show 100', () => {
+    const match = calculateMatchPercentage(
+      buildResult({
+        checkItems: 5,
+        checkSeverities: ['high', 'high', 'high', 'high', 'high'],
+      })
     );
-    expect(score).toBe(15);
-    expect(calculateMatchPercentage(buildResult({ compatible: 3, different: 2, warnings: 2, checkItems: 1 })).level).toBe(
-      'low'
-    );
+    expect(match.percentage).toBe(40);
+    expect(match.level).toBe('low');
   });
 
   it('returns color for each level', () => {
-    expect(calculateMatchPercentage(buildResult({ compatible: 4 })).color).toBe('#16A34A');
-    expect(calculateMatchPercentage(buildResult({ compatible: 2, checkItems: 1 })).color).toBe(
-      '#F59E0B'
-    );
-    expect(calculateMatchPercentage(buildResult({ different: 3 })).color).toBe('#DC2626');
+    expect(calculateMatchPercentage(buildResult({})).color).toBe('#16A34A');
+    expect(calculateMatchPercentage(buildResult({ checkItems: 5 })).color).toBe('#F59E0B');
+    expect(
+      calculateMatchPercentage(
+        buildResult({ checkItems: 5, checkSeverities: ['high', 'high', 'high', 'high', 'high'] })
+      ).color
+    ).toBe('#DC2626');
   });
 });

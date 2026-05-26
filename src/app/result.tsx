@@ -7,7 +7,9 @@ import { LowConfidenceWarningCard } from '@/components/LowConfidenceWarningCard'
 import { ProductCard } from '@/components/ProductCard';
 import { ReliabilityNote } from '@/components/ReliabilityNote';
 import { PartialSuggestionsPanel } from '@/components/PartialSuggestionsPanel';
+import { TechnicalAttributesCard } from '@/components/TechnicalAttributesCard';
 import { UnresolvedResultCard } from '@/components/UnresolvedResultCard';
+import { calculateProductReliability } from '@/domain/reliability/calculateProductReliability';
 import { resolveProductSearch } from '@/domain/resolver/resolveProductSearch';
 import { suggestProducts } from '@/domain/resolver/suggestProducts';
 import {
@@ -15,7 +17,6 @@ import {
   recordSearch,
   saveUnresolvedSearch,
 } from '@/services/localSearchStore';
-import { isLowConfidence } from '@/utils/confidenceScore';
 import { isSeriesDataUnverified } from '@/utils/catalogReliability';
 
 export default function ResultScreen() {
@@ -50,8 +51,11 @@ export default function ResultScreen() {
     }
   }, [inputCode, identification, isUnresolved]);
 
-  const showLowConfidence =
-    !isUnresolved && isLowConfidence(identification.confidence);
+  const reliability = useMemo(
+    () => calculateProductReliability(identification),
+    [identification]
+  );
+  const showLowConfidence = !isUnresolved && reliability.isLowConfidence;
   const showSeriesReliabilityNote =
     !isUnresolved && isSeriesDataUnverified(identification.seriesId);
 
@@ -110,16 +114,27 @@ export default function ResultScreen() {
         </>
       ) : (
         <>
-          {showLowConfidence ? <LowConfidenceWarningCard /> : null}
+          {showLowConfidence ? (
+            <LowConfidenceWarningCard
+              title={reliability.warningTitleTr}
+              message={reliability.warningMessageTr}
+            />
+          ) : null}
 
-          <ProductCard identification={identification} />
+          <ProductCard
+            identification={identification}
+            noticeText={reliability.seriesOnlyNoticeTr}
+          />
 
           {showSeriesReliabilityNote ? (
             <ReliabilityNote message="Bu seri bilgisi henüz katalog kaynağıyla doğrulanmamış olabilir." />
           ) : null}
 
           {identification.outcome === 'full' ? (
-            <EvidenceDetails identification={identification} />
+            <>
+              <TechnicalAttributesCard identification={identification} />
+              <EvidenceDetails identification={identification} />
+            </>
           ) : null}
 
           {hasEquivalents ? (

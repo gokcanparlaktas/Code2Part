@@ -1,23 +1,7 @@
-import equivalentSeriesData from '@/data/equivalentSeries.json';
-import { getProductSeriesById } from '@/domain/resolver/productSeriesCatalog';
-import type { EquivalentGroupRecord } from '@/types/product';
-import type {
-  ConfidenceLevel,
-  EvidenceLevel,
-  ProductIdentification,
-  TechnicalAttribute,
-} from '@/types/product';
-import { formatAttributeValue, formatConfidence } from '@/utils/formatConfidence';
-import { formatConfidencePercent } from '@/utils/confidenceScore';
+import type { EvidenceLevel } from '@/types/product';
 
-const equivalenceGroups = equivalentSeriesData as EquivalentGroupRecord[];
-
-export interface EvidenceDetailRow {
-  label: string;
-  value: string;
-  evidenceLabel: string;
-  explanation: string;
-}
+export type { EvidenceDetailRow } from '@/domain/presentation/buildEvidenceDetailRows';
+export { buildEvidenceDetailRows } from '@/domain/presentation/buildEvidenceDetailRows';
 
 type EvidenceFieldKey =
   | 'brand'
@@ -81,70 +65,3 @@ export function formatEvidenceExplanation(
   return EVIDENCE_EXPLANATIONS[evidence];
 }
 
-function attributeRow(
-  fieldKey: EvidenceFieldKey,
-  label: string,
-  attribute: TechnicalAttribute<string | number>
-): EvidenceDetailRow {
-  return {
-    label,
-    value: formatAttributeValue(attribute.value, attribute.unit),
-    evidenceLabel: formatEvidenceLabel(attribute.evidence, fieldKey),
-    explanation: formatEvidenceExplanation(attribute.evidence, fieldKey),
-  };
-}
-
-function getEquivalenceGroupLabel(seriesId: string | null): string {
-  if (!seriesId) {
-    return 'Bilinmiyor';
-  }
-  const series = getProductSeriesById(seriesId);
-  const groupId = series?.equivalenceGroupId;
-  if (!groupId) {
-    return 'Bilinmiyor';
-  }
-  const group = equivalenceGroups.find((g) => g.id === groupId);
-  return group?.name ?? groupId;
-}
-
-function confidenceExplanation(confidence: ConfidenceLevel): string {
-  switch (confidence) {
-    case 'high':
-      return 'Ürün kodu ve seri bilgisi güvenle eşleşti.';
-    case 'medium':
-      return 'Sonuç kısmen güvenilir; bazı alanlar doğrulanmalıdır.';
-    case 'low':
-      return 'Sonuç düşük güvenle üretildi; mutlaka doğrulanmalıdır.';
-    case 'unknown':
-      return 'Güven skoru hesaplanamadı.';
-  }
-}
-
-export function buildEvidenceDetailRows(
-  identification: ProductIdentification
-): EvidenceDetailRow[] {
-  return [
-    attributeRow('brand', 'Marka', identification.brand),
-    attributeRow('series', 'Seri', identification.series),
-    attributeRow('productType', 'Ürün tipi', identification.productType),
-    attributeRow('standardFamily', 'Standart aile', identification.standardFamily),
-    attributeRow('bore', 'Çap', identification.bore),
-    attributeRow('stroke', 'Strok', identification.stroke),
-    {
-      label: 'Muadil grup',
-      value: getEquivalenceGroupLabel(identification.seriesId),
-      evidenceLabel: identification.seriesId
-        ? formatEvidenceLabel('series_table', 'equivalenceGroup')
-        : formatEvidenceLabel('unknown'),
-      explanation: identification.seriesId
-        ? formatEvidenceExplanation('series_table', 'equivalenceGroup')
-        : EVIDENCE_EXPLANATIONS.unknown,
-    },
-    {
-      label: 'Güven skoru',
-      value: formatConfidencePercent(identification.confidence),
-      evidenceLabel: formatConfidence(identification.confidence),
-      explanation: confidenceExplanation(identification.confidence),
-    },
-  ];
-}

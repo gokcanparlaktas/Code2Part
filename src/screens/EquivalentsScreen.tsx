@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { EquivalentAccordionCard } from '@/components/EquivalentAccordionCard';
 import { ReliabilityNote } from '@/components/ReliabilityNote';
 import { SourceProductSummary } from '@/components/SourceProductSummary';
+import { sortCompatibilityResultsByMatchPercentage } from '@/domain/presentation/sortCompatibilityResults';
 import { resolveProductSearch } from '@/domain/resolver/resolveProductSearch';
 import { isEquivalenceMappingUnverified } from '@/utils/catalogReliability';
 
@@ -15,9 +16,10 @@ function EquivalentsScreen() {
   const { identification, compatibilityResults, isResolvable } = useMemo(() => {
     const resolved = resolveProductSearch(inputCode);
     const ok = resolved.identification.outcome === 'full';
+    const results = ok ? resolved.compatibilityResults : [];
     return {
       identification: resolved.identification,
-      compatibilityResults: ok ? resolved.compatibilityResults : [],
+      compatibilityResults: sortCompatibilityResultsByMatchPercentage(results),
       isResolvable: ok,
     };
   }, [inputCode]);

@@ -1,9 +1,9 @@
 import parsingRulesData from '@/data/parsingRules.json';
 import {
   parseHydraulicValveAttributes,
-  resolveHydraulicValveConfidence,
 } from '@/domain/categories/hydraulicValve/hydraulicValveIdentify';
 import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
+import { calculateProductReliability } from '@/domain/reliability/calculateProductReliability';
 
 import { getAllProductSeries } from './productSeriesCatalog';
 import type {
@@ -152,7 +152,7 @@ function identifyHydraulicValveProduct(
   const hydraulicAttrs = parseHydraulicValveAttributes(normalizedCode, series);
   const outcome = hydraulicAttrs.parsedFromCode ? 'full' : 'series_only';
 
-  return {
+  const identification: ProductIdentification = {
     inputCode,
     normalizedCode,
     seriesId: series.id,
@@ -173,8 +173,12 @@ function identifyHydraulicValveProduct(
     cetopNgSize: hydraulicAttrs.cetopNgSize,
     valveCoilVoltage: hydraulicAttrs.valveCoilVoltage,
     valveSpoolFunction: hydraulicAttrs.valveSpoolFunction,
-    confidence: resolveHydraulicValveConfidence(series, hydraulicAttrs.parsedFromCode),
+    confidence: 'unknown',
   };
+
+  const reliability = calculateProductReliability(identification);
+  identification.confidence = reliability.confidence;
+  return identification;
 }
 
 export function identifyProduct(

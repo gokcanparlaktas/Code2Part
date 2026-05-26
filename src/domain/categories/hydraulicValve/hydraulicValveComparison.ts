@@ -8,7 +8,12 @@ import type {
 import type { ProductIdentification, TechnicalAttribute } from '@/types/product';
 import { formatAttributeValue } from '@/utils/formatConfidence';
 
-import { getHydraulicValveCheckItems, HYDRAULIC_VALVE_WARNINGS } from './hydraulicValveCheckItems';
+import { getTechnicalAttributes } from '@/domain/attributes/getTechnicalAttributes';
+import { compareValveFunctions } from '@/domain/categories/hydraulicValve/functionMappings/compareValveFunctions';
+import {
+  getHydraulicValveCheckItems,
+  HYDRAULIC_VALVE_WARNINGS,
+} from './hydraulicValveCheckItems';
 
 function displayAttribute(attr: TechnicalAttribute<string | number>): string {
   return formatAttributeValue(attr.value, attr.unit);
@@ -49,6 +54,52 @@ function compareAttribute(
   }
 
   return { label, sourceDisplay, targetDisplay, status: 'different' };
+}
+
+function getAttrValue(
+  attributes: ReturnType<typeof getTechnicalAttributes>,
+  key: string
+): string | null {
+  const match = attributes.find((a) => a.key === key);
+  if (!match || match.value === null) {
+    return null;
+  }
+  return String(match.value);
+}
+
+function compareOptionalString(options: {
+  label: string;
+  sourceValue: string | null;
+  targetValue: string | null;
+  missingMessageTr: string;
+}): AttributeComparison {
+  const sourceDisplay = options.sourceValue ?? 'Doğrulanamadı';
+  const targetDisplay = options.targetValue ?? 'Doğrulanamadı';
+
+  if (!options.sourceValue || !options.targetValue) {
+    return {
+      label: options.label,
+      sourceDisplay,
+      targetDisplay,
+      status: 'unknownOrCheck',
+    };
+  }
+
+  if (options.sourceValue === options.targetValue) {
+    return {
+      label: options.label,
+      sourceDisplay,
+      targetDisplay,
+      status: 'compatible',
+    };
+  }
+
+  return {
+    label: options.label,
+    sourceDisplay,
+    targetDisplay,
+    status: 'different',
+  };
 }
 
 function comparisonToCheckItem(comparison: AttributeComparison): CheckItem | null {
@@ -99,6 +150,9 @@ export function compareHydraulicValves(
   candidate: EquivalentCandidate
 ): CompatibilityResult {
   const target = candidate.targetIdentification;
+  const sourceAttrs = getTechnicalAttributes(source);
+  const targetAttrs = target ? getTechnicalAttributes(target) : [];
+
   const sourceCetop =
     source.cetopNgSize ??
     ({
@@ -114,6 +168,29 @@ export function compareHydraulicValves(
       requiresCheck: false,
     };
 
+  const sourceVoltage = getAttrValue(sourceAttrs, 'voltage');
+  const targetVoltage = target ? getAttrValue(targetAttrs, 'voltage') : null;
+
+  const sourceConnector = getAttrValue(sourceAttrs, 'connector_token');
+  const targetConnector = target ? getAttrValue(targetAttrs, 'connector_token') : null;
+
+  const sourceFunction = getAttrValue(sourceAttrs, 'function_token');
+  const targetFunction = target ? getAttrValue(targetAttrs, 'function_token') : null;
+
+  const functionMatch = compareValveFunctions({
+    label: 'Sürgü / fonksiyon kodu',
+    source: {
+      manufacturer: String(source.brand.value ?? ''),
+      series: String(source.series.value ?? ''),
+      token: sourceFunction,
+    },
+    target: {
+      manufacturer: target ? String(target.brand.value ?? '') : candidate.brand,
+      series: target ? String(target.series.value ?? '') : candidate.series,
+      token: targetFunction,
+    },
+  });
+
   const comparisons: AttributeComparison[] = [
     compareAttribute(
       'Ürün kategorisi',
@@ -121,19 +198,19 @@ export function compareHydraulicValves(
       candidate.productCategory
     ),
     compareAttribute('CETOP / NG ölçüsü', sourceCetop, targetCetop),
-    compareAttribute(
-      'Valf fonksiyonu / sürgü',
-      source.valveSpoolFunction ?? {
-        value: null,
-        evidence: 'unknown',
-        requiresCheck: true,
-      },
-      target?.valveSpoolFunction ?? {
-        value: null,
-        evidence: 'unknown',
-        requiresCheck: true,
-      }
-    ),
+    compareOptionalString({
+      label: 'Bobin voltajı',
+      sourceValue: sourceVoltage,
+      targetValue: targetVoltage,
+      missingMessageTr: 'Bobin voltajı eksik veya doğrulanamadı.',
+    }),
+    compareOptionalString({
+      label: 'Konnektör kodu',
+      sourceValue: sourceConnector,
+      targetValue: targetConnector,
+      missingMessageTr: 'Konnektör kodu eksik veya doğrulanamadı.',
+    }),
+    functionMatch.comparison,
   ];
 
   const compatible = comparisons.filter((c) => c.status === 'compatible');
@@ -143,9 +220,49 @@ export function compareHydraulicValves(
     .map((c) => comparisonToCheckItem(c))
     .filter((item): item is CheckItem => item !== null);
 
-  const checkItems = [...attributeChecks, ...getHydraulicValveCheckItems(source, candidate)];
+  const findComparison = (label: string) => comparisons.find((c) => c.label === label);
+  const spoolComparison = findComparison('Sürgü / fonksiyon kodu');
+  const voltageComparison = findComparison('Bobin voltajı');
+  const connectorComparison = findComparison('Konnektör kodu');
 
-  const warnings = [...HYDRAULIC_VALVE_WARNINGS];
+  const checkItems = [
+    // dynamic category check items (only when missing/unknown)
+    ...getHydraulicValveCheckItems(source, candidate, {
+      spool: spoolComparison
+        ? {
+            source: spoolComparison.sourceDisplay,
+            target: spoolComparison.targetDisplay,
+            status: spoolComparison.status,
+            reasonTr:
+              spoolComparison.status === 'unknownOrCheck'
+                ? functionMatch.statusMessageTr
+                : undefined,
+          }
+        : undefined,
+      voltage: voltageComparison
+        ? { source: voltageComparison.sourceDisplay, target: voltageComparison.targetDisplay, status: voltageComparison.status }
+        : undefined,
+      connector: connectorComparison
+        ? { source: connectorComparison.sourceDisplay, target: connectorComparison.targetDisplay, status: connectorComparison.status }
+        : undefined,
+    }),
+    // any other unknown comparisons (e.g. category/cetop missing) as generic check items
+    ...attributeChecks.filter(
+      (item) =>
+        !['Bobin voltajı', 'Konnektör kodu', 'Sürgü / fonksiyon kodu'].includes(item.field)
+    ),
+  ];
+
+  const warningSet = new Set<string>(HYDRAULIC_VALVE_WARNINGS);
+  if (
+    functionMatch.requiresCatalogCheck &&
+    functionMatch.statusMessageTr &&
+    functionMatch.comparison.status === 'different'
+  ) {
+    warningSet.add(functionMatch.statusMessageTr);
+  }
+
+  const warnings = [...warningSet];
   if (!candidate.suggestedCode) {
     warnings.push(
       'Örnek muadil kodu gösterilemedi. Sürgü, voltaj ve konnektör bilgileri doğrulanmalıdır.'

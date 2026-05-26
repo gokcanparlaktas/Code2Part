@@ -1,16 +1,13 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import type { ProductIdentification } from '@/types/product';
-import {
-  formatAttributeValue,
-  formatEvidence,
-} from '@/utils/formatConfidence';
-
+import { buildProductDetailRows } from '@/domain/presentation/buildProductDetailRows';
 import { ConfidenceBadge } from './ConfidenceBadge';
 
 interface ProductCardProps {
   identification: ProductIdentification;
   title?: string;
+  noticeText?: string;
 }
 
 interface DetailRowProps {
@@ -34,51 +31,12 @@ function DetailRow({ label, value, evidence, requiresCheck }: DetailRowProps) {
   );
 }
 
-export function ProductCard({ identification, title = 'Tanımlanan ürün' }: ProductCardProps) {
-  const rows: DetailRowProps[] = [
-    {
-      label: 'Marka',
-      value: formatAttributeValue(identification.brand.value),
-      evidence: formatEvidence(identification.brand.evidence),
-      requiresCheck: identification.brand.requiresCheck,
-    },
-    {
-      label: 'Seri',
-      value: formatAttributeValue(identification.series.value),
-      evidence: formatEvidence(identification.series.evidence),
-      requiresCheck: identification.series.requiresCheck,
-    },
-    {
-      label: 'Ürün tipi',
-      value: formatAttributeValue(identification.productType.value),
-      evidence: formatEvidence(identification.productType.evidence),
-      requiresCheck: identification.productType.requiresCheck,
-    },
-    {
-      label: 'Ürün kategorisi',
-      value: formatAttributeValue(identification.productCategory.value),
-      evidence: formatEvidence(identification.productCategory.evidence),
-      requiresCheck: identification.productCategory.requiresCheck,
-    },
-    {
-      label: 'Standart ailesi',
-      value: formatAttributeValue(identification.standardFamily.value),
-      evidence: formatEvidence(identification.standardFamily.evidence),
-      requiresCheck: identification.standardFamily.requiresCheck,
-    },
-    {
-      label: 'Çap',
-      value: formatAttributeValue(identification.bore.value, identification.bore.unit),
-      evidence: formatEvidence(identification.bore.evidence),
-      requiresCheck: identification.bore.requiresCheck,
-    },
-    {
-      label: 'Strok',
-      value: formatAttributeValue(identification.stroke.value, identification.stroke.unit),
-      evidence: formatEvidence(identification.stroke.evidence),
-      requiresCheck: identification.stroke.requiresCheck,
-    },
-  ];
+export function ProductCard({
+  identification,
+  title = 'Tanımlanan ürün',
+  noticeText,
+}: ProductCardProps) {
+  const rows: DetailRowProps[] = buildProductDetailRows(identification);
 
   return (
     <View style={styles.card}>
@@ -86,11 +44,10 @@ export function ProductCard({ identification, title = 'Tanımlanan ürün' }: Pr
       <Text style={styles.codeLabel}>Normalize kod</Text>
       <Text style={styles.code}>{identification.normalizedCode}</Text>
 
-      {identification.outcome === 'series_only' && (
+      {identification.outcome === 'series_only' && noticeText && (
         <View style={styles.alertBox}>
           <Text style={styles.alertText}>
-            Seri tanındı; çap ve strok kod formatından okunamadı. Değerler kesin
-            değildir.
+            {noticeText}
           </Text>
         </View>
       )}
