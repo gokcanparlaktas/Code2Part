@@ -1,6 +1,7 @@
 import equivalentSeriesData from '@/data/equivalentSeries.json';
 import equivalenceProfilesData from '@/data/equivalenceProfiles.json';
 import parsingRulesData from '@/data/parsingRules.json';
+import hydraulicValveSeriesData from '@/data/hydraulicValveSeries.json';
 import productSeriesData from '@/data/productSeries.json';
 import type { DataReliabilityMetadata } from '@/types/catalogMetadata';
 import type {
@@ -445,7 +446,10 @@ function validateEquivalentLinks(
 }
 
 export function validateCatalog(): CatalogValidationResult {
-  const productSeries = productSeriesData as CatalogProductSeries[];
+  const productSeries = [
+    ...(productSeriesData as CatalogProductSeries[]),
+    ...(hydraulicValveSeriesData as CatalogProductSeries[]),
+  ];
   const parsingRules = parsingRulesData as CatalogParsingRule[];
   const equivalenceGroups = equivalentSeriesData as CatalogEquivalenceGroup[];
   const equivalentLinks = equivalenceProfilesData as CatalogEquivalentLink[];

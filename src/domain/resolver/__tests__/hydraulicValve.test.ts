@@ -1,0 +1,147 @@
+import { buildSuggestedEquivalentCode } from '../buildSuggestedEquivalentCode';
+import { compareProducts, resolveResolverCategory } from '../compareProducts';
+import { findEquivalents } from '../findEquivalents';
+import { identifyProduct } from '../identifyProduct';
+import { normalizeCode } from '../normalizeCode';
+import { suggestProducts } from '../suggestProducts';
+import { getProductSeriesById } from '../identifyProduct';
+
+function identify(input: string) {
+  const normalized = normalizeCode(input);
+  return identifyProduct(input, normalized);
+}
+
+describe('hydraulic_valve category', () => {
+  it('identifies 4WE6 as hydraulic_valve', () => {
+    const result = identify('4WE6E-6X/EG24N9K4');
+    expect(result.resolverCategoryKey).toBe('hydraulic_valve');
+    expect(result.brand.value).toBe('Rexroth');
+    expect(result.series.value).toBe('4WE6');
+    expect(result.cetopNgSize?.value).toContain('NG6');
+    expect(result.valveCoilVoltage?.evidence).toBe('code');
+    expect(result.confidence).not.toBe('high');
+  });
+
+  it('identifies DSG-01 as hydraulic_valve', () => {
+    const result = identify('DSG-01-3C2-D24-N1-50');
+    expect(result.resolverCategoryKey).toBe('hydraulic_valve');
+    expect(result.brand.value).toBe('Yuken');
+    expect(result.series.value).toBe('DSG-01');
+    expect(result.cetopNgSize?.value).toContain('NG6');
+  });
+
+  it('routes hydraulic_valve to hydraulic comparison', () => {
+    const source = identify('4WE6E-6X/EG24N9K4');
+    expect(resolveResolverCategory(source)).toBe('hydraulic_valve');
+
+    const targetSeries = getProductSeriesById('yuken_dsg01');
+    expect(targetSeries).toBeDefined();
+
+    const candidate = {
+      seriesId: targetSeries!.id,
+      brand: targetSeries!.brand,
+      series: targetSeries!.series,
+      productType: targetSeries!.productType,
+      productCategory: targetSeries!.productCategory,
+      standardFamily: targetSeries!.standardFamily,
+      suggestedCode: buildSuggestedEquivalentCode(source, targetSeries!) ?? null,
+      targetIdentification: identify(
+        buildSuggestedEquivalentCode(source, targetSeries!) ?? 'DSG-01-3C2-D24-N1-50',
+        normalizeCode(buildSuggestedEquivalentCode(source, targetSeries!) ?? 'DSG-01-3C2-D24-N1-50')
+      ),
+    };
+
+    const result = compareProducts(source, candidate);
+    const checkFields = result.checkItems.map((c) => c.field);
+
+    expect(checkFields).toContain('Sürgü sembolü / fonksiyon');
+    expect(checkFields).toContain('Bobin voltajı');
+    expect(checkFields).toContain('Konnektör tipi');
+    expect(checkFields).toContain('Basınç değeri');
+    expect(checkFields).toContain('Debi değeri');
+    expect(result.warnings.some((w) => w.includes('bobin voltajı'))).toBe(true);
+  });
+
+  it('NG6 equivalents do not include NG10 series', () => {
+    const source = identify('4WE6E-6X/EG24N9K4');
+    const equivalents = findEquivalents(source);
+    const ng10Series = equivalents.filter((e) =>
+      ['4WE10', 'DSG-03', 'DG4V-5', 'DHU', 'D3W'].includes(e.series)
+    );
+    expect(ng10Series).toHaveLength(0);
+  });
+
+  it('marks different CETOP size as different in comparison', () => {
+    const ng6 = identify('4WE6E-6X/EG24N9K4');
+    const ng10Series = getProductSeriesById('rexroth_4we10')!;
+    const ng10Code = '4WE10E-3X/CG24N9K4';
+    const candidate = {
+      seriesId: ng10Series.id,
+      brand: ng10Series.brand,
+      series: ng10Series.series,
+      productType: ng10Series.productType,
+      productCategory: ng10Series.productCategory,
+      standardFamily: ng10Series.standardFamily,
+      suggestedCode: ng10Code,
+      targetIdentification: identify(ng10Code, normalizeCode(ng10Code)),
+    };
+
+    const result = compareProducts(ng6, candidate);
+    expect(result.different.some((d) => d.label === 'CETOP / NG ölçüsü')).toBe(true);
+  });
+
+  describe('suggestions', () => {
+    it('suggests 4WE6 example for "4WE6"', () => {
+      const suggestions = suggestProducts('4WE6');
+      expect(
+        suggestions.some((s) => s.exampleCodeFormat.startsWith('4WE6'))
+      ).toBe(true);
+    });
+
+    it('suggests DSG-01 example for "DSG 01"', () => {
+      const suggestions = suggestProducts('DSG 01');
+      expect(
+        suggestions.some((s) => s.exampleCodeFormat.includes('DSG-01'))
+      ).toBe(true);
+    });
+
+    it('suggests DSG example containing D24 and N1 for "D24 N1"', () => {
+      const suggestions = suggestProducts('D24 N1');
+      const match = suggestions.find((s) => s.exampleCodeFormat.includes('DSG'));
+      expect(match).toBeDefined();
+      expect(match!.exampleCodeFormat).toMatch(/D24/);
+      expect(match!.exampleCodeFormat).toMatch(/N1/);
+    });
+
+    it('requires all tokens for multi-token hydraulic search', () => {
+      const suggestions = suggestProducts('D24 N1');
+      expect(
+        suggestions.every((s) => {
+          const compact = s.exampleCodeFormat.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+          return compact.includes('D24') && compact.includes('N1');
+        })
+      ).toBe(true);
+      expect(
+        suggestions.some((s) => s.exampleCodeFormat === 'DSBC-32-25-PPSA-N3')
+      ).toBe(false);
+    });
+
+    it('suggests DG4V-3 example for "DG4V 3"', () => {
+      const suggestions = suggestProducts('DG4V 3');
+      expect(
+        suggestions.some((s) => s.exampleCodeFormat.includes('DG4V-3'))
+      ).toBe(true);
+    });
+
+    it('suggests Atos 24DC example for "24DC"', () => {
+      const suggestions = suggestProducts('24DC');
+      expect(
+        suggestions.some(
+          (s) =>
+            s.exampleCodeFormat.includes('24DC') &&
+            (s.series === 'DHI' || s.series === 'DHU')
+        )
+      ).toBe(true);
+    });
+  });
+});

@@ -6,3 +6,5 @@ export type ProductResolverCategory =
 
 export const PNEUMATIC_CYLINDER_CATEGORY: ProductResolverCategory =
   'pneumatic_cylinder';
+
+export const HYDRAULIC_VALVE_CATEGORY: ProductResolverCategory = 'hydraulic_valve';

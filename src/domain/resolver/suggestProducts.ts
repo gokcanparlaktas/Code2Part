@@ -1,4 +1,6 @@
+import hydraulicValveSeriesData from '@/data/hydraulicValveSeries.json';
 import productSeriesData from '@/data/productSeries.json';
+import { suggestHydraulicValveProducts } from '@/domain/categories/hydraulicValve/hydraulicValveSuggestions';
 import {
   buildPneumaticCylinderExampleCode,
   buildPneumaticCylinderSuggestionTextTr,
@@ -8,7 +10,7 @@ import {
   suggestTokenMatchedPneumaticCylinders,
 } from '@/domain/categories/pneumaticCylinder/pneumaticCylinderSuggestions';
 import { isEligibleTokenQuery, tokenizeForMatching } from '@/domain/categories/pneumaticCylinder/pneumaticCylinderTokenMatch';
-import { PNEUMATIC_CYLINDER_CATEGORY } from '@/types/category';
+import { HYDRAULIC_VALVE_CATEGORY, PNEUMATIC_CYLINDER_CATEGORY } from '@/types/category';
 import { identifyProduct } from './identifyProduct';
 import { normalizeCode } from './normalizeCode';
 import type { ProductSeriesRecord } from '@/types/product';
@@ -18,7 +20,10 @@ import type {
   SuggestedProduct,
 } from '@/types/suggestion';
 
-const productSeries = productSeriesData as ProductSeriesRecord[];
+const productSeries = [
+  ...(productSeriesData as ProductSeriesRecord[]),
+  ...(hydraulicValveSeriesData as ProductSeriesRecord[]),
+];
 
 const BRAND_ALIASES: { brand: string; aliases: string[] }[] = [
   { brand: 'Festo', aliases: ['FESTO'] },
@@ -43,11 +48,15 @@ function getSeriesPrefixes(series: ProductSeriesRecord): string[] {
   );
 }
 
-function confidenceFromScore(score: number): SuggestionConfidence {
-  if (score >= 80) {
+function confidenceFromScore(
+  score: number,
+  series: ProductSeriesRecord
+): SuggestionConfidence {
+  const cappedScore = series.resolverCategory === HYDRAULIC_VALVE_CATEGORY ? Math.min(score, 79) : score;
+  if (cappedScore >= 80) {
     return 'high';
   }
-  if (score >= 55) {
+  if (cappedScore >= 55) {
     return 'medium';
   }
   return 'low';
@@ -165,7 +174,7 @@ function toSuggestedProduct(candidate: MatchCandidate, normalized: string): Sugg
     productTypeTr: series.productType,
     standardFamily: series.standardFamily,
     equivalenceGroup: series.equivalenceGroup ?? series.equivalenceGroupId ?? '',
-    confidence: confidenceFromScore(score),
+    confidence: confidenceFromScore(score, series),
     matchedBy,
     detectedAttributes: {
       ...(boreMm !== undefined ? { boreMm } : {}),
@@ -238,9 +247,16 @@ export function suggestProducts(rawInput: string, limit = 5): SuggestedProduct[]
     Math.max(limit, 8)
   );
 
+  const hydraulicSuggestions = suggestHydraulicValveProducts(
+    rawInput,
+    productSeries,
+    Math.max(limit, 8)
+  );
+
   const merged = new Map<string, SuggestedProduct>();
 
   for (const suggestion of [
+    ...hydraulicSuggestions,
     ...tokenSuggestions,
     ...seriesLessSuggestions,
     ...prefixSuggestions,

@@ -38,6 +38,9 @@ export interface ProductIdentification {
   standardFamily: TechnicalAttribute<string>;
   bore: TechnicalAttribute<number>;
   stroke: TechnicalAttribute<number>;
+  cetopNgSize?: TechnicalAttribute<string>;
+  valveCoilVoltage?: TechnicalAttribute<string>;
+  valveSpoolFunction?: TechnicalAttribute<string>;
   confidence: ConfidenceLevel;
 }
 
@@ -57,6 +60,9 @@ export interface ProductSeriesRecord extends DataReliabilityMetadata {
   suggestedCodeTemplate?: string;
   confidenceWhenMatched: ConfidenceLevel;
   equivalenceGroupId?: string;
+  cetopNgLabel?: string;
+  defaultCoilVoltageTr?: string;
+  exampleProductCodes?: string[];
 }
 
 export interface ParsingRuleRecord extends DataReliabilityMetadata {

@@ -24,7 +24,7 @@ describe('compareProducts', () => {
 
     const unsupportedSource = {
       ...source,
-      resolverCategoryKey: 'hydraulic_valve' as const,
+      resolverCategoryKey: 'pneumatic_valve' as const,
     };
 
     const result = compareProducts(unsupportedSource, cp96!);

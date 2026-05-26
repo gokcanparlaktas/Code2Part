@@ -1,6 +1,12 @@
 import equivalentSeriesData from '@/data/equivalentSeries.json';
+import hydraulicValveSeriesData from '@/data/hydraulicValveSeries.json';
 import parsingRulesData from '@/data/parsingRules.json';
 import productSeriesData from '@/data/productSeries.json';
+import {
+  parseHydraulicValveAttributes,
+  resolveHydraulicValveConfidence,
+} from '@/domain/categories/hydraulicValve/hydraulicValveIdentify';
+import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
 import type {
   ConfidenceLevel,
   IdentificationOutcome,
@@ -10,7 +16,10 @@ import type {
   TechnicalAttribute,
 } from '@/types/product';
 
-const productSeries = productSeriesData as ProductSeriesRecord[];
+const productSeries = [
+  ...(productSeriesData as ProductSeriesRecord[]),
+  ...(hydraulicValveSeriesData as ProductSeriesRecord[]),
+];
 const parsingRules = parsingRulesData as ParsingRuleRecord[];
 
 function attributeFromSeries<T extends string | number>(
@@ -140,6 +149,39 @@ function emptyIdentification(
   };
 }
 
+function identifyHydraulicValveProduct(
+  inputCode: string,
+  normalizedCode: string,
+  series: ProductSeriesRecord
+): ProductIdentification {
+  const hydraulicAttrs = parseHydraulicValveAttributes(normalizedCode, series);
+  const outcome = hydraulicAttrs.parsedFromCode ? 'full' : 'series_only';
+
+  return {
+    inputCode,
+    normalizedCode,
+    seriesId: series.id,
+    resolverCategoryKey: HYDRAULIC_VALVE_CATEGORY,
+    matched: true,
+    outcome,
+    brand: attributeFromSeries(series.brand),
+    series: attributeFromSeries(series.series),
+    productType: attributeFromSeries(series.productType),
+    productCategory: attributeFromSeries(series.productCategory),
+    standardFamily: {
+      value: series.standardFamily,
+      evidence: 'standard',
+      requiresCheck: false,
+    },
+    bore: unknownAttribute(),
+    stroke: unknownAttribute(),
+    cetopNgSize: hydraulicAttrs.cetopNgSize,
+    valveCoilVoltage: hydraulicAttrs.valveCoilVoltage,
+    valveSpoolFunction: hydraulicAttrs.valveSpoolFunction,
+    confidence: resolveHydraulicValveConfidence(series, hydraulicAttrs.parsedFromCode),
+  };
+}
+
 export function identifyProduct(
   inputCode: string,
   normalizedCode: string
@@ -148,6 +190,10 @@ export function identifyProduct(
 
   if (!series) {
     return emptyIdentification(inputCode, normalizedCode);
+  }
+
+  if (series.resolverCategory === HYDRAULIC_VALVE_CATEGORY) {
+    return identifyHydraulicValveProduct(inputCode, normalizedCode, series);
   }
 
   const { bore, stroke, parsed } = parseDimensions(normalizedCode, series.id);

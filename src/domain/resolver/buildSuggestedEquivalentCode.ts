@@ -1,5 +1,6 @@
+import { buildHydraulicValveSuggestedCode } from '@/domain/categories/hydraulicValve/hydraulicValveSuggestedCode';
 import { buildPneumaticCylinderSuggestedCode } from '@/domain/categories/pneumaticCylinder/pneumaticCylinderSuggestedCode';
-import { PNEUMATIC_CYLINDER_CATEGORY } from '@/types/category';
+import { HYDRAULIC_VALVE_CATEGORY, PNEUMATIC_CYLINDER_CATEGORY } from '@/types/category';
 import type {
   ProductIdentification,
   ProductSeriesRecord,
@@ -13,6 +14,10 @@ export function buildSuggestedEquivalentCode(
 
   if (category === PNEUMATIC_CYLINDER_CATEGORY) {
     return buildPneumaticCylinderSuggestedCode(source, targetSeries);
+  }
+
+  if (category === HYDRAULIC_VALVE_CATEGORY) {
+    return buildHydraulicValveSuggestedCode(source, targetSeries);
   }
 
   return null;

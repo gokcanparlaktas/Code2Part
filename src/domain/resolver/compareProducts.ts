@@ -1,5 +1,6 @@
+import { compareHydraulicValves } from '@/domain/categories/hydraulicValve/hydraulicValveComparison';
 import { comparePneumaticCylinders } from '@/domain/categories/pneumaticCylinder/pneumaticCylinderComparison';
-import { PNEUMATIC_CYLINDER_CATEGORY } from '@/types/category';
+import { HYDRAULIC_VALVE_CATEGORY, PNEUMATIC_CYLINDER_CATEGORY } from '@/types/category';
 import type {
   AttributeComparison,
   CompatibilityResult,
@@ -102,6 +103,10 @@ export function compareProducts(
 
   if (category === PNEUMATIC_CYLINDER_CATEGORY) {
     return comparePneumaticCylinders(source, candidate);
+  }
+
+  if (category === HYDRAULIC_VALVE_CATEGORY) {
+    return compareHydraulicValves(source, candidate);
   }
 
   return compareGenericProducts(source, candidate);
