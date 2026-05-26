@@ -100,6 +100,33 @@ export function compareProducts(
   candidate: EquivalentCandidate
 ): CompatibilityResult {
   const category = resolveResolverCategory(source);
+  const targetCategory = candidate.targetIdentification?.resolverCategoryKey ?? null;
+
+  const isSupportedCategory =
+    category === PNEUMATIC_CYLINDER_CATEGORY || category === HYDRAULIC_VALVE_CATEGORY;
+
+  if (isSupportedCategory && targetCategory && category !== targetCategory) {
+    return {
+      candidate,
+      summary: {
+        matchLevelTr: 'Fonksiyonel alternatif',
+        summaryTr:
+          'Ürün kategorileri farklı. Bu iki ürün doğrudan muadil olarak karşılaştırılamaz; doğru kategori seçilmelidir.',
+        riskLevel: 'high',
+      },
+      compatible: [],
+      different: [
+        {
+          label: 'Ürün kategorisi',
+          sourceDisplay: String(category),
+          targetDisplay: String(targetCategory),
+          status: 'different',
+        },
+      ],
+      checkItems: [],
+      warnings: ['Ürün kategorisi farklı: Bu iki ürün doğrudan uyumlu kabul edilmez.'],
+    };
+  }
 
   if (category === PNEUMATIC_CYLINDER_CATEGORY) {
     return comparePneumaticCylinders(source, candidate);

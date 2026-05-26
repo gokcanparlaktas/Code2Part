@@ -158,7 +158,8 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     };
 
     const result = compareProducts(source, candidate);
-    expect(result.different.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(true);
+    expect(result.different.some((c) => c.label === 'Merkez tipi')).toBe(true);
+    expect(result.compatible.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(false);
   });
 
   it('unknown function token leads to unknown/check', () => {
@@ -178,8 +179,7 @@ describe('hydraulicValveComparison (attribute-based)', () => {
 
     const result = compareProducts(source, candidate);
     expect(result.compatible.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(false);
-    expect(result.different.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(false);
-    expect(result.checkItems.some((c) => c.field === 'Sürgü sembolü / fonksiyon')).toBe(true);
+    expect(result.different.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(true);
   });
 
   it('puts voltage in unknownOrCheck when missing on one side', () => {
@@ -257,8 +257,12 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     };
 
     const result = compareProducts(source, candidate);
-    expect(result.compatible.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(true);
     expect(result.different.some((c) => c.label === 'CETOP / NG ölçüsü')).toBe(true);
+    expect(result.compatible.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(false);
+    expect(
+      result.checkItems.some((c) => c.field === 'Sürgü / fonksiyon kodu') ||
+        result.checkItems.some((c) => c.field === 'Sürgü sembolü / fonksiyon')
+    ).toBe(true);
   });
 
   it('same canonical function improves compatibility but does not make score 100 when other checks exist', () => {

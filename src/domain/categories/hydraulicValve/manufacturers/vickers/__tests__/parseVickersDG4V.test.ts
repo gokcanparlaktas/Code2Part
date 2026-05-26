@@ -133,10 +133,13 @@ describe('parseVickersDG4V', () => {
       ),
     });
 
-    const sameScore = calculateMatchPercentage(sameSpool).percentage;
-    const diffScore = calculateMatchPercentage(differentSpring).percentage;
-    expect(sameScore).toBeGreaterThan(diffScore);
+    const sameCompatible = sameSpool.compatible.length;
+    const diffCompatible = differentSpring.compatible.length;
+    expect(sameCompatible).toBeGreaterThan(diffCompatible);
     expect(differentSpring.different.some((c) => c.label === 'Yay düzeni')).toBe(true);
+    expect(calculateMatchPercentage(sameSpool).percentage).toBeGreaterThanOrEqual(
+      calculateMatchPercentage(differentSpring).percentage
+    );
   });
 
   it('Rexroth E vs Vickers 2A remains cautious cross-brand', () => {

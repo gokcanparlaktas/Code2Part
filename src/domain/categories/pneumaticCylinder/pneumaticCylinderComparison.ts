@@ -6,51 +6,11 @@ import type {
   EquivalenceSummary,
   EquivalentCandidate,
 } from '@/types/compatibility';
-import type { ProductIdentification, TechnicalAttribute } from '@/types/product';
-import { formatAttributeValue } from '@/utils/formatConfidence';
+import type { ProductIdentification } from '@/types/product';
 
 import { getPneumaticCylinderCheckItems } from './pneumaticCylinderCheckItems';
-
-function displayAttribute(attr: TechnicalAttribute<string | number>): string {
-  return formatAttributeValue(attr.value, attr.unit);
-}
-
-function compareAttribute(
-  label: string,
-  source: TechnicalAttribute<string | number>,
-  target: TechnicalAttribute<string | number> | string
-): AttributeComparison {
-  const targetAttr: TechnicalAttribute<string | number> =
-    typeof target === 'string'
-      ? { value: target, evidence: 'series_table', requiresCheck: false }
-      : target;
-
-  const sourceDisplay = displayAttribute(source);
-  const targetDisplay = displayAttribute(targetAttr);
-
-  if (source.requiresCheck || targetAttr.requiresCheck) {
-    return { label, sourceDisplay, targetDisplay, status: 'unknownOrCheck' };
-  }
-
-  if (
-    source.evidence === 'unknown' ||
-    targetAttr.evidence === 'unknown' ||
-    source.value === null ||
-    targetAttr.value === null
-  ) {
-    return { label, sourceDisplay, targetDisplay, status: 'unknownOrCheck' };
-  }
-
-  if (source.evidence === 'inferred' || targetAttr.evidence === 'inferred') {
-    return { label, sourceDisplay, targetDisplay, status: 'unknownOrCheck' };
-  }
-
-  if (String(source.value) === String(targetAttr.value)) {
-    return { label, sourceDisplay, targetDisplay, status: 'compatible' };
-  }
-
-  return { label, sourceDisplay, targetDisplay, status: 'different' };
-}
+import { buildPneumaticCylinderCompatibilityProfile } from './pneumaticCylinderCompatibilityProfile';
+import { compareCompatibilityProfilesDetailed } from '@/domain/compatibilityProfiles/compareCompatibilityProfiles';
 
 function attributeCheckReason(label: string, status: AttributeComparison['status']): string {
   if (status === 'different') {
@@ -164,34 +124,34 @@ export function comparePneumaticCylinders(
   candidate: EquivalentCandidate
 ): CompatibilityResult {
   const target = candidate.targetIdentification;
-  const comparisons: AttributeComparison[] = [
-    compareAttribute(
-      'Ürün kategorisi',
-      source.productCategory,
-      candidate.productCategory
-    ),
-    compareAttribute(
-      'Çap (bore)',
-      source.bore,
-      target?.bore ?? { value: null, evidence: 'unknown', requiresCheck: true }
-    ),
-    compareAttribute(
-      'Strok',
-      source.stroke,
-      target?.stroke ?? { value: null, evidence: 'unknown', requiresCheck: true }
-    ),
-  ];
+
+  const sourceProfile = buildPneumaticCylinderCompatibilityProfile({ identification: source });
+  const targetProfile = buildPneumaticCylinderCompatibilityProfile({
+    identification: target,
+    candidate,
+  });
+  const profileComparison = compareCompatibilityProfilesDetailed(sourceProfile, targetProfile);
+  const comparisons: AttributeComparison[] = profileComparison.comparisons;
 
   const compatible = comparisons.filter((c) => c.status === 'compatible');
   const different = comparisons.filter((c) => c.status === 'different');
 
-  const attributeChecks = comparisons
-    .map((c) => comparisonToCheckItem(c))
-    .filter((item): item is CheckItem => item !== null);
-
   const cylinderItems = getPneumaticCylinderCheckItems(source, candidate);
 
-  const checkItems = [...attributeChecks, ...cylinderItems];
+  const checkItems: CheckItem[] = [
+    ...profileComparison.checkItems.map((item) => {
+      // keep existing pneumatic wording for core fields when possible
+      if (item.field === 'Çap (bore)' || item.field === 'Strok') {
+        return {
+          ...item,
+          reasonTr: attributeCheckReason(item.field, 'unknownOrCheck'),
+          severity: attributeCheckSeverity(item.field, 'unknownOrCheck'),
+        };
+      }
+      return item;
+    }),
+    ...cylinderItems,
+  ].filter(Boolean);
 
   const summary = lookupEquivalenceSummary(
     source,
@@ -208,6 +168,6 @@ export function comparePneumaticCylinders(
     compatible,
     different,
     checkItems,
-    warnings,
+    warnings: [...new Set([...warnings, ...profileComparison.warnings])],
   };
 }
