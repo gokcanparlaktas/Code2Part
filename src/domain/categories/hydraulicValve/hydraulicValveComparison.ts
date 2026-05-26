@@ -9,7 +9,7 @@ import type { ProductIdentification, TechnicalAttribute } from '@/types/product'
 import { formatAttributeValue } from '@/utils/formatConfidence';
 
 import { getTechnicalAttributes } from '@/domain/attributes/getTechnicalAttributes';
-import { compareValveFunctions } from '@/domain/categories/hydraulicValve/functionMappings/compareValveFunctions';
+import { compareValveFunctionBehavior } from '@/domain/categories/hydraulicValve/functionMappings/compareValveFunctionBehavior';
 import {
   getHydraulicValveCheckItems,
   HYDRAULIC_VALVE_WARNINGS,
@@ -64,7 +64,16 @@ function getAttrValue(
   if (!match || match.value === null) {
     return null;
   }
-  return String(match.value);
+  const unit = match.unit ? ` ${match.unit}` : '';
+  return `${match.value}${unit}`;
+}
+
+function getFunctionTokenForComparison(
+  attributes: ReturnType<typeof getTechnicalAttributes>
+): string | null {
+  return (
+    getAttrValue(attributes, 'function_token') ?? getAttrValue(attributes, 'spool_symbol')
+  );
 }
 
 function compareOptionalString(options: {
@@ -171,13 +180,16 @@ export function compareHydraulicValves(
   const sourceVoltage = getAttrValue(sourceAttrs, 'voltage');
   const targetVoltage = target ? getAttrValue(targetAttrs, 'voltage') : null;
 
-  const sourceConnector = getAttrValue(sourceAttrs, 'connector_token');
-  const targetConnector = target ? getAttrValue(targetAttrs, 'connector_token') : null;
+  const sourceConnector =
+    getAttrValue(sourceAttrs, 'connector') ?? getAttrValue(sourceAttrs, 'connector_token');
+  const targetConnector = target
+    ? getAttrValue(targetAttrs, 'connector') ?? getAttrValue(targetAttrs, 'connector_token')
+    : null;
 
-  const sourceFunction = getAttrValue(sourceAttrs, 'function_token');
-  const targetFunction = target ? getAttrValue(targetAttrs, 'function_token') : null;
+  const sourceFunction = getFunctionTokenForComparison(sourceAttrs);
+  const targetFunction = target ? getFunctionTokenForComparison(targetAttrs) : null;
 
-  const functionMatch = compareValveFunctions({
+  const functionMatch = compareValveFunctionBehavior({
     label: 'Sürgü / fonksiyon kodu',
     source: {
       manufacturer: String(source.brand.value ?? ''),
@@ -210,8 +222,39 @@ export function compareHydraulicValves(
       targetValue: targetConnector,
       missingMessageTr: 'Konnektör kodu eksik veya doğrulanamadı.',
     }),
+    compareOptionalString({
+      label: 'Manuel kumanda',
+      sourceValue: getAttrValue(sourceAttrs, 'manual_override'),
+      targetValue: target ? getAttrValue(targetAttrs, 'manual_override') : null,
+      missingMessageTr: 'Manuel kumanda bilgisi eksik veya doğrulanamadı.',
+    }),
+    compareOptionalString({
+      label: 'Port deseni',
+      sourceValue: getAttrValue(sourceAttrs, 'porting_pattern'),
+      targetValue: target ? getAttrValue(targetAttrs, 'porting_pattern') : null,
+      missingMessageTr: 'Port deseni katalogdan doğrulanmalıdır.',
+    }),
+    compareOptionalString({
+      label: 'Maks. debi',
+      sourceValue: getAttrValue(sourceAttrs, 'max_flow'),
+      targetValue: target ? getAttrValue(targetAttrs, 'max_flow') : null,
+      missingMessageTr: 'Maksimum debi katalogdan doğrulanmalıdır.',
+    }),
     functionMatch.comparison,
   ];
+
+  const sourcePressureAbp = getAttrValue(sourceAttrs, 'max_pressure_abp');
+  const targetPressureAbp = target ? getAttrValue(targetAttrs, 'max_pressure_abp') : null;
+  if (sourcePressureAbp || targetPressureAbp) {
+    comparisons.push(
+      compareOptionalString({
+        label: 'Maks. basınç (A/B/P)',
+        sourceValue: sourcePressureAbp,
+        targetValue: targetPressureAbp,
+        missingMessageTr: 'Maksimum çalışma basıncı katalogdan doğrulanmalıdır.',
+      })
+    );
+  }
 
   const compatible = comparisons.filter((c) => c.status === 'compatible');
   const different = comparisons.filter((c) => c.status === 'different');

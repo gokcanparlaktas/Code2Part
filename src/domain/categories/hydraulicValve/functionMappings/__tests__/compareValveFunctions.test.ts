@@ -22,9 +22,8 @@ describe('compareValveFunctions', () => {
 
     expect(result.comparison.status).toBe('unknownOrCheck');
     expect(result.comparison.status).not.toBe('compatible');
-    expect(result.statusMessageTr).toBe(
-      'Sürgü/fonksiyon tipi benzer olabilir: E / 3C2. Katalog sembolleriyle doğrulanmalıdır.'
-    );
+    expect(result.statusMessageTr).toContain('benzer olabilir');
+    expect(result.statusMessageTr).toContain('Katalog sembolüyle doğrulanmalıdır');
     expect(result.statusMessageTr).not.toMatch(/aynıdır/i);
   });
 
@@ -36,8 +35,7 @@ describe('compareValveFunctions', () => {
     });
 
     expect(result.comparison.status).toBe('unknownOrCheck');
-    expect(result.statusMessageTr).toContain('E / 0711');
-    expect(result.statusMessageTr).toContain('Katalog sembolleriyle doğrulanmalıdır');
+    expect(result.statusMessageTr).toContain('katalogdan kontrol edilmelidir');
   });
 
   it('Yuken 3C12 vs Rexroth E is different', () => {

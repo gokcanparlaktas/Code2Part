@@ -19,7 +19,7 @@ function resultMap(
 describe('extractTechnicalAttributes (catalog v2 driven)', () => {
   describe('hydraulic voltage', () => {
     it.each([
-      ['4WE6E-6X/EG24N9K4', 'EG24', '24V DC'],
+      ['4WE6E-7X/HG24N9K4', 'G24', '24V DC'],
       ['4WE10E-3X/CG24N9K4', 'CG24', '24V DC'],
       ['DSG-01-3C2-D24-N1-50', 'D24', '24V DC'],
       ['DHI-0711-X 24DC', '24DC', '24V DC'],
@@ -77,8 +77,8 @@ describe('extractTechnicalAttributes (catalog v2 driven)', () => {
   });
 
   describe('hydraulic connector and function', () => {
-    it('extracts connector token safely with low confidence', () => {
-      const code = '4WE6E-6X/EG24N9K4';
+    it('extracts Rexroth WE6 connector from RE 23164 parser with catalog confidence', () => {
+      const code = '4WE6E-7X/HG24N9K4';
       const id = identifyProduct(code, normalizeCode(code));
       const connector = extractHydraulicAttributes({
         inputCode: code,
@@ -86,6 +86,19 @@ describe('extractTechnicalAttributes (catalog v2 driven)', () => {
       }).find((a) => a.key === 'connector_token');
 
       expect(connector?.value).toBe('K4');
+      expect(connector?.confidence).toBe('high');
+      expect(connector?.requiresCatalogCheck).toBe(false);
+    });
+
+    it('extracts connector token with check required on non-catalog hydraulic series', () => {
+      const code = 'DSG-01-3C2-D24-N1-50';
+      const id = identifyProduct(code, normalizeCode(code));
+      const connector = extractHydraulicAttributes({
+        inputCode: code,
+        seriesId: id.seriesId,
+      }).find((a) => a.key === 'connector_token');
+
+      expect(connector?.value).toBe('N1');
       expect(connector?.confidence).toBe('low');
       expect(connector?.requiresCatalogCheck).toBe(true);
     });

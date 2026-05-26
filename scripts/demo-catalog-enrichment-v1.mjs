@@ -35,6 +35,10 @@ export const DEMO_HYDRAULIC_EXTRA_CHECK_REFS = [
 export const DEMO_SERIES_ENRICHMENT = {
   rexroth_4we6: {
     exampleCodes: [
+      '4WE6E-7X/HG24N9K4',
+      '4WE6J-7X/HG24N9K4',
+      '4WE6D-7X/HG24N9K4',
+      '4WE6E-7X/HG12N9C4Z',
       '4WE6E-6X/EG24N9K4',
       '4WE6J-6X/EG24N9K4',
       '4WE6G-6X/EG24N9K4',

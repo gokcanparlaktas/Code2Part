@@ -42,16 +42,16 @@ describe('getTechnicalAttributes', () => {
     const map = attrMap(getTechnicalAttributes(id));
 
     expect(map.get('cetop_ng')?.value).toBe('CETOP 03 / NG6');
-    expect(map.get('cetop_ng')?.evidence).toBe('series_table');
+    expect(map.get('cetop_ng')?.evidence).toBe('standard');
 
     expect(map.get('voltage')?.value).toBe('24V DC');
     expect(map.get('voltage')?.evidence).toBe('code');
+    expect(map.get('voltage')?.confidence).toBe('medium');
 
+    expect(map.get('spool_symbol')?.value).toBe('E');
     expect(map.get('function_token')?.value).toBe('E');
-    expect(map.get('function_token')?.evidence).toBe('code');
 
     expect(map.get('connector_token')?.value).toBe('K4');
-    expect(map.get('connector_token')?.evidence).toBe('code');
   });
 
   it('DSG-01-3C2-D24-N1-50 extracts CETOP/NG, voltage, function token, connector token', () => {

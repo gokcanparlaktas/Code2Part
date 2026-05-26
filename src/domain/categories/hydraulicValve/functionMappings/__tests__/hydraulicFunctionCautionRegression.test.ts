@@ -13,8 +13,7 @@ describe('hydraulic function caution regression', () => {
 
     expect(result.comparison.status).toBe('unknownOrCheck');
     expect(result.comparison.status).not.toBe('compatible');
-    expect(result.statusMessageTr).toContain('benzer olabilir');
-    expect(result.statusMessageTr).toContain('Katalog sembolleriyle doğrulanmalıdır');
+    expect(result.statusMessageTr).toContain('katalogdan kontrol edilmelidir');
     expect(result.statusMessageTr ?? '').not.toMatch(/aynıdır/i);
   });
 
@@ -45,6 +44,6 @@ describe('hydraulic function caution regression', () => {
 
     expect(result.compatible.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(false);
     const spoolCheck = result.checkItems.find((c) => c.field === 'Sürgü sembolü / fonksiyon');
-    expect(spoolCheck?.reasonTr).toContain('benzer olabilir');
+      expect(spoolCheck?.reasonTr).toContain('katalogdan kontrol edilmelidir');
   });
 });

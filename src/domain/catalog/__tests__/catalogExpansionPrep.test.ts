@@ -19,7 +19,7 @@ import type { ProductIdentification } from '@/types/product';
 describe('catalog expansion prep', () => {
   describe('parsingRules-driven extraction', () => {
     it('extracts hydraulic connector from catalog codePatterns', () => {
-      const code = '4WE6E-6X/EG24N9K4';
+      const code = 'DSG-01-3C2-D24-N1-50';
       const id = identifyProduct(code, normalizeCode(code));
       const patterns = getCodePatternsForSeries(id.seriesId!, 'connector');
       expect(patterns.length).toBeGreaterThan(0);
@@ -29,7 +29,7 @@ describe('catalog expansion prep', () => {
         seriesId: id.seriesId,
       }).find((a) => a.key === 'connector_token');
 
-      expect(connector?.value).toBe('K4');
+      expect(connector?.value).toBe('N1');
       expect(connector?.confidence).toBe('low');
     });
 

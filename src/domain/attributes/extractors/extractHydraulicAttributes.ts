@@ -5,6 +5,10 @@ import {
   getKnownTokensForSeries,
   getVoltageCodesForSeries,
 } from '@/domain/catalog/adapters/catalogV2Adapter';
+import {
+  isRexrothWE6Code,
+  parseRexrothWE6,
+} from '@/domain/categories/hydraulicValve/manufacturers/rexroth/parseRexrothWE6';
 import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
 import type { CatalogFunctionMapping, CatalogSeries } from '@/types/catalog';
 import type { TechnicalAttributeResult } from '@/types/technicalAttributeResult';
@@ -170,6 +174,20 @@ function extractFunctionFromCatalog(
     if (mapping) {
       return buildFunctionAttribute(series, mapping);
     }
+
+    const label = attributeDefLabel(series.attributes, 'function_token', 'Fonksiyon / spool');
+    return buildAttributeResult({
+      key: 'function_token',
+      label,
+      value: patternToken,
+      normalizedValue: normalizeFunctionToken(patternToken),
+      evidence: 'code',
+      confidence: 'low',
+      requiresCatalogCheck: true,
+      sourceToken: patternToken,
+      category: HYDRAULIC_VALVE_CATEGORY,
+      note: 'Fonksiyon kodu koddan okundu; sembol davranışı katalogdan doğrulanmalıdır.',
+    });
   }
 
   for (const mapping of mappings) {
@@ -208,6 +226,19 @@ export function extractHydraulicAttributes(
 ): TechnicalAttributeResult[] {
   const normalized = normalizeProductCode(options.inputCode);
   const series = options.seriesId ? getCatalogSeriesById(options.seriesId) : undefined;
+
+  const useRexrothWE6Parser =
+    series?.id === 'rexroth_4we6' ||
+    series?.codePrefix.startsWith('4WE6') ||
+    isRexrothWE6Code(normalized);
+
+  if (useRexrothWE6Parser) {
+    const rexrothAttrs = parseRexrothWE6(options.inputCode);
+    if (rexrothAttrs) {
+      return rexrothAttrs;
+    }
+  }
+
   const results: TechnicalAttributeResult[] = [];
 
   if (series) {

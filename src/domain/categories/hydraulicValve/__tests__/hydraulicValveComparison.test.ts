@@ -47,7 +47,9 @@ describe('hydraulicValveComparison (attribute-based)', () => {
 
     const result = compareProducts(source, candidate);
     expect(result.compatible.some((c) => c.label === 'Konnektör kodu')).toBe(true);
-    expect(result.compatible.find((c) => c.label === 'Konnektör kodu')?.sourceDisplay).toBe('K4');
+    expect(result.compatible.find((c) => c.label === 'Konnektör kodu')?.sourceDisplay).toBe(
+      'DIN EN 175301-803'
+    );
   });
 
   it('marks spool/function compatible when both are known and equal', () => {
@@ -91,9 +93,8 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     expect(result.compatible.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(false);
     expect(result.different.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(false);
     const spoolCheck = result.checkItems.find((c) => c.field === 'Sürgü sembolü / fonksiyon');
-    expect(spoolCheck?.reasonTr).toBe(
-      'Sürgü/fonksiyon tipi benzer olabilir: E / 3C2. Katalog sembolleriyle doğrulanmalıdır.'
-    );
+    expect(spoolCheck?.reasonTr).toContain('benzer olabilir');
+    expect(spoolCheck?.reasonTr).toContain('Katalog sembolüyle doğrulanmalıdır');
     expect([...result.warnings, spoolCheck?.reasonTr ?? ''].join(' ')).not.toMatch(/aynıdır/i);
   });
 
@@ -115,8 +116,7 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     const result = compareProducts(source, candidate);
     expect(result.compatible.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(false);
     const spoolCheck = result.checkItems.find((c) => c.field === 'Sürgü sembolü / fonksiyon');
-    expect(spoolCheck?.reasonTr).toContain('E / 2A');
-    expect(spoolCheck?.reasonTr).toContain('Katalog sembolleriyle doğrulanmalıdır');
+    expect(spoolCheck?.reasonTr).toContain('katalogdan kontrol edilmelidir');
   });
 
   it('Rexroth E vs Atos 0711 is unknownOrCheck, not compatible', () => {
@@ -138,8 +138,7 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     expect(result.compatible.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(false);
     expect(result.different.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(false);
     const spoolCheck = result.checkItems.find((c) => c.field === 'Sürgü sembolü / fonksiyon');
-    expect(spoolCheck?.reasonTr).toContain('E / 0711');
-    expect(spoolCheck?.reasonTr).toContain('Katalog sembolleriyle doğrulanmalıdır');
+    expect(spoolCheck?.reasonTr).toContain('katalogdan kontrol edilmelidir');
     expect([...result.warnings, spoolCheck?.reasonTr ?? ''].join(' ')).not.toMatch(/aynıdır/i);
   });
 

@@ -86,7 +86,7 @@ describe('hydraulic_valve category', () => {
     expect(checkFields).toContain('Sürgü sembolü / fonksiyon');
     const spoolCheck = result.checkItems.find((c) => c.field === 'Sürgü sembolü / fonksiyon');
     expect(spoolCheck?.reasonTr).toContain('benzer olabilir');
-    expect(spoolCheck?.reasonTr).toContain('Katalog sembolleriyle doğrulanmalıdır');
+    expect(spoolCheck?.reasonTr).toContain('Katalog sembolüyle doğrulanmalıdır');
   });
 
   it('NG6 equivalents do not include NG10 series', () => {
