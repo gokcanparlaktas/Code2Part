@@ -101,6 +101,53 @@ function getFunctionTokenForComparison(
   );
 }
 
+const UNRESOLVED_COIL_VOLTAGE_CODES = new Set(['H7']);
+
+function compareCoilVoltageCode(options: {
+  sourceValue: string | null;
+  targetValue: string | null;
+}): AttributeComparison {
+  const sourceDisplay = options.sourceValue ?? 'Doğrulanamadı';
+  const targetDisplay = options.targetValue ?? 'Doğrulanamadı';
+
+  if (!options.sourceValue || !options.targetValue) {
+    return {
+      label: 'Bobin kodu',
+      sourceDisplay,
+      targetDisplay,
+      status: 'unknownOrCheck',
+    };
+  }
+
+  if (
+    UNRESOLVED_COIL_VOLTAGE_CODES.has(options.sourceValue) ||
+    UNRESOLVED_COIL_VOLTAGE_CODES.has(options.targetValue)
+  ) {
+    return {
+      label: 'Bobin kodu',
+      sourceDisplay,
+      targetDisplay,
+      status: 'unknownOrCheck',
+    };
+  }
+
+  if (options.sourceValue === options.targetValue) {
+    return {
+      label: 'Bobin kodu',
+      sourceDisplay,
+      targetDisplay,
+      status: 'compatible',
+    };
+  }
+
+  return {
+    label: 'Bobin kodu',
+    sourceDisplay,
+    targetDisplay,
+    status: 'different',
+  };
+}
+
 function compareOptionalString(options: {
   label: string;
   sourceValue: string | null;
@@ -228,6 +275,13 @@ export function compareHydraulicValves(
     },
   });
 
+  const sourceCoilCode = getAttrValue(sourceAttrs, 'coil_voltage_code');
+  const targetCoilCode = target ? getAttrValue(targetAttrs, 'coil_voltage_code') : null;
+  const sourceElectrical = getAttrValue(sourceAttrs, 'electrical_option');
+  const targetElectrical = target ? getAttrValue(targetAttrs, 'electrical_option') : null;
+  const sourceDesign = getAttrValue(sourceAttrs, 'design_number');
+  const targetDesign = target ? getAttrValue(targetAttrs, 'design_number') : null;
+
   const comparisons: AttributeComparison[] = [
     compareAttribute(
       'Ürün kategorisi',
@@ -285,6 +339,39 @@ export function compareHydraulicValves(
     }),
     functionMatch.comparison,
   ];
+
+  if (sourceCoilCode || targetCoilCode) {
+    comparisons.splice(
+      comparisons.findIndex((c) => c.label === 'Konnektör kodu') + 1,
+      0,
+      compareCoilVoltageCode({
+        sourceValue: sourceCoilCode,
+        targetValue: targetCoilCode,
+      })
+    );
+  }
+
+  if (sourceElectrical || targetElectrical) {
+    comparisons.push(
+      compareOptionalString({
+        label: 'Elektrik seçeneği',
+        sourceValue: sourceElectrical,
+        targetValue: targetElectrical,
+        missingMessageTr: 'Elektrik seçeneği katalogdan doğrulanmalıdır.',
+      })
+    );
+  }
+
+  if (sourceDesign || targetDesign) {
+    comparisons.push(
+      compareOptionalString({
+        label: 'Tasarım serisi',
+        sourceValue: sourceDesign,
+        targetValue: targetDesign,
+        missingMessageTr: 'Tasarım serisi katalogdan doğrulanmalıdır.',
+      })
+    );
+  }
 
   const sourcePressureAbp = getAttrValue(sourceAttrs, 'max_pressure_abp');
   const targetPressureAbp = target ? getAttrValue(targetAttrs, 'max_pressure_abp') : null;

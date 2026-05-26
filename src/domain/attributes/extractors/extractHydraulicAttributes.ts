@@ -10,6 +10,10 @@ import {
   parseRexrothWE6,
 } from '@/domain/categories/hydraulicValve/manufacturers/rexroth/parseRexrothWE6';
 import {
+  isVickersDG4VCode,
+  parseVickersDG4V,
+} from '@/domain/categories/hydraulicValve/manufacturers/vickers/parseVickersDG4V';
+import {
   isYukenDSGCode,
   parseYukenDSG,
 } from '@/domain/categories/hydraulicValve/manufacturers/yuken/parseYukenDSG';
@@ -253,6 +257,19 @@ export function extractHydraulicAttributes(
     const yukenAttrs = parseYukenDSG(options.inputCode);
     if (yukenAttrs) {
       return yukenAttrs;
+    }
+  }
+
+  const useVickersDG4VParser =
+    series?.id === 'vickers_dg4v3' ||
+    series?.id === 'vickers_dg4v5' ||
+    series?.codePrefix?.startsWith('DG4V-') ||
+    isVickersDG4VCode(normalized);
+
+  if (useVickersDG4VParser) {
+    const vickersAttrs = parseVickersDG4V(options.inputCode);
+    if (vickersAttrs) {
+      return vickersAttrs;
     }
   }
 

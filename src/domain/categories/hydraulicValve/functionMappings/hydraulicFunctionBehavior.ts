@@ -19,6 +19,7 @@ import {
   isRexrothWE6BaseSpoolSymbol,
   rexrothWE6BehaviorLookupToken,
 } from '@/domain/categories/hydraulicValve/manufacturers/rexroth/rexrothWE6SpoolSemantics';
+import { getVickersDG4VSpoolSemantics } from '@/domain/categories/hydraulicValve/manufacturers/vickers/vickersDG4VSemantics';
 
 export type HydraulicFunctionBehaviorConfidence = 'high' | 'medium' | 'low' | 'unknown';
 
@@ -77,6 +78,32 @@ function entry(
     series,
     ...behavior,
   };
+}
+
+function vickersDG4VBehaviorEntries(series: 'DG4V-3' | 'DG4V-5'): HydraulicFunctionBehavior[] {
+  const codes = ['2A', '4C', '6C', '6B'] as const;
+  return codes.map((code) => {
+    const sem = getVickersDG4VSpoolSemantics(code);
+    if (!sem) {
+      return entry('Vickers', series, code, {
+        positions: 3,
+        centering: 'unknown',
+        centerCondition: 'unknown',
+        normallyState: 'unknown',
+        confidence: 'low',
+        requiresCatalogCheck: true,
+      });
+    }
+    return entry('Vickers', series, code, {
+      positions: sem.numberOfPositions,
+      centering: sem.centering,
+      centerCondition: sem.centerCondition,
+      normallyState: 'unknown',
+      confidence: 'low',
+      requiresCatalogCheck: true,
+      note: sem.behaviorNoteTr,
+    });
+  });
 }
 
 function rexrothWE6BehaviorEntries(series: '4WE6' | '4WE10'): HydraulicFunctionBehavior[] {
@@ -228,32 +255,8 @@ const HYDRAULIC_FUNCTION_BEHAVIORS: HydraulicFunctionBehavior[] = [
     requiresCatalogCheck: true,
   }),
 
-  // Vickers — spool type + spring code; not equivalent to Yuken 3C2 by token alone
-  entry('Vickers', 'DG4V-3', '2A', {
-    positions: 3,
-    centering: 'spring_centered',
-    centerCondition: 'unknown',
-    normallyState: 'unknown',
-    confidence: 'low',
-    requiresCatalogCheck: true,
-    note: 'Vickers 2A: 2 konumlu sürgü + A yay düzeni (tahmini); katalog gerekir.',
-  }),
-  entry('Vickers', 'DG4V-5', '2A', {
-    positions: 3,
-    centering: 'spring_centered',
-    centerCondition: 'unknown',
-    normallyState: 'unknown',
-    confidence: 'low',
-    requiresCatalogCheck: true,
-  }),
-  entry('Vickers', 'DG4V-3', '6B', {
-    positions: 3,
-    centering: 'spring_centered',
-    centerCondition: 'unknown',
-    normallyState: 'unknown',
-    confidence: 'low',
-    requiresCatalogCheck: true,
-  }),
+  ...vickersDG4VBehaviorEntries('DG4V-3'),
+  ...vickersDG4VBehaviorEntries('DG4V-5'),
 ];
 
 const behaviorByKey = new Map<string, HydraulicFunctionBehavior>(
