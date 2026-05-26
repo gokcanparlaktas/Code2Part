@@ -1,4 +1,4 @@
-import equivalentSeriesData from '@/data/equivalentSeries.json';
+import { getLegacyEquivalentGroups } from '@/domain/catalog/adapters/catalogV2Adapter';
 import { buildSuggestedEquivalentCode } from './buildSuggestedEquivalentCode';
 import { getProductSeriesById, identifyProduct } from './identifyProduct';
 import type { EquivalentCandidate } from '@/types/compatibility';
@@ -7,7 +7,7 @@ import type {
   ProductIdentification,
 } from '@/types/product';
 
-const equivalentGroups = equivalentSeriesData as EquivalentGroupRecord[];
+const equivalentGroups = getLegacyEquivalentGroups();
 
 export function findEquivalents(
   source: ProductIdentification

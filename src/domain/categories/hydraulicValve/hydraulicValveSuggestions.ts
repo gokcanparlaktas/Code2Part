@@ -1,4 +1,4 @@
-import hydraulicExampleCodesData from '@/data/hydraulicValveExampleCodes.json';
+import { getHydraulicCatalogExampleCodes } from '@/domain/catalog/adapters/catalogV2Adapter';
 import { identifyProduct } from '@/domain/resolver/identifyProduct';
 import { normalizeCode } from '@/domain/resolver/normalizeCode';
 import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
@@ -18,7 +18,9 @@ import {
 } from '../pneumaticCylinder/pneumaticCylinderTokenMatch';
 import type { TokenMatchScore } from '../pneumaticCylinder/pneumaticCylinderTokenMatch';
 
-const hydraulicExampleCodes = hydraulicExampleCodesData as string[];
+function getHydraulicExampleCodes(): string[] {
+  return getHydraulicCatalogExampleCodes();
+}
 
 function confidenceFromScore(score: number): SuggestionConfidence {
   if (score >= 75) {
@@ -54,7 +56,7 @@ export function suggestHydraulicValveProducts(
 
   const seriesPrefixes = collectSeriesPrefixes(hydraulicSeries);
 
-  const scored = hydraulicExampleCodes
+  const scored = getHydraulicExampleCodes()
     .map((code) => {
       const normalizedCode = normalizeCode(code);
       const match = scoreProductCodeAgainstTokens(normalizedCode, query, seriesPrefixes);

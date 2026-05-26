@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DemoDisclaimerNote } from '@/components/DemoDisclaimerNote';
 import { ProductCodeSearchCard } from '@/components/ProductCodeSearchCard';
 
 export default function HomeScreen() {
@@ -26,7 +27,12 @@ export default function HomeScreen() {
           <Text style={styles.step}>1. Ürün kodunu yukarıdaki alana girin</Text>
           <Text style={styles.step}>2. Uygulama kodu düzenler ve ürünü tanır</Text>
           <Text style={styles.step}>3. Muadil serileri ve uyumluluğu görün</Text>
+          <Text style={styles.stepMuted}>
+            Veri kontrolü için: Son Aramalar → Veri Kontrolü
+          </Text>
         </View>
+
+        <DemoDisclaimerNote />
       </ScrollView>
     </SafeAreaView>
   );
@@ -77,5 +83,11 @@ const styles = StyleSheet.create({
     color: '#475569',
     fontSize: 14,
     lineHeight: 20,
+  },
+  stepMuted: {
+    color: '#94A3B8',
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 4,
   },
 });

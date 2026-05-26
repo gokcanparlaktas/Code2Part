@@ -1,5 +1,4 @@
-import hydraulicValveSeriesData from '@/data/hydraulicValveSeries.json';
-import productSeriesData from '@/data/productSeries.json';
+import { getLegacyProductSeries } from '@/domain/catalog/adapters/catalogV2Adapter';
 import { suggestHydraulicValveProducts } from '@/domain/categories/hydraulicValve/hydraulicValveSuggestions';
 import {
   buildPneumaticCylinderExampleCode,
@@ -20,10 +19,7 @@ import type {
   SuggestedProduct,
 } from '@/types/suggestion';
 
-const productSeries = [
-  ...(productSeriesData as ProductSeriesRecord[]),
-  ...(hydraulicValveSeriesData as ProductSeriesRecord[]),
-];
+const productSeries = getLegacyProductSeries();
 
 const BRAND_ALIASES: { brand: string; aliases: string[] }[] = [
   { brand: 'Festo', aliases: ['FESTO'] },

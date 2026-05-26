@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { DemoDisclaimerNote } from '@/components/DemoDisclaimerNote';
 import type { ProductIdentification } from '@/types/product';
 import { buildEvidenceDetailRows } from '@/utils/formatEvidence';
 
@@ -50,6 +51,7 @@ export function EvidenceDetails({ identification }: EvidenceDetailsProps) {
           {rows.map((row) => (
             <EvidenceRow key={row.label} {...row} />
           ))}
+          <DemoDisclaimerNote compact />
         </View>
       ) : null}
     </View>

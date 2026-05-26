@@ -1,21 +1,18 @@
-import equivalentSeriesData from '@/data/equivalentSeries.json';
-import hydraulicValveSeriesData from '@/data/hydraulicValveSeries.json';
-import productSeriesData from '@/data/productSeries.json';
+import {
+  getLegacyEquivalentGroups,
+  getLegacyProductSeries,
+  getLegacyProductSeriesById,
+} from '@/domain/catalog/adapters/catalogV2Adapter';
 import type { ProductSeriesRecord } from '@/types/product';
 
-const productSeries: ProductSeriesRecord[] = [
-  ...(productSeriesData as ProductSeriesRecord[]),
-  ...(hydraulicValveSeriesData as ProductSeriesRecord[]),
-];
-
 export function getProductSeriesById(id: string): ProductSeriesRecord | undefined {
-  return productSeries.find((series) => series.id === id);
+  return getLegacyProductSeriesById(id);
 }
 
 export function getAllProductSeries(): ProductSeriesRecord[] {
-  return productSeries;
+  return getLegacyProductSeries();
 }
 
 export function getEquivalentGroups() {
-  return equivalentSeriesData;
+  return getLegacyEquivalentGroups();
 }

@@ -1,23 +1,20 @@
-import parsingRulesData from '@/data/parsingRules.json';
 import {
   parseHydraulicValveAttributes,
 } from '@/domain/categories/hydraulicValve/hydraulicValveIdentify';
-import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
+import { getLegacyParsingRules } from '@/domain/catalog/adapters/catalogV2Adapter';
 import { calculateProductReliability } from '@/domain/reliability/calculateProductReliability';
-
-import { findExactExampleCodeMatch } from './exactExampleCodeMatch';
-import { getAllProductSeries } from './productSeriesCatalog';
-import { normalizeCode } from './normalizeCode';
+import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
 import type {
   ConfidenceLevel,
   IdentificationOutcome,
-  ParsingRuleRecord,
   ProductIdentification,
   ProductSeriesRecord,
   TechnicalAttribute,
 } from '@/types/product';
 
-const parsingRules = parsingRulesData as ParsingRuleRecord[];
+import { findExactExampleCodeMatch } from './exactExampleCodeMatch';
+import { getAllProductSeries } from './productSeriesCatalog';
+import { normalizeCode } from './normalizeCode';
 
 function attributeFromSeries<T extends string | number>(
   value: T,
@@ -60,14 +57,14 @@ function findSeriesByCode(normalizedCode: string): ProductSeriesRecord | null {
 }
 
 function hasParserRule(seriesId: string): boolean {
-  return parsingRules.some((rule) => rule.seriesId === seriesId);
+  return getLegacyParsingRules().some((rule) => rule.seriesId === seriesId);
 }
 
 function parseDimensions(
   normalizedCode: string,
   seriesId: string
 ): { bore: TechnicalAttribute<number>; stroke: TechnicalAttribute<number>; parsed: boolean } {
-  const rules = parsingRules.filter((r) => r.seriesId === seriesId);
+  const rules = getLegacyParsingRules().filter((r) => r.seriesId === seriesId);
 
   for (const rule of rules) {
     const regex = new RegExp(rule.pattern);

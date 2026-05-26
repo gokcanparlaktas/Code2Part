@@ -2,6 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { DemoDisclaimerNote } from '@/components/DemoDisclaimerNote';
 import { EquivalentAccordionCard } from '@/components/EquivalentAccordionCard';
 import { ReliabilityNote } from '@/components/ReliabilityNote';
 import { SourceProductSummary } from '@/components/SourceProductSummary';
@@ -11,7 +12,7 @@ import { isEquivalenceMappingUnverified } from '@/utils/catalogReliability';
 
 function EquivalentsScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
-  const inputCode = typeof code === 'string' ? code : '';
+  const inputCode = typeof code === 'string' ? code.trim() : '';
 
   const { identification, compatibilityResults, isResolvable } = useMemo(() => {
     const resolved = resolveProductSearch(inputCode);
@@ -44,7 +45,8 @@ function EquivalentsScreen() {
       showsVerticalScrollIndicator={false}
     >
       <Text style={styles.pageSubtitle}>
-        Bu ürüne benzer kullanılabilecek seri adayları
+        Bu ürüne benzer kullanılabilecek seri adayları. Liste teknik onay yerine geçmez;
+        kontrol edilmesi gereken alanlar kart içinde gösterilir.
       </Text>
 
       <SourceProductSummary identification={identification} />
@@ -77,6 +79,8 @@ function EquivalentsScreen() {
           ))}
         </View>
       )}
+
+      <DemoDisclaimerNote compact />
     </ScrollView>
   );
 }

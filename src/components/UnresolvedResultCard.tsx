@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { formatNotFoundSearchTips } from '@/utils/notFoundSearchTips';
+
 interface UnresolvedResultCardProps {
   originalInput: string;
   normalizedCode: string;
@@ -46,8 +48,15 @@ export function UnresolvedResultCard({
       <Text style={styles.body}>
         {hasPartialSuggestions
           ? 'Kod tam olarak çözümlenemedi. Olası seriler yukarıda listelenmiştir. İsterseniz bu kodu veri setine eklemek için kaydedebilirsiniz.'
-          : 'Kod formatı henüz desteklenmiyor olabilir. Bu kodu daha sonra veri setine eklemek için kaydedebiliriz.'}
+          : 'Bu kodla eşleşen ürün bulunamadı. Aşağıdaki önerileri deneyebilir veya kodu kaydedebilirsiniz.'}
       </Text>
+
+      {!hasPartialSuggestions ? (
+        <View style={styles.tipsBox}>
+          <Text style={styles.tipsTitle}>Ne deneyebilirsiniz?</Text>
+          <Text style={styles.tipsText}>{formatNotFoundSearchTips()}</Text>
+        </View>
+      ) : null}
 
       <View style={styles.detailBox}>
         <Text style={styles.detailLabel}>Normalize kod</Text>
@@ -165,5 +174,21 @@ const styles = StyleSheet.create({
   originalHint: {
     color: '#94A3B8',
     fontSize: 13,
+  },
+  tipsBox: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    gap: 6,
+    padding: 12,
+  },
+  tipsTitle: {
+    color: '#0F172A',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  tipsText: {
+    color: '#475569',
+    fontSize: 14,
+    lineHeight: 22,
   },
 });

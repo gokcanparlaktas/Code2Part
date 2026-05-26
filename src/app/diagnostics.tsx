@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { DemoDisclaimerNote } from '@/components/DemoDisclaimerNote';
+import { validateCatalogV2 } from '@/domain/catalog/validateCatalogV2';
 import { validateCatalog } from '@/domain/validation/validateCatalog';
 import type { ValidationIssue } from '@/types/validation';
 
@@ -48,55 +50,75 @@ export default function DiagnosticsScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
+      <DemoDisclaimerNote compact />
+
+      <View
+        style={[
+          styles.statusCard,
+          validationV2.isValid ? styles.statusOk : styles.statusError,
+        ]}
+      >
+        <Text style={styles.statusTitle}>Çalışma kataloğu (v2)</Text>
+        <Text style={styles.statusValue}>
+          {validationV2.isValid ? 'Geçerli' : 'Hatalar var'}
+        </Text>
+        <Text style={styles.statusHint}>
+          Uygulama tanımlama ve muadil aramada bu veri setini kullanır.
+        </Text>
+      </View>
+
       <View
         style={[
           styles.statusCard,
           validation.isValid ? styles.statusOk : styles.statusError,
         ]}
       >
-        <Text style={styles.statusTitle}>Katalog doğrulama durumu</Text>
+        <Text style={styles.statusTitle}>Eski düz JSON (v1) — tanılama</Text>
         <Text style={styles.statusValue}>
           {validation.isValid ? 'Geçerli' : 'Hatalar var'}
         </Text>
         {validation.warnings.length > 0 ? (
           <Text style={styles.statusHint}>
-            {validation.warnings.length} uyarı mevcut — uygulama çalışmaya devam eder.
+            {validation.warnings.length} uyarı — yalnızca geliştirici kontrolü içindir.
           </Text>
         ) : null}
       </View>
 
       <View style={styles.countsCard}>
-        <Text style={styles.countsTitle}>Kayıt sayıları</Text>
+        <Text style={styles.countsTitle}>Katalog v2 kayıt sayıları</Text>
         <Text style={styles.countRow}>
-          Ürün serisi: {validation.summary.productSeriesCount}
+          Ürün serisi: {validationV2.summary.productSeriesCount}
         </Text>
         <Text style={styles.countRow}>
-          Parser kuralı: {validation.summary.parsingRulesCount}
+          Parser kuralı: {validationV2.summary.parsingRulesCount}
         </Text>
         <Text style={styles.countRow}>
-          Muadil grubu: {validation.summary.equivalenceGroupCount}
+          Muadil grubu: {validationV2.summary.equivalenceGroupCount}
         </Text>
         <Text style={styles.countRow}>
-          Muadil bağlantısı: {validation.summary.equivalentLinksCount}
+          Fonksiyon eşlemesi: {validationV2.summary.functionMappingsCount}
+        </Text>
+        <Text style={styles.countRow}>
+          Kontrol kuralı: {validationV2.summary.checkRulesCount}
         </Text>
       </View>
 
       <View style={styles.countsCard}>
-        <Text style={styles.countsTitle}>Veri güvenilirliği özeti</Text>
+        <Text style={styles.countsTitle}>Veri güvenilirliği özeti (v2)</Text>
         <Text style={styles.countRow}>
-          Toplam kayıt: {validation.summary.reliability.totalRecords}
+          Toplam kayıt: {validationV2.summary.reliability.totalRecords}
         </Text>
         <Text style={styles.countRow}>
-          Kaynak doğrulanmış: {validation.summary.reliability.sourceVerifiedCount}
+          Kaynak doğrulanmış: {validationV2.summary.reliability.sourceVerifiedCount}
         </Text>
         <Text style={styles.countRow}>
-          Manuel doğrulanmış: {validation.summary.reliability.manualVerifiedCount}
+          Manuel doğrulanmış: {validationV2.summary.reliability.manualVerifiedCount}
         </Text>
         <Text style={styles.countRow}>
-          Manuel doğrulanmamış: {validation.summary.reliability.manualUnverifiedCount}
+          Manuel doğrulanmamış: {validationV2.summary.reliability.manualUnverifiedCount}
         </Text>
         <Text style={styles.countRow}>
-          Mock: {validation.summary.reliability.mockCount}
+          Mock: {validationV2.summary.reliability.mockCount}
         </Text>
       </View>
 

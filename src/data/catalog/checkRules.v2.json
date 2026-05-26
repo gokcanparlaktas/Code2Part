@@ -1,0 +1,240 @@
+[
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": null,
+    "id": "pneumatic_bore",
+    "fieldTr": "Çap",
+    "reasonTr": "Çap değeri kodda net okunamadı veya doğrulanmalıdır.",
+    "severity": "high",
+    "resolverCategories": [
+      "pneumatic_cylinder"
+    ]
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": null,
+    "id": "pneumatic_stroke",
+    "fieldTr": "Strok",
+    "reasonTr": "Strok değeri kodda net okunamadı veya doğrulanmalıdır.",
+    "severity": "high",
+    "resolverCategories": [
+      "pneumatic_cylinder"
+    ]
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": null,
+    "id": "pneumatic_cushioning",
+    "fieldTr": "Sönümleme",
+    "reasonTr": "Sönümleme seçeneği üreticiye göre değişebilir.",
+    "severity": "medium",
+    "resolverCategories": [
+      "pneumatic_cylinder"
+    ]
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": null,
+    "id": "pneumatic_port_thread",
+    "fieldTr": "Port / diş",
+    "reasonTr": "Port ve diş tipi katalogdan doğrulanmalıdır.",
+    "severity": "medium",
+    "resolverCategories": [
+      "pneumatic_cylinder"
+    ]
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": null,
+    "id": "pneumatic_mounting",
+    "fieldTr": "Montaj",
+    "reasonTr": "Montaj arayüzü seri ve üreticiye göre değişebilir.",
+    "severity": "medium",
+    "resolverCategories": [
+      "pneumatic_cylinder"
+    ]
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": null,
+    "id": "pneumatic_sensor",
+    "fieldTr": "Sensör uyumu",
+    "reasonTr": "Sensör yuvası ve kablo seçenekleri kontrol edilmelidir.",
+    "severity": "medium",
+    "resolverCategories": [
+      "pneumatic_cylinder"
+    ]
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": null,
+    "id": "pneumatic_rod_end",
+    "fieldTr": "Mil ucu",
+    "reasonTr": "Mil ucu ve bağlantı detayları doğrulanmalıdır.",
+    "severity": "medium",
+    "resolverCategories": [
+      "pneumatic_cylinder"
+    ]
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": null,
+    "id": "pneumatic_manufacturer_series",
+    "fieldTr": "Üretici / seri farkı",
+    "reasonTr": "Farklı üretici serileri birebir aynı olmayabilir.",
+    "severity": "medium",
+    "resolverCategories": [
+      "pneumatic_cylinder"
+    ]
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": null,
+    "id": "hydraulic_spool_function",
+    "fieldTr": "Sürgü / fonksiyon",
+    "reasonTr": "Sürgü tipi ve sembolü katalogdan doğrulanmalıdır.",
+    "severity": "high",
+    "resolverCategories": [
+      "hydraulic_valve"
+    ]
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": null,
+    "id": "hydraulic_coil_voltage",
+    "fieldTr": "Bobin voltajı",
+    "reasonTr": "Bobin voltajı ve bağlantı tipi sipariş öncesi kontrol edilmelidir.",
+    "severity": "high",
+    "resolverCategories": [
+      "hydraulic_valve"
+    ]
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": null,
+    "id": "hydraulic_connector",
+    "fieldTr": "Konnektör",
+    "reasonTr": "Konnektör ve bobin bağlantısı seri ve üreticiye göre değişebilir.",
+    "severity": "medium",
+    "resolverCategories": [
+      "hydraulic_valve"
+    ]
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": null,
+    "id": "hydraulic_pressure_rating",
+    "fieldTr": "Basınç değeri",
+    "reasonTr": "Maksimum çalışma basıncı uygulama koşullarına göre doğrulanmalıdır.",
+    "severity": "high",
+    "resolverCategories": [
+      "hydraulic_valve"
+    ]
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": null,
+    "id": "hydraulic_flow_rating",
+    "fieldTr": "Debi değeri",
+    "reasonTr": "Nominal debi çalışma basıncına göre değişir; katalog değeri kontrol edilmelidir.",
+    "severity": "medium",
+    "resolverCategories": [
+      "hydraulic_valve"
+    ]
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": null,
+    "id": "hydraulic_seal_material",
+    "fieldTr": "Conta malzemesi",
+    "reasonTr": "Conta malzemesi ve sıvı uyumu katalogdan doğrulanmalıdır.",
+    "severity": "medium",
+    "resolverCategories": [
+      "hydraulic_valve"
+    ]
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": null,
+    "id": "hydraulic_manual_override",
+    "fieldTr": "Manuel kumanda",
+    "reasonTr": "Manuel kumanda veya mekanik kilit seçeneği kodda farklı ifade edilebilir.",
+    "severity": "medium",
+    "resolverCategories": [
+      "hydraulic_valve"
+    ]
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": null,
+    "id": "pneumatic_seal_material",
+    "fieldTr": "Conta / sızdırmazlık",
+    "reasonTr": "Conta malzemesi ve sızdırmazlık detayları seri ve uygulamaya göre değişir; katalogdan doğrulanmalıdır.",
+    "severity": "medium",
+    "resolverCategories": [
+      "pneumatic_cylinder"
+    ]
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": null,
+    "id": "hydraulic_mounting_cetop",
+    "fieldTr": "Montaj / CETOP NG",
+    "reasonTr": "CETOP/NG montaj ölçüsü ve bağlantı yüzeyi katalogdan doğrulanmalıdır.",
+    "severity": "medium",
+    "resolverCategories": [
+      "hydraulic_valve"
+    ]
+  }
+]

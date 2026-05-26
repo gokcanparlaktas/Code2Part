@@ -15,6 +15,8 @@ export interface CatalogValidationSummary {
   equivalenceGroupCount: number;
   equivalentLinksCount: number;
   reliability: ReliabilitySummary;
+  functionMappingsCount?: number;
+  checkRulesCount?: number;
 }
 
 export interface CatalogValidationResult {

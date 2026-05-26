@@ -7,6 +7,8 @@ import type {
   UnresolvedSearchEntry,
 } from '@/types/searchHistory';
 
+import { dedupeSearchHistoryByNormalizedCode } from './searchHistoryDedupe';
+
 const STORAGE_KEY = '@code2part/search_store';
 const MAX_HISTORY = 50;
 
@@ -66,6 +68,7 @@ export async function recordSearch(
     searchedAt: new Date().toISOString(),
   };
 
+  store.searches = dedupeSearchHistoryByNormalizedCode(store.searches, identification.normalizedCode);
   store.searches = [entry, ...store.searches].slice(0, MAX_HISTORY);
   await writeStore(store);
   return entry;

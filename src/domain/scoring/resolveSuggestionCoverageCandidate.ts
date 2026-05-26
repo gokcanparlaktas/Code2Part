@@ -1,21 +1,15 @@
-import exampleProductCodesData from '@/data/exampleProductCodes.json';
-import hydraulicValveExampleCodesData from '@/data/hydraulicValveExampleCodes.json';
+import { getAllCatalogExampleCodes } from '@/domain/catalog/adapters/catalogV2Adapter';
 import { identifyProduct } from '@/domain/resolver/identifyProduct';
 import { normalizeCode } from '@/domain/resolver/normalizeCode';
 
 import { compactProductCode } from './calculateSuggestionMatchPercentage';
-
-const exampleProductCodes = [
-  ...(exampleProductCodesData as string[]),
-  ...(hydraulicValveExampleCodesData as string[]),
-];
 
 let longestExampleBySeriesId: Map<string, string> | null = null;
 
 function buildLongestExampleBySeriesId(): Map<string, string> {
   const best = new Map<string, { code: string; length: number }>();
 
-  for (const code of exampleProductCodes) {
+  for (const code of getAllCatalogExampleCodes()) {
     const normalized = normalizeCode(code);
     const identification = identifyProduct(code, normalized);
     if (!identification.seriesId) {

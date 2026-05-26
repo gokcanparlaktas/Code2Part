@@ -103,7 +103,10 @@ describe('suggestProducts', () => {
     expect(suggestions.every((s) => s.confidence !== 'high')).toBe(true);
     expect(
       suggestions.some(
-        (s) => s.matchedBy === 'dimension_fragment' || s.matchedBy === 'token_match'
+        (s) =>
+          s.matchedBy === 'dimension_fragment' ||
+          s.matchedBy === 'token_match' ||
+          s.matchedBy === 'example_code_contains'
       )
     ).toBe(true);
   });

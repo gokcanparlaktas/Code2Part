@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { DemoDisclaimerNote } from '@/components/DemoDisclaimerNote';
 import { EvidenceDetails } from '@/components/EvidenceDetails';
 import { LowConfidenceWarningCard } from '@/components/LowConfidenceWarningCard';
 import { ProductCard } from '@/components/ProductCard';
@@ -21,7 +22,7 @@ import { isSeriesDataUnverified } from '@/utils/catalogReliability';
 
 export default function ResultScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
-  const inputCode = typeof code === 'string' ? code : '';
+  const inputCode = typeof code === 'string' ? code.trim() : '';
   const [alreadySaved, setAlreadySaved] = useState(false);
 
   const { identification, hasEquivalents, isUnresolved, suggestions } = useMemo(() => {
@@ -77,7 +78,16 @@ export default function ResultScreen() {
   if (!inputCode) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Sorgulanacak ürün kodu bulunamadı.</Text>
+        <Text style={styles.emptyTitle}>Ürün kodu girilmedi</Text>
+        <Text style={styles.emptyText}>
+          Ana ekrandan bir ürün kodu yazıp aramayı tekrar deneyin.
+        </Text>
+        <Pressable
+          style={({ pressed }) => [styles.backButton, pressed && styles.buttonPressed]}
+          onPress={() => router.replace('/')}
+        >
+          <Text style={styles.backButtonText}>Ana ekrana dön</Text>
+        </Pressable>
       </View>
     );
   }
@@ -93,7 +103,8 @@ export default function ResultScreen() {
           {suggestions.length > 0 ? (
             <>
               <Text style={styles.partialIntro}>
-                Tam ürün kodu tanınamadı, ancak aşağıdaki seriler olası görünüyor.
+                Tam ürün kodu tanınamadı; aşağıdaki seriler olası görünüyor. Kesin eşleşme
+                değildir — tam kodu veya marka/seri bilgisini deneyin.
               </Text>
               <PartialSuggestionsPanel
                 title="Olası seriler"
@@ -156,6 +167,8 @@ export default function ResultScreen() {
           )}
         </>
       )}
+
+      <DemoDisclaimerNote compact />
     </ScrollView>
   );
 }
@@ -202,12 +215,34 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     flex: 1,
+    gap: 12,
     justifyContent: 'center',
     padding: 24,
+  },
+  emptyTitle: {
+    color: '#0F172A',
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   emptyText: {
     color: '#64748B',
     fontSize: 16,
+    lineHeight: 24,
     textAlign: 'center',
+  },
+  backButton: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    backgroundColor: '#1E40AF',
+    borderRadius: 12,
+    marginTop: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+  },
+  backButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

@@ -1,0 +1,3564 @@
+[
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": "2026-05-26",
+    "notesTr": "MVP veri seti için manuel eklenmiştir. Gerçek katalog kaynağıyla doğrulanmalıdır. Demo v1 genişletmesi: örnek kodlar ve arama takma adları test amaçlıdır; sipariş öncesi üretici kataloğu ile doğrulanmalıdır.",
+    "id": "festo_dsbc",
+    "brand": "Festo",
+    "series": "DSBC",
+    "category": "ISO 15552 pnömatik silindir",
+    "resolverCategory": "pneumatic_cylinder",
+    "productTypeLabel": "Pnömatik silindir",
+    "productCategoryLabel": "ISO 15552 pnömatik silindir",
+    "standardFamily": "ISO 15552",
+    "technology": "Pnömatik",
+    "equivalenceGroupId": "pneumatic_iso_15552_cylinder",
+    "codePrefix": "DSBC",
+    "matchPrefixes": [
+      "DSBC"
+    ],
+    "suggestedCodeTemplate": "DSBC-{bore}-{stroke}",
+    "confidenceWhenMatched": "high",
+    "searchAliases": [
+      "Festo",
+      "DSBC",
+      "dsbc",
+      "festo dsbc",
+      "festo iso 15552",
+      "iso 15552 cylinder",
+      "festo pneumatic cylinder"
+    ],
+    "exampleCodes": [
+      "DSBC-50-100-PPVA-N3",
+      "DSBC-32-25-PPSA-N3",
+      "DSBC-63-200-PPVA",
+      "DSBC-40-160",
+      "DSBC-80-320"
+    ],
+    "attributes": [
+      {
+        "key": "bore",
+        "labelTr": "Çap",
+        "valueType": "number",
+        "source": "code"
+      },
+      {
+        "key": "stroke",
+        "labelTr": "Strok",
+        "valueType": "number",
+        "source": "code"
+      },
+      {
+        "key": "standard_family",
+        "labelTr": "Standart ailesi",
+        "valueType": "string",
+        "source": "standard",
+        "defaultValue": "ISO 15552"
+      }
+    ],
+    "knownTokens": [
+      {
+        "token": "PPVA",
+        "meaningTr": "Sönümleme seçeneği",
+        "confidence": "medium",
+        "requiresCatalogCheck": true,
+        "role": "cushioning"
+      },
+      {
+        "token": "PPSA",
+        "meaningTr": "Sönümleme seçeneği",
+        "confidence": "medium",
+        "requiresCatalogCheck": true,
+        "role": "cushioning"
+      },
+      {
+        "token": "N3",
+        "meaningTr": "Sensör yuvası / seçenek",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "sensor"
+      },
+      {
+        "token": "D",
+        "meaningTr": "Strok sonu seçeneği",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "options"
+      },
+      {
+        "token": "A",
+        "meaningTr": "Strok sonu seçeneği",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "options"
+      }
+    ],
+    "checkRuleRefs": [
+      {
+        "ruleId": "pneumatic_bore"
+      },
+      {
+        "ruleId": "pneumatic_stroke"
+      },
+      {
+        "ruleId": "pneumatic_cushioning"
+      },
+      {
+        "ruleId": "pneumatic_port_thread"
+      },
+      {
+        "ruleId": "pneumatic_mounting"
+      },
+      {
+        "ruleId": "pneumatic_sensor"
+      },
+      {
+        "ruleId": "pneumatic_rod_end"
+      },
+      {
+        "ruleId": "pneumatic_manufacturer_series"
+      },
+      {
+        "ruleId": "pneumatic_seal_material"
+      }
+    ],
+    "parsingRules": [
+      {
+        "id": "festo_dsbc-dash",
+        "pattern": "^DSBC-(\\d+)-(\\d+)",
+        "boreGroup": 1,
+        "strokeGroup": 2
+      }
+    ],
+    "comparisonProfileRef": "legacy:equivalenceProfiles",
+    "codePatterns": {
+      "boreStrokeFallback": [
+        {
+          "id": "fallback-bore-stroke-x",
+          "kind": "bore_stroke",
+          "pattern": "(\\d{1,3})X(\\d{1,4})",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-dash",
+          "kind": "bore_stroke",
+          "pattern": "-(\\d{1,3})-(\\d{1,4})(?:-|$)",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-compact",
+          "kind": "bore_stroke",
+          "pattern": "^[A-Z]+(\\d{1,3})-(\\d{1,4})[A-Z]*$",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-sms",
+          "kind": "bore_stroke",
+          "pattern": "S(\\d{2,3})MS-(\\d{2,4})",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-tail",
+          "kind": "bore_stroke",
+          "pattern": "(\\d{1,3})-(\\d{1,4})$",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        }
+      ]
+    }
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": "2026-05-26",
+    "notesTr": "MVP veri seti için manuel eklenmiştir. Gerçek katalog kaynağıyla doğrulanmalıdır. Demo v1 genişletmesi: örnek kodlar ve arama takma adları test amaçlıdır; sipariş öncesi üretici kataloğu ile doğrulanmalıdır.",
+    "id": "festo_adn",
+    "brand": "Festo",
+    "series": "ADN",
+    "category": "Kompakt pnömatik silindir",
+    "resolverCategory": "pneumatic_cylinder",
+    "productTypeLabel": "Pnömatik silindir",
+    "productCategoryLabel": "Kompakt pnömatik silindir",
+    "standardFamily": "ISO 21287",
+    "technology": "Pnömatik",
+    "equivalenceGroupId": "pneumatic_compact_cylinder",
+    "codePrefix": "ADN",
+    "matchPrefixes": [
+      "ADN"
+    ],
+    "suggestedCodeTemplate": "ADN-{bore}-{stroke}",
+    "confidenceWhenMatched": "high",
+    "searchAliases": [
+      "Festo",
+      "ADN",
+      "adn",
+      "festo adn",
+      "festo compact cylinder",
+      "iso 21287 cylinder"
+    ],
+    "exampleCodes": [
+      "ADN-32-50",
+      "ADN-40-100",
+      "ADN-25-40",
+      "ADN-50-80"
+    ],
+    "attributes": [
+      {
+        "key": "bore",
+        "labelTr": "Çap",
+        "valueType": "number",
+        "source": "code"
+      },
+      {
+        "key": "stroke",
+        "labelTr": "Strok",
+        "valueType": "number",
+        "source": "code"
+      },
+      {
+        "key": "standard_family",
+        "labelTr": "Standart ailesi",
+        "valueType": "string",
+        "source": "standard",
+        "defaultValue": "ISO 21287"
+      }
+    ],
+    "knownTokens": [
+      {
+        "token": "PPVA",
+        "meaningTr": "Sönümleme seçeneği",
+        "confidence": "medium",
+        "requiresCatalogCheck": true,
+        "role": "cushioning"
+      },
+      {
+        "token": "PPSA",
+        "meaningTr": "Sönümleme seçeneği",
+        "confidence": "medium",
+        "requiresCatalogCheck": true,
+        "role": "cushioning"
+      },
+      {
+        "token": "N3",
+        "meaningTr": "Sensör yuvası / seçenek",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "sensor"
+      },
+      {
+        "token": "D",
+        "meaningTr": "Strok sonu seçeneği",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "options"
+      },
+      {
+        "token": "A",
+        "meaningTr": "Strok sonu seçeneği",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "options"
+      }
+    ],
+    "checkRuleRefs": [
+      {
+        "ruleId": "pneumatic_bore"
+      },
+      {
+        "ruleId": "pneumatic_stroke"
+      },
+      {
+        "ruleId": "pneumatic_cushioning"
+      },
+      {
+        "ruleId": "pneumatic_port_thread"
+      },
+      {
+        "ruleId": "pneumatic_mounting"
+      },
+      {
+        "ruleId": "pneumatic_sensor"
+      },
+      {
+        "ruleId": "pneumatic_rod_end"
+      },
+      {
+        "ruleId": "pneumatic_manufacturer_series"
+      },
+      {
+        "ruleId": "pneumatic_seal_material"
+      }
+    ],
+    "parsingRules": [
+      {
+        "id": "festo_adn-dash",
+        "pattern": "^ADN-(\\d+)-(\\d+)",
+        "boreGroup": 1,
+        "strokeGroup": 2
+      }
+    ],
+    "comparisonProfileRef": "legacy:equivalenceProfiles",
+    "codePatterns": {
+      "boreStrokeFallback": [
+        {
+          "id": "fallback-bore-stroke-x",
+          "kind": "bore_stroke",
+          "pattern": "(\\d{1,3})X(\\d{1,4})",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-dash",
+          "kind": "bore_stroke",
+          "pattern": "-(\\d{1,3})-(\\d{1,4})(?:-|$)",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-compact",
+          "kind": "bore_stroke",
+          "pattern": "^[A-Z]+(\\d{1,3})-(\\d{1,4})[A-Z]*$",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-sms",
+          "kind": "bore_stroke",
+          "pattern": "S(\\d{2,3})MS-(\\d{2,4})",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-tail",
+          "kind": "bore_stroke",
+          "pattern": "(\\d{1,3})-(\\d{1,4})$",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        }
+      ]
+    }
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": "2026-05-26",
+    "notesTr": "MVP veri seti için manuel eklenmiştir. Gerçek katalog kaynağıyla doğrulanmalıdır. Demo v1 genişletmesi: örnek kodlar ve arama takma adları test amaçlıdır; sipariş öncesi üretici kataloğu ile doğrulanmalıdır.",
+    "id": "festo_dsnu",
+    "brand": "Festo",
+    "series": "DSNU",
+    "category": "Yuvarlak mini pnömatik silindir",
+    "resolverCategory": "pneumatic_cylinder",
+    "productTypeLabel": "Pnömatik silindir",
+    "productCategoryLabel": "Yuvarlak mini pnömatik silindir",
+    "standardFamily": "ISO 6432",
+    "technology": "Pnömatik",
+    "equivalenceGroupId": "pneumatic_round_mini_cylinder",
+    "codePrefix": "DSNU",
+    "matchPrefixes": [
+      "DSNU"
+    ],
+    "suggestedCodeTemplate": "DSNU-{bore}-{stroke}",
+    "confidenceWhenMatched": "high",
+    "searchAliases": [
+      "Festo",
+      "DSNU",
+      "dsnu",
+      "festo dsnu",
+      "festo round cylinder",
+      "iso 6432 cylinder",
+      "mini cylinder festo"
+    ],
+    "exampleCodes": [
+      "DSNU-25-80-P-A",
+      "DSNU-16-50-P-A",
+      "DSNU-32-100-P-A"
+    ],
+    "attributes": [
+      {
+        "key": "bore",
+        "labelTr": "Çap",
+        "valueType": "number",
+        "source": "code"
+      },
+      {
+        "key": "stroke",
+        "labelTr": "Strok",
+        "valueType": "number",
+        "source": "code"
+      },
+      {
+        "key": "standard_family",
+        "labelTr": "Standart ailesi",
+        "valueType": "string",
+        "source": "standard",
+        "defaultValue": "ISO 6432"
+      }
+    ],
+    "knownTokens": [
+      {
+        "token": "PPVA",
+        "meaningTr": "Sönümleme seçeneği",
+        "confidence": "medium",
+        "requiresCatalogCheck": true,
+        "role": "cushioning"
+      },
+      {
+        "token": "PPSA",
+        "meaningTr": "Sönümleme seçeneği",
+        "confidence": "medium",
+        "requiresCatalogCheck": true,
+        "role": "cushioning"
+      },
+      {
+        "token": "N3",
+        "meaningTr": "Sensör yuvası / seçenek",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "sensor"
+      },
+      {
+        "token": "D",
+        "meaningTr": "Strok sonu seçeneği",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "options"
+      },
+      {
+        "token": "A",
+        "meaningTr": "Strok sonu seçeneği",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "options"
+      }
+    ],
+    "checkRuleRefs": [
+      {
+        "ruleId": "pneumatic_bore"
+      },
+      {
+        "ruleId": "pneumatic_stroke"
+      },
+      {
+        "ruleId": "pneumatic_cushioning"
+      },
+      {
+        "ruleId": "pneumatic_port_thread"
+      },
+      {
+        "ruleId": "pneumatic_mounting"
+      },
+      {
+        "ruleId": "pneumatic_sensor"
+      },
+      {
+        "ruleId": "pneumatic_rod_end"
+      },
+      {
+        "ruleId": "pneumatic_manufacturer_series"
+      },
+      {
+        "ruleId": "pneumatic_seal_material"
+      }
+    ],
+    "parsingRules": [
+      {
+        "id": "festo_dsnu-dash",
+        "pattern": "^DSNU-(\\d+)-(\\d+)",
+        "boreGroup": 1,
+        "strokeGroup": 2
+      }
+    ],
+    "comparisonProfileRef": "legacy:equivalenceProfiles",
+    "codePatterns": {
+      "boreStrokeFallback": [
+        {
+          "id": "fallback-bore-stroke-x",
+          "kind": "bore_stroke",
+          "pattern": "(\\d{1,3})X(\\d{1,4})",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-dash",
+          "kind": "bore_stroke",
+          "pattern": "-(\\d{1,3})-(\\d{1,4})(?:-|$)",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-compact",
+          "kind": "bore_stroke",
+          "pattern": "^[A-Z]+(\\d{1,3})-(\\d{1,4})[A-Z]*$",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-sms",
+          "kind": "bore_stroke",
+          "pattern": "S(\\d{2,3})MS-(\\d{2,4})",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-tail",
+          "kind": "bore_stroke",
+          "pattern": "(\\d{1,3})-(\\d{1,4})$",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        }
+      ]
+    }
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": "2026-05-26",
+    "notesTr": "MVP veri seti için manuel eklenmiştir. Gerçek katalog kaynağıyla doğrulanmalıdır. Demo v1 genişletmesi: örnek kodlar ve arama takma adları test amaçlıdır; sipariş öncesi üretici kataloğu ile doğrulanmalıdır.",
+    "id": "smc_cp96",
+    "brand": "SMC",
+    "series": "CP96",
+    "category": "ISO 15552 pnömatik silindir",
+    "resolverCategory": "pneumatic_cylinder",
+    "productTypeLabel": "Pnömatik silindir",
+    "productCategoryLabel": "ISO 15552 pnömatik silindir",
+    "standardFamily": "ISO 15552",
+    "technology": "Pnömatik",
+    "equivalenceGroupId": "pneumatic_iso_15552_cylinder",
+    "codePrefix": "CP96",
+    "matchPrefixes": [
+      "CP96SDB",
+      "CP96"
+    ],
+    "suggestedCodeTemplate": "CP96-{bore}-{stroke}",
+    "confidenceWhenMatched": "high",
+    "searchAliases": [
+      "SMC",
+      "CP96",
+      "CP96SDB",
+      "cp96",
+      "smc cp96",
+      "smc iso cylinder",
+      "smc iso 15552"
+    ],
+    "exampleCodes": [
+      "CP96-50-100",
+      "CP96SDB50-100",
+      "CP96-63-200",
+      "CP96SDB32-80",
+      "CP96-40-160"
+    ],
+    "attributes": [
+      {
+        "key": "bore",
+        "labelTr": "Çap",
+        "valueType": "number",
+        "source": "code"
+      },
+      {
+        "key": "stroke",
+        "labelTr": "Strok",
+        "valueType": "number",
+        "source": "code"
+      },
+      {
+        "key": "standard_family",
+        "labelTr": "Standart ailesi",
+        "valueType": "string",
+        "source": "standard",
+        "defaultValue": "ISO 15552"
+      }
+    ],
+    "knownTokens": [
+      {
+        "token": "PPVA",
+        "meaningTr": "Sönümleme seçeneği",
+        "confidence": "medium",
+        "requiresCatalogCheck": true,
+        "role": "cushioning"
+      },
+      {
+        "token": "PPSA",
+        "meaningTr": "Sönümleme seçeneği",
+        "confidence": "medium",
+        "requiresCatalogCheck": true,
+        "role": "cushioning"
+      },
+      {
+        "token": "N3",
+        "meaningTr": "Sensör yuvası / seçenek",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "sensor"
+      },
+      {
+        "token": "D",
+        "meaningTr": "Strok sonu seçeneği",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "options"
+      },
+      {
+        "token": "A",
+        "meaningTr": "Strok sonu seçeneği",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "options"
+      },
+      {
+        "token": "SDB",
+        "meaningTr": "Montaj / sensör yuvası varyantı (SDB)",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "options"
+      }
+    ],
+    "checkRuleRefs": [
+      {
+        "ruleId": "pneumatic_bore"
+      },
+      {
+        "ruleId": "pneumatic_stroke"
+      },
+      {
+        "ruleId": "pneumatic_cushioning"
+      },
+      {
+        "ruleId": "pneumatic_port_thread"
+      },
+      {
+        "ruleId": "pneumatic_mounting"
+      },
+      {
+        "ruleId": "pneumatic_sensor"
+      },
+      {
+        "ruleId": "pneumatic_rod_end"
+      },
+      {
+        "ruleId": "pneumatic_manufacturer_series"
+      },
+      {
+        "ruleId": "pneumatic_seal_material"
+      }
+    ],
+    "parsingRules": [
+      {
+        "id": "smc_cp96-sdb",
+        "pattern": "^CP96SDB(\\d+)-(\\d+)",
+        "boreGroup": 1,
+        "strokeGroup": 2
+      },
+      {
+        "id": "smc_cp96-dash",
+        "pattern": "^CP96-(\\d+)-(\\d+)",
+        "boreGroup": 1,
+        "strokeGroup": 2
+      }
+    ],
+    "comparisonProfileRef": "legacy:equivalenceProfiles",
+    "codePatterns": {
+      "boreStrokeFallback": [
+        {
+          "id": "fallback-bore-stroke-x",
+          "kind": "bore_stroke",
+          "pattern": "(\\d{1,3})X(\\d{1,4})",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-dash",
+          "kind": "bore_stroke",
+          "pattern": "-(\\d{1,3})-(\\d{1,4})(?:-|$)",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-compact",
+          "kind": "bore_stroke",
+          "pattern": "^[A-Z]+(\\d{1,3})-(\\d{1,4})[A-Z]*$",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-sms",
+          "kind": "bore_stroke",
+          "pattern": "S(\\d{2,3})MS-(\\d{2,4})",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-tail",
+          "kind": "bore_stroke",
+          "pattern": "(\\d{1,3})-(\\d{1,4})$",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        }
+      ]
+    }
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": "2026-05-26",
+    "notesTr": "MVP veri seti için manuel eklenmiştir. Gerçek katalog kaynağıyla doğrulanmalıdır. Demo v1 genişletmesi: örnek kodlar ve arama takma adları test amaçlıdır; sipariş öncesi üretici kataloğu ile doğrulanmalıdır.",
+    "id": "smc_c96",
+    "brand": "SMC",
+    "series": "C96",
+    "category": "ISO 15552 pnömatik silindir",
+    "resolverCategory": "pneumatic_cylinder",
+    "productTypeLabel": "Pnömatik silindir",
+    "productCategoryLabel": "ISO 15552 pnömatik silindir",
+    "standardFamily": "ISO 15552",
+    "technology": "Pnömatik",
+    "equivalenceGroupId": "pneumatic_iso_15552_cylinder",
+    "codePrefix": "C96",
+    "matchPrefixes": [
+      "C96SDB",
+      "C96"
+    ],
+    "suggestedCodeTemplate": "C96SDB{bore}-{stroke}",
+    "confidenceWhenMatched": "high",
+    "searchAliases": [
+      "SMC",
+      "C96",
+      "C96SDB",
+      "c96",
+      "smc c96",
+      "smc c96sdb"
+    ],
+    "exampleCodes": [
+      "C96SDB50-100",
+      "C96-40-80",
+      "C96SDB63-200"
+    ],
+    "attributes": [
+      {
+        "key": "bore",
+        "labelTr": "Çap",
+        "valueType": "number",
+        "source": "code"
+      },
+      {
+        "key": "stroke",
+        "labelTr": "Strok",
+        "valueType": "number",
+        "source": "code"
+      },
+      {
+        "key": "standard_family",
+        "labelTr": "Standart ailesi",
+        "valueType": "string",
+        "source": "standard",
+        "defaultValue": "ISO 15552"
+      }
+    ],
+    "knownTokens": [
+      {
+        "token": "PPVA",
+        "meaningTr": "Sönümleme seçeneği",
+        "confidence": "medium",
+        "requiresCatalogCheck": true,
+        "role": "cushioning"
+      },
+      {
+        "token": "PPSA",
+        "meaningTr": "Sönümleme seçeneği",
+        "confidence": "medium",
+        "requiresCatalogCheck": true,
+        "role": "cushioning"
+      },
+      {
+        "token": "N3",
+        "meaningTr": "Sensör yuvası / seçenek",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "sensor"
+      },
+      {
+        "token": "D",
+        "meaningTr": "Strok sonu seçeneği",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "options"
+      },
+      {
+        "token": "A",
+        "meaningTr": "Strok sonu seçeneği",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "options"
+      },
+      {
+        "token": "SDB",
+        "meaningTr": "Montaj / sensör yuvası varyantı (SDB)",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "options"
+      }
+    ],
+    "checkRuleRefs": [
+      {
+        "ruleId": "pneumatic_bore"
+      },
+      {
+        "ruleId": "pneumatic_stroke"
+      },
+      {
+        "ruleId": "pneumatic_cushioning"
+      },
+      {
+        "ruleId": "pneumatic_port_thread"
+      },
+      {
+        "ruleId": "pneumatic_mounting"
+      },
+      {
+        "ruleId": "pneumatic_sensor"
+      },
+      {
+        "ruleId": "pneumatic_rod_end"
+      },
+      {
+        "ruleId": "pneumatic_manufacturer_series"
+      },
+      {
+        "ruleId": "pneumatic_seal_material"
+      }
+    ],
+    "parsingRules": [
+      {
+        "id": "smc_c96-sdb",
+        "pattern": "^C96SDB(\\d+)-(\\d+)",
+        "boreGroup": 1,
+        "strokeGroup": 2
+      },
+      {
+        "id": "smc_c96-dash",
+        "pattern": "^C96-(\\d+)-(\\d+)",
+        "boreGroup": 1,
+        "strokeGroup": 2
+      }
+    ],
+    "comparisonProfileRef": "legacy:equivalenceProfiles",
+    "codePatterns": {
+      "boreStrokeFallback": [
+        {
+          "id": "fallback-bore-stroke-x",
+          "kind": "bore_stroke",
+          "pattern": "(\\d{1,3})X(\\d{1,4})",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-dash",
+          "kind": "bore_stroke",
+          "pattern": "-(\\d{1,3})-(\\d{1,4})(?:-|$)",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-compact",
+          "kind": "bore_stroke",
+          "pattern": "^[A-Z]+(\\d{1,3})-(\\d{1,4})[A-Z]*$",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-sms",
+          "kind": "bore_stroke",
+          "pattern": "S(\\d{2,3})MS-(\\d{2,4})",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-tail",
+          "kind": "bore_stroke",
+          "pattern": "(\\d{1,3})-(\\d{1,4})$",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        }
+      ]
+    }
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": "2026-05-26",
+    "notesTr": "MVP veri seti için manuel eklenmiştir. Gerçek katalog kaynağıyla doğrulanmalıdır. Demo v1 genişletmesi: örnek kodlar ve arama takma adları test amaçlıdır; sipariş öncesi üretici kataloğu ile doğrulanmalıdır.",
+    "id": "smc_cq2",
+    "brand": "SMC",
+    "series": "CQ2",
+    "category": "Kompakt pnömatik silindir",
+    "resolverCategory": "pneumatic_cylinder",
+    "productTypeLabel": "Pnömatik silindir",
+    "productCategoryLabel": "Kompakt pnömatik silindir",
+    "standardFamily": "ISO 21287",
+    "technology": "Pnömatik",
+    "equivalenceGroupId": "pneumatic_compact_cylinder",
+    "codePrefix": "CQ2",
+    "matchPrefixes": [
+      "CQ2B"
+    ],
+    "suggestedCodeTemplate": "CQ2B{bore}-{stroke}D",
+    "confidenceWhenMatched": "high",
+    "searchAliases": [
+      "SMC",
+      "CQ2",
+      "CQ2B",
+      "cq2",
+      "smc cq2",
+      "smc compact cylinder",
+      "cq2b",
+      "iso 21287 smc"
+    ],
+    "exampleCodes": [
+      "CQ2B32-50D",
+      "CQ2B40-75D",
+      "CQ2B25-30D"
+    ],
+    "attributes": [
+      {
+        "key": "bore",
+        "labelTr": "Çap",
+        "valueType": "number",
+        "source": "code"
+      },
+      {
+        "key": "stroke",
+        "labelTr": "Strok",
+        "valueType": "number",
+        "source": "code"
+      },
+      {
+        "key": "standard_family",
+        "labelTr": "Standart ailesi",
+        "valueType": "string",
+        "source": "standard",
+        "defaultValue": "ISO 21287"
+      }
+    ],
+    "knownTokens": [
+      {
+        "token": "PPVA",
+        "meaningTr": "Sönümleme seçeneği",
+        "confidence": "medium",
+        "requiresCatalogCheck": true,
+        "role": "cushioning"
+      },
+      {
+        "token": "PPSA",
+        "meaningTr": "Sönümleme seçeneği",
+        "confidence": "medium",
+        "requiresCatalogCheck": true,
+        "role": "cushioning"
+      },
+      {
+        "token": "N3",
+        "meaningTr": "Sensör yuvası / seçenek",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "sensor"
+      },
+      {
+        "token": "D",
+        "meaningTr": "Strok sonu seçeneği",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "options"
+      },
+      {
+        "token": "A",
+        "meaningTr": "Strok sonu seçeneği",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "options"
+      }
+    ],
+    "checkRuleRefs": [
+      {
+        "ruleId": "pneumatic_bore"
+      },
+      {
+        "ruleId": "pneumatic_stroke"
+      },
+      {
+        "ruleId": "pneumatic_cushioning"
+      },
+      {
+        "ruleId": "pneumatic_port_thread"
+      },
+      {
+        "ruleId": "pneumatic_mounting"
+      },
+      {
+        "ruleId": "pneumatic_sensor"
+      },
+      {
+        "ruleId": "pneumatic_rod_end"
+      },
+      {
+        "ruleId": "pneumatic_manufacturer_series"
+      },
+      {
+        "ruleId": "pneumatic_seal_material"
+      }
+    ],
+    "parsingRules": [
+      {
+        "id": "smc_cq2-bore",
+        "pattern": "^CQ2B(\\d+)-(\\d+)D?",
+        "boreGroup": 1,
+        "strokeGroup": 2
+      }
+    ],
+    "comparisonProfileRef": "legacy:equivalenceProfiles",
+    "codePatterns": {
+      "boreStrokeFallback": [
+        {
+          "id": "fallback-bore-stroke-x",
+          "kind": "bore_stroke",
+          "pattern": "(\\d{1,3})X(\\d{1,4})",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-dash",
+          "kind": "bore_stroke",
+          "pattern": "-(\\d{1,3})-(\\d{1,4})(?:-|$)",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-compact",
+          "kind": "bore_stroke",
+          "pattern": "^[A-Z]+(\\d{1,3})-(\\d{1,4})[A-Z]*$",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-sms",
+          "kind": "bore_stroke",
+          "pattern": "S(\\d{2,3})MS-(\\d{2,4})",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-tail",
+          "kind": "bore_stroke",
+          "pattern": "(\\d{1,3})-(\\d{1,4})$",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        }
+      ]
+    }
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": "2026-05-26",
+    "notesTr": "MVP veri seti için manuel eklenmiştir. Gerçek katalog kaynağıyla doğrulanmalıdır. Demo v1 genişletmesi: örnek kodlar ve arama takma adları test amaçlıdır; sipariş öncesi üretici kataloğu ile doğrulanmalıdır.",
+    "id": "smc_c85",
+    "brand": "SMC",
+    "series": "C85",
+    "category": "Yuvarlak mini pnömatik silindir",
+    "resolverCategory": "pneumatic_cylinder",
+    "productTypeLabel": "Pnömatik silindir",
+    "productCategoryLabel": "Yuvarlak mini pnömatik silindir",
+    "standardFamily": "ISO 6432",
+    "technology": "Pnömatik",
+    "equivalenceGroupId": "pneumatic_round_mini_cylinder",
+    "codePrefix": "C85",
+    "matchPrefixes": [
+      "C85N"
+    ],
+    "suggestedCodeTemplate": "C85N{bore}-{stroke}",
+    "confidenceWhenMatched": "high",
+    "searchAliases": [
+      "SMC",
+      "C85",
+      "C85N",
+      "c85",
+      "smc c85",
+      "smc round cylinder",
+      "c85n",
+      "iso 6432 smc"
+    ],
+    "exampleCodes": [
+      "C85N25-80",
+      "C85N20-50",
+      "C85N32-100"
+    ],
+    "attributes": [
+      {
+        "key": "bore",
+        "labelTr": "Çap",
+        "valueType": "number",
+        "source": "code"
+      },
+      {
+        "key": "stroke",
+        "labelTr": "Strok",
+        "valueType": "number",
+        "source": "code"
+      },
+      {
+        "key": "standard_family",
+        "labelTr": "Standart ailesi",
+        "valueType": "string",
+        "source": "standard",
+        "defaultValue": "ISO 6432"
+      }
+    ],
+    "knownTokens": [
+      {
+        "token": "PPVA",
+        "meaningTr": "Sönümleme seçeneği",
+        "confidence": "medium",
+        "requiresCatalogCheck": true,
+        "role": "cushioning"
+      },
+      {
+        "token": "PPSA",
+        "meaningTr": "Sönümleme seçeneği",
+        "confidence": "medium",
+        "requiresCatalogCheck": true,
+        "role": "cushioning"
+      },
+      {
+        "token": "N3",
+        "meaningTr": "Sensör yuvası / seçenek",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "sensor"
+      },
+      {
+        "token": "D",
+        "meaningTr": "Strok sonu seçeneği",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "options"
+      },
+      {
+        "token": "A",
+        "meaningTr": "Strok sonu seçeneği",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "options"
+      }
+    ],
+    "checkRuleRefs": [
+      {
+        "ruleId": "pneumatic_bore"
+      },
+      {
+        "ruleId": "pneumatic_stroke"
+      },
+      {
+        "ruleId": "pneumatic_cushioning"
+      },
+      {
+        "ruleId": "pneumatic_port_thread"
+      },
+      {
+        "ruleId": "pneumatic_mounting"
+      },
+      {
+        "ruleId": "pneumatic_sensor"
+      },
+      {
+        "ruleId": "pneumatic_rod_end"
+      },
+      {
+        "ruleId": "pneumatic_manufacturer_series"
+      },
+      {
+        "ruleId": "pneumatic_seal_material"
+      }
+    ],
+    "parsingRules": [
+      {
+        "id": "smc_c85-n",
+        "pattern": "^C85N(\\d+)-(\\d+)",
+        "boreGroup": 1,
+        "strokeGroup": 2
+      }
+    ],
+    "comparisonProfileRef": "legacy:equivalenceProfiles",
+    "codePatterns": {
+      "boreStrokeFallback": [
+        {
+          "id": "fallback-bore-stroke-x",
+          "kind": "bore_stroke",
+          "pattern": "(\\d{1,3})X(\\d{1,4})",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-dash",
+          "kind": "bore_stroke",
+          "pattern": "-(\\d{1,3})-(\\d{1,4})(?:-|$)",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-compact",
+          "kind": "bore_stroke",
+          "pattern": "^[A-Z]+(\\d{1,3})-(\\d{1,4})[A-Z]*$",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-sms",
+          "kind": "bore_stroke",
+          "pattern": "S(\\d{2,3})MS-(\\d{2,4})",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-tail",
+          "kind": "bore_stroke",
+          "pattern": "(\\d{1,3})-(\\d{1,4})$",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        }
+      ]
+    }
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": "2026-05-26",
+    "notesTr": "MVP veri seti için manuel eklenmiştir. Gerçek katalog kaynağıyla doğrulanmalıdır. Demo v1 genişletmesi: örnek kodlar ve arama takma adları test amaçlıdır; sipariş öncesi üretici kataloğu ile doğrulanmalıdır.",
+    "id": "parker_p1d",
+    "brand": "Parker",
+    "series": "P1D",
+    "category": "ISO 15552 pnömatik silindir",
+    "resolverCategory": "pneumatic_cylinder",
+    "productTypeLabel": "Pnömatik silindir",
+    "productCategoryLabel": "ISO 15552 pnömatik silindir",
+    "standardFamily": "ISO 15552",
+    "technology": "Pnömatik",
+    "equivalenceGroupId": "pneumatic_iso_15552_cylinder",
+    "codePrefix": "P1D",
+    "matchPrefixes": [
+      "P1D-S",
+      "P1D"
+    ],
+    "suggestedCodeTemplate": "P1D-{bore}-{stroke}",
+    "confidenceWhenMatched": "high",
+    "searchAliases": [
+      "Parker",
+      "P1D",
+      "P1D-S",
+      "p1d",
+      "parker p1d",
+      "parker iso cylinder",
+      "parker iso 15552"
+    ],
+    "exampleCodes": [
+      "P1D-S050MS-0100",
+      "P1D-S063MS-0200",
+      "P1D-50-100"
+    ],
+    "attributes": [
+      {
+        "key": "bore",
+        "labelTr": "Çap",
+        "valueType": "number",
+        "source": "code"
+      },
+      {
+        "key": "stroke",
+        "labelTr": "Strok",
+        "valueType": "number",
+        "source": "code"
+      },
+      {
+        "key": "standard_family",
+        "labelTr": "Standart ailesi",
+        "valueType": "string",
+        "source": "standard",
+        "defaultValue": "ISO 15552"
+      }
+    ],
+    "knownTokens": [
+      {
+        "token": "PPVA",
+        "meaningTr": "Sönümleme seçeneği",
+        "confidence": "medium",
+        "requiresCatalogCheck": true,
+        "role": "cushioning"
+      },
+      {
+        "token": "PPSA",
+        "meaningTr": "Sönümleme seçeneği",
+        "confidence": "medium",
+        "requiresCatalogCheck": true,
+        "role": "cushioning"
+      },
+      {
+        "token": "N3",
+        "meaningTr": "Sensör yuvası / seçenek",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "sensor"
+      },
+      {
+        "token": "D",
+        "meaningTr": "Strok sonu seçeneği",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "options"
+      },
+      {
+        "token": "A",
+        "meaningTr": "Strok sonu seçeneği",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "options"
+      }
+    ],
+    "checkRuleRefs": [
+      {
+        "ruleId": "pneumatic_bore"
+      },
+      {
+        "ruleId": "pneumatic_stroke"
+      },
+      {
+        "ruleId": "pneumatic_cushioning"
+      },
+      {
+        "ruleId": "pneumatic_port_thread"
+      },
+      {
+        "ruleId": "pneumatic_mounting"
+      },
+      {
+        "ruleId": "pneumatic_sensor"
+      },
+      {
+        "ruleId": "pneumatic_rod_end"
+      },
+      {
+        "ruleId": "pneumatic_manufacturer_series"
+      },
+      {
+        "ruleId": "pneumatic_seal_material"
+      }
+    ],
+    "parsingRules": [
+      {
+        "id": "parker_p1d-ms",
+        "pattern": "^P1D-S(\\d{3})MS-(\\d+)",
+        "boreGroup": 1,
+        "strokeGroup": 2
+      },
+      {
+        "id": "parker_p1d-dash",
+        "pattern": "^P1D-(\\d+)-(\\d+)",
+        "boreGroup": 1,
+        "strokeGroup": 2
+      }
+    ],
+    "comparisonProfileRef": "legacy:equivalenceProfiles",
+    "codePatterns": {
+      "boreStrokeFallback": [
+        {
+          "id": "fallback-bore-stroke-x",
+          "kind": "bore_stroke",
+          "pattern": "(\\d{1,3})X(\\d{1,4})",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-dash",
+          "kind": "bore_stroke",
+          "pattern": "-(\\d{1,3})-(\\d{1,4})(?:-|$)",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-compact",
+          "kind": "bore_stroke",
+          "pattern": "^[A-Z]+(\\d{1,3})-(\\d{1,4})[A-Z]*$",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-sms",
+          "kind": "bore_stroke",
+          "pattern": "S(\\d{2,3})MS-(\\d{2,4})",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-tail",
+          "kind": "bore_stroke",
+          "pattern": "(\\d{1,3})-(\\d{1,4})$",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        }
+      ]
+    }
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": "2026-05-26",
+    "notesTr": "MVP veri seti için manuel eklenmiştir. Gerçek katalog kaynağıyla doğrulanmalıdır. Demo v1 genişletmesi: örnek kodlar ve arama takma adları test amaçlıdır; sipariş öncesi üretici kataloğu ile doğrulanmalıdır.",
+    "id": "aventics_pra",
+    "brand": "Aventics",
+    "series": "PRA",
+    "category": "ISO 15552 pnömatik silindir",
+    "resolverCategory": "pneumatic_cylinder",
+    "productTypeLabel": "Pnömatik silindir",
+    "productCategoryLabel": "ISO 15552 pnömatik silindir",
+    "standardFamily": "ISO 15552",
+    "technology": "Pnömatik",
+    "equivalenceGroupId": "pneumatic_iso_15552_cylinder",
+    "codePrefix": "PRA",
+    "matchPrefixes": [
+      "PRA"
+    ],
+    "suggestedCodeTemplate": "PRA-{bore}-{stroke}",
+    "confidenceWhenMatched": "high",
+    "searchAliases": [
+      "Aventics",
+      "PRA",
+      "pra",
+      "aventics pra",
+      "aventics iso 15552",
+      "emerson aventics cylinder"
+    ],
+    "exampleCodes": [
+      "PRA-50-100",
+      "PRA-63-150",
+      "PRA-40-80"
+    ],
+    "attributes": [
+      {
+        "key": "bore",
+        "labelTr": "Çap",
+        "valueType": "number",
+        "source": "code"
+      },
+      {
+        "key": "stroke",
+        "labelTr": "Strok",
+        "valueType": "number",
+        "source": "code"
+      },
+      {
+        "key": "standard_family",
+        "labelTr": "Standart ailesi",
+        "valueType": "string",
+        "source": "standard",
+        "defaultValue": "ISO 15552"
+      }
+    ],
+    "knownTokens": [
+      {
+        "token": "PPVA",
+        "meaningTr": "Sönümleme seçeneği",
+        "confidence": "medium",
+        "requiresCatalogCheck": true,
+        "role": "cushioning"
+      },
+      {
+        "token": "PPSA",
+        "meaningTr": "Sönümleme seçeneği",
+        "confidence": "medium",
+        "requiresCatalogCheck": true,
+        "role": "cushioning"
+      },
+      {
+        "token": "N3",
+        "meaningTr": "Sensör yuvası / seçenek",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "sensor"
+      },
+      {
+        "token": "D",
+        "meaningTr": "Strok sonu seçeneği",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "options"
+      },
+      {
+        "token": "A",
+        "meaningTr": "Strok sonu seçeneği",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "options"
+      }
+    ],
+    "checkRuleRefs": [
+      {
+        "ruleId": "pneumatic_bore"
+      },
+      {
+        "ruleId": "pneumatic_stroke"
+      },
+      {
+        "ruleId": "pneumatic_cushioning"
+      },
+      {
+        "ruleId": "pneumatic_port_thread"
+      },
+      {
+        "ruleId": "pneumatic_mounting"
+      },
+      {
+        "ruleId": "pneumatic_sensor"
+      },
+      {
+        "ruleId": "pneumatic_rod_end"
+      },
+      {
+        "ruleId": "pneumatic_manufacturer_series"
+      },
+      {
+        "ruleId": "pneumatic_seal_material"
+      }
+    ],
+    "parsingRules": [
+      {
+        "id": "aventics_pra-dash",
+        "pattern": "^PRA-(\\d+)-(\\d+)",
+        "boreGroup": 1,
+        "strokeGroup": 2
+      }
+    ],
+    "comparisonProfileRef": "legacy:equivalenceProfiles",
+    "codePatterns": {
+      "boreStrokeFallback": [
+        {
+          "id": "fallback-bore-stroke-x",
+          "kind": "bore_stroke",
+          "pattern": "(\\d{1,3})X(\\d{1,4})",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-dash",
+          "kind": "bore_stroke",
+          "pattern": "-(\\d{1,3})-(\\d{1,4})(?:-|$)",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-compact",
+          "kind": "bore_stroke",
+          "pattern": "^[A-Z]+(\\d{1,3})-(\\d{1,4})[A-Z]*$",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-sms",
+          "kind": "bore_stroke",
+          "pattern": "S(\\d{2,3})MS-(\\d{2,4})",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-tail",
+          "kind": "bore_stroke",
+          "pattern": "(\\d{1,3})-(\\d{1,4})$",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        }
+      ]
+    }
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": "2026-05-26",
+    "notesTr": "MVP veri seti için manuel eklenmiştir. Gerçek katalog kaynağıyla doğrulanmalıdır. Demo v1 genişletmesi: örnek kodlar ve arama takma adları test amaçlıdır; sipariş öncesi üretici kataloğu ile doğrulanmalıdır.",
+    "id": "airtac_si",
+    "brand": "AirTAC",
+    "series": "SI",
+    "category": "ISO 15552 pnömatik silindir",
+    "resolverCategory": "pneumatic_cylinder",
+    "productTypeLabel": "Pnömatik silindir",
+    "productCategoryLabel": "ISO 15552 pnömatik silindir",
+    "standardFamily": "ISO 15552",
+    "technology": "Pnömatik",
+    "equivalenceGroupId": "pneumatic_iso_15552_cylinder",
+    "codePrefix": "SI",
+    "matchPrefixes": [
+      "SI"
+    ],
+    "suggestedCodeTemplate": "SI-{bore}-{stroke}",
+    "confidenceWhenMatched": "high",
+    "searchAliases": [
+      "AirTAC",
+      "SI",
+      "si",
+      "airtac si",
+      "airtac iso cylinder",
+      "airtac iso 15552"
+    ],
+    "exampleCodes": [
+      "SI50X100",
+      "SI-63-150",
+      "SI63X150",
+      "SI-40-80"
+    ],
+    "attributes": [
+      {
+        "key": "bore",
+        "labelTr": "Çap",
+        "valueType": "number",
+        "source": "code"
+      },
+      {
+        "key": "stroke",
+        "labelTr": "Strok",
+        "valueType": "number",
+        "source": "code"
+      },
+      {
+        "key": "standard_family",
+        "labelTr": "Standart ailesi",
+        "valueType": "string",
+        "source": "standard",
+        "defaultValue": "ISO 15552"
+      }
+    ],
+    "knownTokens": [
+      {
+        "token": "PPVA",
+        "meaningTr": "Sönümleme seçeneği",
+        "confidence": "medium",
+        "requiresCatalogCheck": true,
+        "role": "cushioning"
+      },
+      {
+        "token": "PPSA",
+        "meaningTr": "Sönümleme seçeneği",
+        "confidence": "medium",
+        "requiresCatalogCheck": true,
+        "role": "cushioning"
+      },
+      {
+        "token": "N3",
+        "meaningTr": "Sensör yuvası / seçenek",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "sensor"
+      },
+      {
+        "token": "D",
+        "meaningTr": "Strok sonu seçeneği",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "options"
+      },
+      {
+        "token": "A",
+        "meaningTr": "Strok sonu seçeneği",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "role": "options"
+      }
+    ],
+    "checkRuleRefs": [
+      {
+        "ruleId": "pneumatic_bore"
+      },
+      {
+        "ruleId": "pneumatic_stroke"
+      },
+      {
+        "ruleId": "pneumatic_cushioning"
+      },
+      {
+        "ruleId": "pneumatic_port_thread"
+      },
+      {
+        "ruleId": "pneumatic_mounting"
+      },
+      {
+        "ruleId": "pneumatic_sensor"
+      },
+      {
+        "ruleId": "pneumatic_rod_end"
+      },
+      {
+        "ruleId": "pneumatic_manufacturer_series"
+      },
+      {
+        "ruleId": "pneumatic_seal_material"
+      }
+    ],
+    "parsingRules": [
+      {
+        "id": "airtac_si-x",
+        "pattern": "^SI(\\d+)X(\\d+)",
+        "boreGroup": 1,
+        "strokeGroup": 2
+      },
+      {
+        "id": "airtac_si-dash",
+        "pattern": "^SI-(\\d+)-(\\d+)",
+        "boreGroup": 1,
+        "strokeGroup": 2
+      }
+    ],
+    "comparisonProfileRef": "legacy:equivalenceProfiles",
+    "codePatterns": {
+      "boreStrokeFallback": [
+        {
+          "id": "fallback-bore-stroke-x",
+          "kind": "bore_stroke",
+          "pattern": "(\\d{1,3})X(\\d{1,4})",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-dash",
+          "kind": "bore_stroke",
+          "pattern": "-(\\d{1,3})-(\\d{1,4})(?:-|$)",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-compact",
+          "kind": "bore_stroke",
+          "pattern": "^[A-Z]+(\\d{1,3})-(\\d{1,4})[A-Z]*$",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-sms",
+          "kind": "bore_stroke",
+          "pattern": "S(\\d{2,3})MS-(\\d{2,4})",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        },
+        {
+          "id": "fallback-bore-stroke-tail",
+          "kind": "bore_stroke",
+          "pattern": "(\\d{1,3})-(\\d{1,4})$",
+          "boreGroup": 1,
+          "strokeGroup": 2
+        }
+      ]
+    }
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": "2026-05-26",
+    "notesTr": "Hidrolik valf MVP veri seti. Katalog doğrulaması gerekir. Demo v1 genişletmesi: örnek kodlar ve arama takma adları test amaçlıdır; sipariş öncesi üretici kataloğu ile doğrulanmalıdır.",
+    "id": "rexroth_4we6",
+    "brand": "Rexroth",
+    "series": "4WE6",
+    "category": "CETOP 03 / NG6 yön kontrol valfi",
+    "resolverCategory": "hydraulic_valve",
+    "productTypeLabel": "Hidrolik yön kontrol valfi",
+    "productCategoryLabel": "CETOP 03 / NG6 hidrolik yön kontrol valfi",
+    "standardFamily": "CETOP 03 / NG6",
+    "technology": "Hidrolik",
+    "equivalenceGroupId": "hydraulic_cetop_03_ng6_valve",
+    "codePrefix": "4WE6",
+    "matchPrefixes": [
+      "4WE6"
+    ],
+    "confidenceWhenMatched": "medium",
+    "cetopNgLabel": "CETOP 03 / NG6",
+    "defaultCoilVoltageTr": "24 V DC (EG24 tipik)",
+    "searchAliases": [
+      "Rexroth",
+      "4WE6",
+      "4WE 6",
+      "4WE6E",
+      "rexroth ng6",
+      "rexroth cetop 3",
+      "rexroth cetop03",
+      "ng6 valve"
+    ],
+    "exampleCodes": [
+      "4WE6E-6X/EG24N9K4",
+      "4WE6J-6X/EG24N9K4",
+      "4WE6G-6X/EG24N9K4",
+      "4WE6H-6X/EG24N9K4"
+    ],
+    "attributes": [
+      {
+        "key": "cetop_ng",
+        "labelTr": "CETOP / NG",
+        "valueType": "string",
+        "source": "series_table",
+        "defaultValue": "CETOP 03 / NG6"
+      },
+      {
+        "key": "function_token",
+        "labelTr": "Sürgü / fonksiyon",
+        "valueType": "string",
+        "source": "code"
+      },
+      {
+        "key": "voltage",
+        "labelTr": "Bobin voltajı",
+        "valueType": "string",
+        "source": "code"
+      },
+      {
+        "key": "connector_token",
+        "labelTr": "Konnektör",
+        "valueType": "string",
+        "source": "code"
+      }
+    ],
+    "knownTokens": [],
+    "voltageCodes": [
+      {
+        "code": "EG24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bEG24\\b|EG24N"
+      },
+      {
+        "code": "CG24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bCG24\\b|CG24N"
+      },
+      {
+        "code": "D24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bD24\\b|-D24-"
+      },
+      {
+        "code": "24DC",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "24DC"
+      }
+    ],
+    "functionMappingRefs": [
+      {
+        "mappingId": "rexroth_e_closed_center"
+      },
+      {
+        "mappingId": "yuken_3c2_closed_center"
+      },
+      {
+        "mappingId": "vickers_2a_closed_center"
+      },
+      {
+        "mappingId": "atos_0711_closed_center"
+      }
+    ],
+    "checkRuleRefs": [
+      {
+        "ruleId": "hydraulic_spool_function"
+      },
+      {
+        "ruleId": "hydraulic_coil_voltage"
+      },
+      {
+        "ruleId": "hydraulic_connector"
+      },
+      {
+        "ruleId": "hydraulic_pressure_rating"
+      },
+      {
+        "ruleId": "hydraulic_flow_rating"
+      },
+      {
+        "ruleId": "hydraulic_seal_material"
+      },
+      {
+        "ruleId": "hydraulic_manual_override"
+      },
+      {
+        "ruleId": "hydraulic_mounting_cetop"
+      }
+    ],
+    "parsingRules": [],
+    "codePatterns": {
+      "connector": [
+        {
+          "id": "connector-kn",
+          "kind": "connector",
+          "pattern": "([KN]\\d{1,2})",
+          "captureGroup": 1,
+          "confidence": "low",
+          "requiresCatalogCheck": true
+        }
+      ],
+      "revision": [
+        {
+          "id": "revision-x-suffix",
+          "kind": "revision",
+          "pattern": "-(\\d{1,2}X)\\b",
+          "captureGroup": 1,
+          "confidence": "medium"
+        },
+        {
+          "id": "revision-end-two-digit",
+          "kind": "revision",
+          "pattern": "-(\\d{2})$",
+          "captureGroup": 1,
+          "confidence": "medium"
+        }
+      ],
+      "inferredVoltage": [
+        {
+          "id": "inferred-d-voltage",
+          "kind": "inferred_voltage",
+          "pattern": "-D(\\d{2,3})-",
+          "captureGroup": 1,
+          "confidence": "medium",
+          "requiresCatalogCheck": true,
+          "noteTr": "Voltaj koddan tahmin edildi; katalogdan doğrulanmalıdır."
+        }
+      ],
+      "functionToken": [
+        {
+          "id": "rexroth_4we6-fn-4we6",
+          "kind": "function_token",
+          "pattern": "^4WE6([A-Z])",
+          "captureGroup": 1
+        }
+      ]
+    }
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": "2026-05-26",
+    "notesTr": "Hidrolik valf MVP veri seti. Katalog doğrulaması gerekir. Demo v1 genişletmesi: örnek kodlar ve arama takma adları test amaçlıdır; sipariş öncesi üretici kataloğu ile doğrulanmalıdır.",
+    "id": "yuken_dsg01",
+    "brand": "Yuken",
+    "series": "DSG-01",
+    "category": "CETOP 03 / NG6 yön kontrol valfi",
+    "resolverCategory": "hydraulic_valve",
+    "productTypeLabel": "Hidrolik yön kontrol valfi",
+    "productCategoryLabel": "CETOP 03 / NG6 hidrolik yön kontrol valfi",
+    "standardFamily": "CETOP 03 / NG6",
+    "technology": "Hidrolik",
+    "equivalenceGroupId": "hydraulic_cetop_03_ng6_valve",
+    "codePrefix": "DSG-01",
+    "matchPrefixes": [
+      "DSG-01",
+      "DSG01"
+    ],
+    "confidenceWhenMatched": "medium",
+    "cetopNgLabel": "CETOP 03 / NG6",
+    "defaultCoilVoltageTr": "24 V DC (D24 tipik)",
+    "searchAliases": [
+      "Yuken",
+      "DSG-01",
+      "DSG01",
+      "dsg01",
+      "dsg 01",
+      "yuken ng6",
+      "yuken cetop 3",
+      "yuken directional valve"
+    ],
+    "exampleCodes": [
+      "DSG-01-3C2-D24-N1-50",
+      "DSG-01-3C2-D24-N1-22",
+      "DSG-01-3C2-D24-N1-70"
+    ],
+    "attributes": [
+      {
+        "key": "cetop_ng",
+        "labelTr": "CETOP / NG",
+        "valueType": "string",
+        "source": "series_table",
+        "defaultValue": "CETOP 03 / NG6"
+      },
+      {
+        "key": "function_token",
+        "labelTr": "Sürgü / fonksiyon",
+        "valueType": "string",
+        "source": "code"
+      },
+      {
+        "key": "voltage",
+        "labelTr": "Bobin voltajı",
+        "valueType": "string",
+        "source": "code"
+      },
+      {
+        "key": "connector_token",
+        "labelTr": "Konnektör",
+        "valueType": "string",
+        "source": "code"
+      }
+    ],
+    "knownTokens": [],
+    "voltageCodes": [
+      {
+        "code": "EG24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bEG24\\b|EG24N"
+      },
+      {
+        "code": "CG24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bCG24\\b|CG24N"
+      },
+      {
+        "code": "D24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bD24\\b|-D24-"
+      },
+      {
+        "code": "24DC",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "24DC"
+      }
+    ],
+    "functionMappingRefs": [
+      {
+        "mappingId": "yuken_3c2_closed_center"
+      },
+      {
+        "mappingId": "rexroth_e_closed_center"
+      },
+      {
+        "mappingId": "vickers_2a_closed_center"
+      },
+      {
+        "mappingId": "atos_0711_closed_center"
+      }
+    ],
+    "checkRuleRefs": [
+      {
+        "ruleId": "hydraulic_spool_function"
+      },
+      {
+        "ruleId": "hydraulic_coil_voltage"
+      },
+      {
+        "ruleId": "hydraulic_connector"
+      },
+      {
+        "ruleId": "hydraulic_pressure_rating"
+      },
+      {
+        "ruleId": "hydraulic_flow_rating"
+      },
+      {
+        "ruleId": "hydraulic_seal_material"
+      },
+      {
+        "ruleId": "hydraulic_manual_override"
+      },
+      {
+        "ruleId": "hydraulic_mounting_cetop"
+      }
+    ],
+    "parsingRules": [],
+    "codePatterns": {
+      "connector": [
+        {
+          "id": "connector-kn",
+          "kind": "connector",
+          "pattern": "([KN]\\d{1,2})",
+          "captureGroup": 1,
+          "confidence": "low",
+          "requiresCatalogCheck": true
+        }
+      ],
+      "revision": [
+        {
+          "id": "revision-x-suffix",
+          "kind": "revision",
+          "pattern": "-(\\d{1,2}X)\\b",
+          "captureGroup": 1,
+          "confidence": "medium"
+        },
+        {
+          "id": "revision-end-two-digit",
+          "kind": "revision",
+          "pattern": "-(\\d{2})$",
+          "captureGroup": 1,
+          "confidence": "medium"
+        }
+      ],
+      "inferredVoltage": [
+        {
+          "id": "inferred-d-voltage",
+          "kind": "inferred_voltage",
+          "pattern": "-D(\\d{2,3})-",
+          "captureGroup": 1,
+          "confidence": "medium",
+          "requiresCatalogCheck": true,
+          "noteTr": "Voltaj koddan tahmin edildi; katalogdan doğrulanmalıdır."
+        }
+      ],
+      "functionToken": [
+        {
+          "id": "yuken_dsg01-fn-dsg-3c",
+          "kind": "function_token",
+          "pattern": "\\b(3C\\d{1,2})\\b",
+          "captureGroup": 1
+        }
+      ]
+    }
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": "2026-05-26",
+    "notesTr": "Hidrolik valf MVP veri seti. Katalog doğrulaması gerekir. Demo v1 genişletmesi: örnek kodlar ve arama takma adları test amaçlıdır; sipariş öncesi üretici kataloğu ile doğrulanmalıdır.",
+    "id": "vickers_dg4v3",
+    "brand": "Vickers",
+    "series": "DG4V-3",
+    "category": "CETOP 03 / NG6 yön kontrol valfi",
+    "resolverCategory": "hydraulic_valve",
+    "productTypeLabel": "Hidrolik yön kontrol valfi",
+    "productCategoryLabel": "CETOP 03 / NG6 hidrolik yön kontrol valfi",
+    "standardFamily": "CETOP 03 / NG6",
+    "technology": "Hidrolik",
+    "equivalenceGroupId": "hydraulic_cetop_03_ng6_valve",
+    "codePrefix": "DG4V-3",
+    "matchPrefixes": [
+      "DG4V-3",
+      "DG4V3"
+    ],
+    "confidenceWhenMatched": "medium",
+    "cetopNgLabel": "CETOP 03 / NG6",
+    "searchAliases": [
+      "Vickers",
+      "DG4V-3",
+      "DG4V3",
+      "dg4v3",
+      "dg4v 3",
+      "vickers ng6",
+      "vickers cetop 3",
+      "eaton dg4v"
+    ],
+    "exampleCodes": [
+      "DG4V-3-2A-M-U-H7-60",
+      "DG4V-3-2A-M-U-D24-60",
+      "DG4V-3-6B-M-U-D24-60"
+    ],
+    "attributes": [
+      {
+        "key": "cetop_ng",
+        "labelTr": "CETOP / NG",
+        "valueType": "string",
+        "source": "series_table",
+        "defaultValue": "CETOP 03 / NG6"
+      },
+      {
+        "key": "function_token",
+        "labelTr": "Sürgü / fonksiyon",
+        "valueType": "string",
+        "source": "code"
+      },
+      {
+        "key": "voltage",
+        "labelTr": "Bobin voltajı",
+        "valueType": "string",
+        "source": "code"
+      },
+      {
+        "key": "connector_token",
+        "labelTr": "Konnektör",
+        "valueType": "string",
+        "source": "code"
+      }
+    ],
+    "knownTokens": [],
+    "voltageCodes": [
+      {
+        "code": "EG24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bEG24\\b|EG24N"
+      },
+      {
+        "code": "CG24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bCG24\\b|CG24N"
+      },
+      {
+        "code": "D24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bD24\\b|-D24-"
+      },
+      {
+        "code": "24DC",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "24DC"
+      },
+      {
+        "code": "H7",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "matchPattern": "(?:^|[^A-Z0-9])H7(?:[^A-Z0-9]|$)"
+      }
+    ],
+    "functionMappingRefs": [
+      {
+        "mappingId": "vickers_2a_closed_center"
+      },
+      {
+        "mappingId": "rexroth_e_closed_center"
+      },
+      {
+        "mappingId": "yuken_3c2_closed_center"
+      }
+    ],
+    "checkRuleRefs": [
+      {
+        "ruleId": "hydraulic_spool_function"
+      },
+      {
+        "ruleId": "hydraulic_coil_voltage"
+      },
+      {
+        "ruleId": "hydraulic_connector"
+      },
+      {
+        "ruleId": "hydraulic_pressure_rating"
+      },
+      {
+        "ruleId": "hydraulic_flow_rating"
+      },
+      {
+        "ruleId": "hydraulic_seal_material"
+      },
+      {
+        "ruleId": "hydraulic_manual_override"
+      },
+      {
+        "ruleId": "hydraulic_mounting_cetop"
+      }
+    ],
+    "parsingRules": [],
+    "codePatterns": {
+      "connector": [
+        {
+          "id": "connector-kn",
+          "kind": "connector",
+          "pattern": "([KN]\\d{1,2})",
+          "captureGroup": 1,
+          "confidence": "low",
+          "requiresCatalogCheck": true
+        }
+      ],
+      "revision": [
+        {
+          "id": "revision-x-suffix",
+          "kind": "revision",
+          "pattern": "-(\\d{1,2}X)\\b",
+          "captureGroup": 1,
+          "confidence": "medium"
+        },
+        {
+          "id": "revision-end-two-digit",
+          "kind": "revision",
+          "pattern": "-(\\d{2})$",
+          "captureGroup": 1,
+          "confidence": "medium"
+        }
+      ],
+      "inferredVoltage": [
+        {
+          "id": "inferred-d-voltage",
+          "kind": "inferred_voltage",
+          "pattern": "-D(\\d{2,3})-",
+          "captureGroup": 1,
+          "confidence": "medium",
+          "requiresCatalogCheck": true,
+          "noteTr": "Voltaj koddan tahmin edildi; katalogdan doğrulanmalıdır."
+        }
+      ],
+      "functionToken": [
+        {
+          "id": "vickers_dg4v3-fn-dg4v",
+          "kind": "function_token",
+          "pattern": "-(\\d[A-Z])-",
+          "captureGroup": 1
+        }
+      ]
+    }
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": "2026-05-26",
+    "notesTr": "Hidrolik valf MVP veri seti. Katalog doğrulaması gerekir. Demo v1 genişletmesi: örnek kodlar ve arama takma adları test amaçlıdır; sipariş öncesi üretici kataloğu ile doğrulanmalıdır.",
+    "id": "atos_dhi",
+    "brand": "Atos",
+    "series": "DHI",
+    "category": "CETOP 03 / NG6 yön kontrol valfi",
+    "resolverCategory": "hydraulic_valve",
+    "productTypeLabel": "Hidrolik yön kontrol valfi",
+    "productCategoryLabel": "CETOP 03 / NG6 hidrolik yön kontrol valfi",
+    "standardFamily": "CETOP 03 / NG6",
+    "technology": "Hidrolik",
+    "equivalenceGroupId": "hydraulic_cetop_03_ng6_valve",
+    "codePrefix": "DHI",
+    "matchPrefixes": [
+      "DHI"
+    ],
+    "confidenceWhenMatched": "medium",
+    "cetopNgLabel": "CETOP 03 / NG6",
+    "defaultCoilVoltageTr": "24 V DC",
+    "searchAliases": [
+      "Atos",
+      "DHI",
+      "dhi",
+      "atos ng6",
+      "atos cetop 3",
+      "atos directional"
+    ],
+    "exampleCodes": [
+      "DHI-0711-X 24DC",
+      "DHI-0713-X 24DC",
+      "DHI-0711/EG24"
+    ],
+    "attributes": [
+      {
+        "key": "cetop_ng",
+        "labelTr": "CETOP / NG",
+        "valueType": "string",
+        "source": "series_table",
+        "defaultValue": "CETOP 03 / NG6"
+      },
+      {
+        "key": "function_token",
+        "labelTr": "Sürgü / fonksiyon",
+        "valueType": "string",
+        "source": "code"
+      },
+      {
+        "key": "voltage",
+        "labelTr": "Bobin voltajı",
+        "valueType": "string",
+        "source": "code"
+      },
+      {
+        "key": "connector_token",
+        "labelTr": "Konnektör",
+        "valueType": "string",
+        "source": "code"
+      }
+    ],
+    "knownTokens": [],
+    "voltageCodes": [
+      {
+        "code": "EG24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bEG24\\b|EG24N"
+      },
+      {
+        "code": "CG24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bCG24\\b|CG24N"
+      },
+      {
+        "code": "D24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bD24\\b|-D24-"
+      },
+      {
+        "code": "24DC",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "24DC"
+      }
+    ],
+    "functionMappingRefs": [
+      {
+        "mappingId": "atos_0711_closed_center"
+      },
+      {
+        "mappingId": "rexroth_e_closed_center"
+      }
+    ],
+    "checkRuleRefs": [
+      {
+        "ruleId": "hydraulic_spool_function"
+      },
+      {
+        "ruleId": "hydraulic_coil_voltage"
+      },
+      {
+        "ruleId": "hydraulic_connector"
+      },
+      {
+        "ruleId": "hydraulic_pressure_rating"
+      },
+      {
+        "ruleId": "hydraulic_flow_rating"
+      },
+      {
+        "ruleId": "hydraulic_seal_material"
+      },
+      {
+        "ruleId": "hydraulic_manual_override"
+      },
+      {
+        "ruleId": "hydraulic_mounting_cetop"
+      }
+    ],
+    "parsingRules": [],
+    "codePatterns": {
+      "connector": [
+        {
+          "id": "connector-kn",
+          "kind": "connector",
+          "pattern": "([KN]\\d{1,2})",
+          "captureGroup": 1,
+          "confidence": "low",
+          "requiresCatalogCheck": true
+        }
+      ],
+      "revision": [
+        {
+          "id": "revision-x-suffix",
+          "kind": "revision",
+          "pattern": "-(\\d{1,2}X)\\b",
+          "captureGroup": 1,
+          "confidence": "medium"
+        },
+        {
+          "id": "revision-end-two-digit",
+          "kind": "revision",
+          "pattern": "-(\\d{2})$",
+          "captureGroup": 1,
+          "confidence": "medium"
+        }
+      ],
+      "inferredVoltage": [
+        {
+          "id": "inferred-d-voltage",
+          "kind": "inferred_voltage",
+          "pattern": "-D(\\d{2,3})-",
+          "captureGroup": 1,
+          "confidence": "medium",
+          "requiresCatalogCheck": true,
+          "noteTr": "Voltaj koddan tahmin edildi; katalogdan doğrulanmalıdır."
+        }
+      ],
+      "functionToken": [
+        {
+          "id": "atos_dhi-fn-atos-config",
+          "kind": "function_token",
+          "pattern": "DHI-(\\d{4})",
+          "captureGroup": 1
+        }
+      ]
+    }
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": "2026-05-26",
+    "notesTr": "Hidrolik valf MVP veri seti. Katalog doğrulaması gerekir. Demo v1 genişletmesi: örnek kodlar ve arama takma adları test amaçlıdır; sipariş öncesi üretici kataloğu ile doğrulanmalıdır.",
+    "id": "parker_d1vw",
+    "brand": "Parker",
+    "series": "D1VW",
+    "category": "CETOP 03 / NG6 yön kontrol valfi",
+    "resolverCategory": "hydraulic_valve",
+    "productTypeLabel": "Hidrolik yön kontrol valfi",
+    "productCategoryLabel": "CETOP 03 / NG6 hidrolik yön kontrol valfi",
+    "standardFamily": "CETOP 03 / NG6",
+    "technology": "Hidrolik",
+    "equivalenceGroupId": "hydraulic_cetop_03_ng6_valve",
+    "codePrefix": "D1VW",
+    "matchPrefixes": [
+      "D1VW"
+    ],
+    "confidenceWhenMatched": "medium",
+    "cetopNgLabel": "CETOP 03 / NG6",
+    "searchAliases": [
+      "Parker",
+      "D1VW",
+      "d1vw",
+      "parker ng6",
+      "parker cetop 3",
+      "parker directional valve"
+    ],
+    "exampleCodes": [
+      "D1VW001CNJW",
+      "D1VW020BNJW",
+      "D1VW001BNJW"
+    ],
+    "attributes": [
+      {
+        "key": "cetop_ng",
+        "labelTr": "CETOP / NG",
+        "valueType": "string",
+        "source": "series_table",
+        "defaultValue": "CETOP 03 / NG6"
+      },
+      {
+        "key": "function_token",
+        "labelTr": "Sürgü / fonksiyon",
+        "valueType": "string",
+        "source": "code"
+      },
+      {
+        "key": "voltage",
+        "labelTr": "Bobin voltajı",
+        "valueType": "string",
+        "source": "code"
+      },
+      {
+        "key": "connector_token",
+        "labelTr": "Konnektör",
+        "valueType": "string",
+        "source": "code"
+      }
+    ],
+    "knownTokens": [],
+    "voltageCodes": [
+      {
+        "code": "EG24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bEG24\\b|EG24N"
+      },
+      {
+        "code": "CG24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bCG24\\b|CG24N"
+      },
+      {
+        "code": "D24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bD24\\b|-D24-"
+      },
+      {
+        "code": "24DC",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "24DC"
+      }
+    ],
+    "functionMappingRefs": [
+      {
+        "mappingId": "rexroth_e_closed_center"
+      }
+    ],
+    "checkRuleRefs": [
+      {
+        "ruleId": "hydraulic_spool_function"
+      },
+      {
+        "ruleId": "hydraulic_coil_voltage"
+      },
+      {
+        "ruleId": "hydraulic_connector"
+      },
+      {
+        "ruleId": "hydraulic_pressure_rating"
+      },
+      {
+        "ruleId": "hydraulic_flow_rating"
+      },
+      {
+        "ruleId": "hydraulic_seal_material"
+      },
+      {
+        "ruleId": "hydraulic_manual_override"
+      },
+      {
+        "ruleId": "hydraulic_mounting_cetop"
+      }
+    ],
+    "parsingRules": [],
+    "codePatterns": {
+      "connector": [
+        {
+          "id": "connector-kn",
+          "kind": "connector",
+          "pattern": "([KN]\\d{1,2})",
+          "captureGroup": 1,
+          "confidence": "low",
+          "requiresCatalogCheck": true
+        }
+      ],
+      "revision": [
+        {
+          "id": "revision-x-suffix",
+          "kind": "revision",
+          "pattern": "-(\\d{1,2}X)\\b",
+          "captureGroup": 1,
+          "confidence": "medium"
+        },
+        {
+          "id": "revision-end-two-digit",
+          "kind": "revision",
+          "pattern": "-(\\d{2})$",
+          "captureGroup": 1,
+          "confidence": "medium"
+        }
+      ],
+      "inferredVoltage": [
+        {
+          "id": "inferred-d-voltage",
+          "kind": "inferred_voltage",
+          "pattern": "-D(\\d{2,3})-",
+          "captureGroup": 1,
+          "confidence": "medium",
+          "requiresCatalogCheck": true,
+          "noteTr": "Voltaj koddan tahmin edildi; katalogdan doğrulanmalıdır."
+        }
+      ],
+      "functionToken": [
+        {
+          "id": "parker_d1vw-fn-parker-dvw",
+          "kind": "function_token",
+          "pattern": "^D1VW(\\d{3})",
+          "captureGroup": 1
+        }
+      ]
+    }
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": "2026-05-26",
+    "notesTr": "Hidrolik valf MVP veri seti. Katalog doğrulaması gerekir. Demo v1 genişletmesi: örnek kodlar ve arama takma adları test amaçlıdır; sipariş öncesi üretici kataloğu ile doğrulanmalıdır.",
+    "id": "rexroth_4we10",
+    "brand": "Rexroth",
+    "series": "4WE10",
+    "category": "CETOP 05 / NG10 yön kontrol valfi",
+    "resolverCategory": "hydraulic_valve",
+    "productTypeLabel": "Hidrolik yön kontrol valfi",
+    "productCategoryLabel": "CETOP 05 / NG10 hidrolik yön kontrol valfi",
+    "standardFamily": "CETOP 05 / NG10",
+    "technology": "Hidrolik",
+    "equivalenceGroupId": "hydraulic_cetop_05_ng10_valve",
+    "codePrefix": "4WE10",
+    "matchPrefixes": [
+      "4WE10"
+    ],
+    "confidenceWhenMatched": "medium",
+    "cetopNgLabel": "CETOP 05 / NG10",
+    "defaultCoilVoltageTr": "24 V DC (CG24 tipik)",
+    "searchAliases": [
+      "Rexroth",
+      "4WE10",
+      "4WE 10",
+      "rexroth ng10",
+      "rexroth cetop 5",
+      "cetop05 valve",
+      "ng10 valve"
+    ],
+    "exampleCodes": [
+      "4WE10E-3X/CG24N9K4",
+      "4WE10J-3X/CG24N9K4",
+      "4WE10G-3X/CG24N9K4"
+    ],
+    "attributes": [
+      {
+        "key": "cetop_ng",
+        "labelTr": "CETOP / NG",
+        "valueType": "string",
+        "source": "series_table",
+        "defaultValue": "CETOP 05 / NG10"
+      },
+      {
+        "key": "function_token",
+        "labelTr": "Sürgü / fonksiyon",
+        "valueType": "string",
+        "source": "code"
+      },
+      {
+        "key": "voltage",
+        "labelTr": "Bobin voltajı",
+        "valueType": "string",
+        "source": "code"
+      },
+      {
+        "key": "connector_token",
+        "labelTr": "Konnektör",
+        "valueType": "string",
+        "source": "code"
+      }
+    ],
+    "knownTokens": [],
+    "voltageCodes": [
+      {
+        "code": "EG24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bEG24\\b|EG24N"
+      },
+      {
+        "code": "CG24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bCG24\\b|CG24N"
+      },
+      {
+        "code": "D24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bD24\\b|-D24-"
+      },
+      {
+        "code": "24DC",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "24DC"
+      }
+    ],
+    "functionMappingRefs": [
+      {
+        "mappingId": "rexroth_e_closed_center"
+      },
+      {
+        "mappingId": "yuken_3c2_closed_center"
+      },
+      {
+        "mappingId": "vickers_2a_closed_center"
+      },
+      {
+        "mappingId": "atos_0711_closed_center"
+      }
+    ],
+    "checkRuleRefs": [
+      {
+        "ruleId": "hydraulic_spool_function"
+      },
+      {
+        "ruleId": "hydraulic_coil_voltage"
+      },
+      {
+        "ruleId": "hydraulic_connector"
+      },
+      {
+        "ruleId": "hydraulic_pressure_rating"
+      },
+      {
+        "ruleId": "hydraulic_flow_rating"
+      },
+      {
+        "ruleId": "hydraulic_seal_material"
+      },
+      {
+        "ruleId": "hydraulic_manual_override"
+      },
+      {
+        "ruleId": "hydraulic_mounting_cetop"
+      }
+    ],
+    "parsingRules": [],
+    "codePatterns": {
+      "connector": [
+        {
+          "id": "connector-kn",
+          "kind": "connector",
+          "pattern": "([KN]\\d{1,2})",
+          "captureGroup": 1,
+          "confidence": "low",
+          "requiresCatalogCheck": true
+        }
+      ],
+      "revision": [
+        {
+          "id": "revision-x-suffix",
+          "kind": "revision",
+          "pattern": "-(\\d{1,2}X)\\b",
+          "captureGroup": 1,
+          "confidence": "medium"
+        },
+        {
+          "id": "revision-end-two-digit",
+          "kind": "revision",
+          "pattern": "-(\\d{2})$",
+          "captureGroup": 1,
+          "confidence": "medium"
+        }
+      ],
+      "inferredVoltage": [
+        {
+          "id": "inferred-d-voltage",
+          "kind": "inferred_voltage",
+          "pattern": "-D(\\d{2,3})-",
+          "captureGroup": 1,
+          "confidence": "medium",
+          "requiresCatalogCheck": true,
+          "noteTr": "Voltaj koddan tahmin edildi; katalogdan doğrulanmalıdır."
+        }
+      ],
+      "functionToken": [
+        {
+          "id": "rexroth_4we10-fn-4we10",
+          "kind": "function_token",
+          "pattern": "^4WE10([A-Z])",
+          "captureGroup": 1
+        }
+      ]
+    }
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": "2026-05-26",
+    "notesTr": "Hidrolik valf MVP veri seti. Katalog doğrulaması gerekir. Demo v1 genişletmesi: örnek kodlar ve arama takma adları test amaçlıdır; sipariş öncesi üretici kataloğu ile doğrulanmalıdır.",
+    "id": "yuken_dsg03",
+    "brand": "Yuken",
+    "series": "DSG-03",
+    "category": "CETOP 05 / NG10 yön kontrol valfi",
+    "resolverCategory": "hydraulic_valve",
+    "productTypeLabel": "Hidrolik yön kontrol valfi",
+    "productCategoryLabel": "CETOP 05 / NG10 hidrolik yön kontrol valfi",
+    "standardFamily": "CETOP 05 / NG10",
+    "technology": "Hidrolik",
+    "equivalenceGroupId": "hydraulic_cetop_05_ng10_valve",
+    "codePrefix": "DSG-03",
+    "matchPrefixes": [
+      "DSG-03",
+      "DSG03"
+    ],
+    "confidenceWhenMatched": "medium",
+    "cetopNgLabel": "CETOP 05 / NG10",
+    "defaultCoilVoltageTr": "24 V DC (D24 tipik)",
+    "searchAliases": [
+      "Yuken",
+      "DSG-03",
+      "DSG03",
+      "dsg03",
+      "yuken ng10",
+      "yuken cetop 5"
+    ],
+    "exampleCodes": [
+      "DSG-03-3C2-D24-N1-50",
+      "DSG-03-3C12-D24-N1-50",
+      "DSG-03-3C2-D24-N1-22"
+    ],
+    "attributes": [
+      {
+        "key": "cetop_ng",
+        "labelTr": "CETOP / NG",
+        "valueType": "string",
+        "source": "series_table",
+        "defaultValue": "CETOP 05 / NG10"
+      },
+      {
+        "key": "function_token",
+        "labelTr": "Sürgü / fonksiyon",
+        "valueType": "string",
+        "source": "code"
+      },
+      {
+        "key": "voltage",
+        "labelTr": "Bobin voltajı",
+        "valueType": "string",
+        "source": "code"
+      },
+      {
+        "key": "connector_token",
+        "labelTr": "Konnektör",
+        "valueType": "string",
+        "source": "code"
+      }
+    ],
+    "knownTokens": [],
+    "voltageCodes": [
+      {
+        "code": "EG24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bEG24\\b|EG24N"
+      },
+      {
+        "code": "CG24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bCG24\\b|CG24N"
+      },
+      {
+        "code": "D24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bD24\\b|-D24-"
+      },
+      {
+        "code": "24DC",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "24DC"
+      }
+    ],
+    "functionMappingRefs": [
+      {
+        "mappingId": "yuken_3c2_closed_center"
+      },
+      {
+        "mappingId": "yuken_3c12_tandem"
+      },
+      {
+        "mappingId": "rexroth_e_closed_center"
+      }
+    ],
+    "checkRuleRefs": [
+      {
+        "ruleId": "hydraulic_spool_function"
+      },
+      {
+        "ruleId": "hydraulic_coil_voltage"
+      },
+      {
+        "ruleId": "hydraulic_connector"
+      },
+      {
+        "ruleId": "hydraulic_pressure_rating"
+      },
+      {
+        "ruleId": "hydraulic_flow_rating"
+      },
+      {
+        "ruleId": "hydraulic_seal_material"
+      },
+      {
+        "ruleId": "hydraulic_manual_override"
+      },
+      {
+        "ruleId": "hydraulic_mounting_cetop"
+      }
+    ],
+    "parsingRules": [],
+    "codePatterns": {
+      "connector": [
+        {
+          "id": "connector-kn",
+          "kind": "connector",
+          "pattern": "([KN]\\d{1,2})",
+          "captureGroup": 1,
+          "confidence": "low",
+          "requiresCatalogCheck": true
+        }
+      ],
+      "revision": [
+        {
+          "id": "revision-x-suffix",
+          "kind": "revision",
+          "pattern": "-(\\d{1,2}X)\\b",
+          "captureGroup": 1,
+          "confidence": "medium"
+        },
+        {
+          "id": "revision-end-two-digit",
+          "kind": "revision",
+          "pattern": "-(\\d{2})$",
+          "captureGroup": 1,
+          "confidence": "medium"
+        }
+      ],
+      "inferredVoltage": [
+        {
+          "id": "inferred-d-voltage",
+          "kind": "inferred_voltage",
+          "pattern": "-D(\\d{2,3})-",
+          "captureGroup": 1,
+          "confidence": "medium",
+          "requiresCatalogCheck": true,
+          "noteTr": "Voltaj koddan tahmin edildi; katalogdan doğrulanmalıdır."
+        }
+      ],
+      "functionToken": [
+        {
+          "id": "yuken_dsg03-fn-dsg-3c",
+          "kind": "function_token",
+          "pattern": "\\b(3C\\d{1,2})\\b",
+          "captureGroup": 1
+        }
+      ]
+    }
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": "2026-05-26",
+    "notesTr": "Hidrolik valf MVP veri seti. Katalog doğrulaması gerekir. Demo v1 genişletmesi: örnek kodlar ve arama takma adları test amaçlıdır; sipariş öncesi üretici kataloğu ile doğrulanmalıdır.",
+    "id": "vickers_dg4v5",
+    "brand": "Vickers",
+    "series": "DG4V-5",
+    "category": "CETOP 05 / NG10 yön kontrol valfi",
+    "resolverCategory": "hydraulic_valve",
+    "productTypeLabel": "Hidrolik yön kontrol valfi",
+    "productCategoryLabel": "CETOP 05 / NG10 hidrolik yön kontrol valfi",
+    "standardFamily": "CETOP 05 / NG10",
+    "technology": "Hidrolik",
+    "equivalenceGroupId": "hydraulic_cetop_05_ng10_valve",
+    "codePrefix": "DG4V-5",
+    "matchPrefixes": [
+      "DG4V-5",
+      "DG4V5"
+    ],
+    "confidenceWhenMatched": "medium",
+    "cetopNgLabel": "CETOP 05 / NG10",
+    "searchAliases": [
+      "Vickers",
+      "DG4V-5",
+      "DG4V5",
+      "dg4v5",
+      "vickers ng10",
+      "vickers cetop 5"
+    ],
+    "exampleCodes": [
+      "DG4V-5-2A-M-U-H7-60",
+      "DG4V-5-2A-M-U-D24-60",
+      "DG4V-5-6B-M-U-H7-60"
+    ],
+    "attributes": [
+      {
+        "key": "cetop_ng",
+        "labelTr": "CETOP / NG",
+        "valueType": "string",
+        "source": "series_table",
+        "defaultValue": "CETOP 05 / NG10"
+      },
+      {
+        "key": "function_token",
+        "labelTr": "Sürgü / fonksiyon",
+        "valueType": "string",
+        "source": "code"
+      },
+      {
+        "key": "voltage",
+        "labelTr": "Bobin voltajı",
+        "valueType": "string",
+        "source": "code"
+      },
+      {
+        "key": "connector_token",
+        "labelTr": "Konnektör",
+        "valueType": "string",
+        "source": "code"
+      }
+    ],
+    "knownTokens": [],
+    "voltageCodes": [
+      {
+        "code": "EG24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bEG24\\b|EG24N"
+      },
+      {
+        "code": "CG24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bCG24\\b|CG24N"
+      },
+      {
+        "code": "D24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bD24\\b|-D24-"
+      },
+      {
+        "code": "24DC",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "24DC"
+      },
+      {
+        "code": "H7",
+        "confidence": "low",
+        "requiresCatalogCheck": true,
+        "matchPattern": "(?:^|[^A-Z0-9])H7(?:[^A-Z0-9]|$)"
+      }
+    ],
+    "functionMappingRefs": [
+      {
+        "mappingId": "vickers_2a_closed_center"
+      },
+      {
+        "mappingId": "rexroth_e_closed_center"
+      }
+    ],
+    "checkRuleRefs": [
+      {
+        "ruleId": "hydraulic_spool_function"
+      },
+      {
+        "ruleId": "hydraulic_coil_voltage"
+      },
+      {
+        "ruleId": "hydraulic_connector"
+      },
+      {
+        "ruleId": "hydraulic_pressure_rating"
+      },
+      {
+        "ruleId": "hydraulic_flow_rating"
+      },
+      {
+        "ruleId": "hydraulic_seal_material"
+      },
+      {
+        "ruleId": "hydraulic_manual_override"
+      },
+      {
+        "ruleId": "hydraulic_mounting_cetop"
+      }
+    ],
+    "parsingRules": [],
+    "codePatterns": {
+      "connector": [
+        {
+          "id": "connector-kn",
+          "kind": "connector",
+          "pattern": "([KN]\\d{1,2})",
+          "captureGroup": 1,
+          "confidence": "low",
+          "requiresCatalogCheck": true
+        }
+      ],
+      "revision": [
+        {
+          "id": "revision-x-suffix",
+          "kind": "revision",
+          "pattern": "-(\\d{1,2}X)\\b",
+          "captureGroup": 1,
+          "confidence": "medium"
+        },
+        {
+          "id": "revision-end-two-digit",
+          "kind": "revision",
+          "pattern": "-(\\d{2})$",
+          "captureGroup": 1,
+          "confidence": "medium"
+        }
+      ],
+      "inferredVoltage": [
+        {
+          "id": "inferred-d-voltage",
+          "kind": "inferred_voltage",
+          "pattern": "-D(\\d{2,3})-",
+          "captureGroup": 1,
+          "confidence": "medium",
+          "requiresCatalogCheck": true,
+          "noteTr": "Voltaj koddan tahmin edildi; katalogdan doğrulanmalıdır."
+        }
+      ],
+      "functionToken": [
+        {
+          "id": "vickers_dg4v5-fn-dg4v",
+          "kind": "function_token",
+          "pattern": "-(\\d[A-Z])-",
+          "captureGroup": 1
+        }
+      ]
+    }
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": "2026-05-26",
+    "notesTr": "Hidrolik valf MVP veri seti. Katalog doğrulaması gerekir. Demo v1 genişletmesi: örnek kodlar ve arama takma adları test amaçlıdır; sipariş öncesi üretici kataloğu ile doğrulanmalıdır.",
+    "id": "atos_dhu",
+    "brand": "Atos",
+    "series": "DHU",
+    "category": "CETOP 05 / NG10 yön kontrol valfi",
+    "resolverCategory": "hydraulic_valve",
+    "productTypeLabel": "Hidrolik yön kontrol valfi",
+    "productCategoryLabel": "CETOP 05 / NG10 hidrolik yön kontrol valfi",
+    "standardFamily": "CETOP 05 / NG10",
+    "technology": "Hidrolik",
+    "equivalenceGroupId": "hydraulic_cetop_05_ng10_valve",
+    "codePrefix": "DHU",
+    "matchPrefixes": [
+      "DHU"
+    ],
+    "confidenceWhenMatched": "medium",
+    "cetopNgLabel": "CETOP 05 / NG10",
+    "defaultCoilVoltageTr": "24 V DC",
+    "searchAliases": [
+      "Atos",
+      "DHU",
+      "dhu",
+      "atos ng10",
+      "atos cetop 5"
+    ],
+    "exampleCodes": [
+      "DHU-0711-X 24DC",
+      "DHU-0714-X 24DC"
+    ],
+    "attributes": [
+      {
+        "key": "cetop_ng",
+        "labelTr": "CETOP / NG",
+        "valueType": "string",
+        "source": "series_table",
+        "defaultValue": "CETOP 05 / NG10"
+      },
+      {
+        "key": "function_token",
+        "labelTr": "Sürgü / fonksiyon",
+        "valueType": "string",
+        "source": "code"
+      },
+      {
+        "key": "voltage",
+        "labelTr": "Bobin voltajı",
+        "valueType": "string",
+        "source": "code"
+      },
+      {
+        "key": "connector_token",
+        "labelTr": "Konnektör",
+        "valueType": "string",
+        "source": "code"
+      }
+    ],
+    "knownTokens": [],
+    "voltageCodes": [
+      {
+        "code": "EG24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bEG24\\b|EG24N"
+      },
+      {
+        "code": "CG24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bCG24\\b|CG24N"
+      },
+      {
+        "code": "D24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bD24\\b|-D24-"
+      },
+      {
+        "code": "24DC",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "24DC"
+      }
+    ],
+    "functionMappingRefs": [
+      {
+        "mappingId": "atos_0711_closed_center"
+      },
+      {
+        "mappingId": "rexroth_e_closed_center"
+      }
+    ],
+    "checkRuleRefs": [
+      {
+        "ruleId": "hydraulic_spool_function"
+      },
+      {
+        "ruleId": "hydraulic_coil_voltage"
+      },
+      {
+        "ruleId": "hydraulic_connector"
+      },
+      {
+        "ruleId": "hydraulic_pressure_rating"
+      },
+      {
+        "ruleId": "hydraulic_flow_rating"
+      },
+      {
+        "ruleId": "hydraulic_seal_material"
+      },
+      {
+        "ruleId": "hydraulic_manual_override"
+      },
+      {
+        "ruleId": "hydraulic_mounting_cetop"
+      }
+    ],
+    "parsingRules": [],
+    "codePatterns": {
+      "connector": [
+        {
+          "id": "connector-kn",
+          "kind": "connector",
+          "pattern": "([KN]\\d{1,2})",
+          "captureGroup": 1,
+          "confidence": "low",
+          "requiresCatalogCheck": true
+        }
+      ],
+      "revision": [
+        {
+          "id": "revision-x-suffix",
+          "kind": "revision",
+          "pattern": "-(\\d{1,2}X)\\b",
+          "captureGroup": 1,
+          "confidence": "medium"
+        },
+        {
+          "id": "revision-end-two-digit",
+          "kind": "revision",
+          "pattern": "-(\\d{2})$",
+          "captureGroup": 1,
+          "confidence": "medium"
+        }
+      ],
+      "inferredVoltage": [
+        {
+          "id": "inferred-d-voltage",
+          "kind": "inferred_voltage",
+          "pattern": "-D(\\d{2,3})-",
+          "captureGroup": 1,
+          "confidence": "medium",
+          "requiresCatalogCheck": true,
+          "noteTr": "Voltaj koddan tahmin edildi; katalogdan doğrulanmalıdır."
+        }
+      ],
+      "functionToken": [
+        {
+          "id": "atos_dhu-fn-atos-config",
+          "kind": "function_token",
+          "pattern": "DHU-(\\d{4})",
+          "captureGroup": 1
+        }
+      ]
+    }
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": "2026-05-26",
+    "notesTr": "Hidrolik valf MVP veri seti. Katalog doğrulaması gerekir. Demo v1 genişletmesi: örnek kodlar ve arama takma adları test amaçlıdır; sipariş öncesi üretici kataloğu ile doğrulanmalıdır.",
+    "id": "parker_d3w",
+    "brand": "Parker",
+    "series": "D3W",
+    "category": "CETOP 05 / NG10 yön kontrol valfi",
+    "resolverCategory": "hydraulic_valve",
+    "productTypeLabel": "Hidrolik yön kontrol valfi",
+    "productCategoryLabel": "CETOP 05 / NG10 hidrolik yön kontrol valfi",
+    "standardFamily": "CETOP 05 / NG10",
+    "technology": "Hidrolik",
+    "equivalenceGroupId": "hydraulic_cetop_05_ng10_valve",
+    "codePrefix": "D3W",
+    "matchPrefixes": [
+      "D3W"
+    ],
+    "confidenceWhenMatched": "medium",
+    "cetopNgLabel": "CETOP 05 / NG10",
+    "searchAliases": [
+      "Parker",
+      "D3W",
+      "d3w",
+      "parker ng10",
+      "parker cetop 5"
+    ],
+    "exampleCodes": [
+      "D3W001CNJW",
+      "D3W020BNJW"
+    ],
+    "attributes": [
+      {
+        "key": "cetop_ng",
+        "labelTr": "CETOP / NG",
+        "valueType": "string",
+        "source": "series_table",
+        "defaultValue": "CETOP 05 / NG10"
+      },
+      {
+        "key": "function_token",
+        "labelTr": "Sürgü / fonksiyon",
+        "valueType": "string",
+        "source": "code"
+      },
+      {
+        "key": "voltage",
+        "labelTr": "Bobin voltajı",
+        "valueType": "string",
+        "source": "code"
+      },
+      {
+        "key": "connector_token",
+        "labelTr": "Konnektör",
+        "valueType": "string",
+        "source": "code"
+      }
+    ],
+    "knownTokens": [],
+    "voltageCodes": [
+      {
+        "code": "EG24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bEG24\\b|EG24N"
+      },
+      {
+        "code": "CG24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bCG24\\b|CG24N"
+      },
+      {
+        "code": "D24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bD24\\b|-D24-"
+      },
+      {
+        "code": "24DC",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "24DC"
+      }
+    ],
+    "functionMappingRefs": [
+      {
+        "mappingId": "rexroth_e_closed_center"
+      }
+    ],
+    "checkRuleRefs": [
+      {
+        "ruleId": "hydraulic_spool_function"
+      },
+      {
+        "ruleId": "hydraulic_coil_voltage"
+      },
+      {
+        "ruleId": "hydraulic_connector"
+      },
+      {
+        "ruleId": "hydraulic_pressure_rating"
+      },
+      {
+        "ruleId": "hydraulic_flow_rating"
+      },
+      {
+        "ruleId": "hydraulic_seal_material"
+      },
+      {
+        "ruleId": "hydraulic_manual_override"
+      },
+      {
+        "ruleId": "hydraulic_mounting_cetop"
+      }
+    ],
+    "parsingRules": [],
+    "codePatterns": {
+      "connector": [
+        {
+          "id": "connector-kn",
+          "kind": "connector",
+          "pattern": "([KN]\\d{1,2})",
+          "captureGroup": 1,
+          "confidence": "low",
+          "requiresCatalogCheck": true
+        }
+      ],
+      "revision": [
+        {
+          "id": "revision-x-suffix",
+          "kind": "revision",
+          "pattern": "-(\\d{1,2}X)\\b",
+          "captureGroup": 1,
+          "confidence": "medium"
+        },
+        {
+          "id": "revision-end-two-digit",
+          "kind": "revision",
+          "pattern": "-(\\d{2})$",
+          "captureGroup": 1,
+          "confidence": "medium"
+        }
+      ],
+      "inferredVoltage": [
+        {
+          "id": "inferred-d-voltage",
+          "kind": "inferred_voltage",
+          "pattern": "-D(\\d{2,3})-",
+          "captureGroup": 1,
+          "confidence": "medium",
+          "requiresCatalogCheck": true,
+          "noteTr": "Voltaj koddan tahmin edildi; katalogdan doğrulanmalıdır."
+        }
+      ],
+      "functionToken": []
+    }
+  }
+]

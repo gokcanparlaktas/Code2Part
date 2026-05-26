@@ -1,6 +1,8 @@
-import equivalentSeriesData from '@/data/equivalentSeries.json';
-import parsingRulesData from '@/data/parsingRules.json';
-import productSeriesData from '@/data/productSeries.json';
+import {
+  getLegacyEquivalentGroups,
+  getLegacyParsingRules,
+  getLegacyProductSeries,
+} from '@/domain/catalog/adapters/catalogV2Adapter';
 import { getProductSeriesById } from '@/domain/resolver/productSeriesCatalog';
 import type {
   DataReliabilityMetadata,
@@ -9,9 +11,9 @@ import type {
 } from '@/types/catalogMetadata';
 import type { EquivalentGroupRecord, ProductSeriesRecord } from '@/types/product';
 
-const productSeries = productSeriesData as ProductSeriesRecord[];
-const parsingRules = parsingRulesData as DataReliabilityMetadata[];
-const equivalenceGroups = equivalentSeriesData as EquivalentGroupRecord[];
+const productSeries = getLegacyProductSeries();
+const parsingRules = getLegacyParsingRules();
+const equivalenceGroups = getLegacyEquivalentGroups();
 
 export function isUnverifiedStatus(status: VerificationStatus): boolean {
   return status === 'manual_unverified' || status === 'mock';

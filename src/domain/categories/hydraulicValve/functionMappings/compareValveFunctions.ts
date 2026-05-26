@@ -1,11 +1,11 @@
 import type { AttributeComparison } from '@/types/compatibility';
 
 import type { CanonicalValveFunctionId } from './canonicalValveFunctions';
-import {
-  HYDRAULIC_FUNCTION_ALIASES,
-  type HydraulicFunctionAlias,
-  type ValveFunctionMatchType,
-} from './hydraulicFunctionAliases';
+import { getHydraulicFunctionAliasesFromCatalog } from '@/domain/catalog/adapters/catalogV2Adapter';
+
+import type { HydraulicFunctionAlias, ValveFunctionMatchType } from './hydraulicFunctionAliases';
+
+const HYDRAULIC_FUNCTION_ALIASES = getHydraulicFunctionAliasesFromCatalog();
 
 export interface CompareValveFunctionsResult {
   comparison: AttributeComparison;

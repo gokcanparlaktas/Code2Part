@@ -1,0 +1,77 @@
+[
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": "Muadil eşleştirme MVP için manuel eklenmiştir. Gerçek uygulamada teknik katalog ve saha doğrulaması gerekir.",
+    "id": "pneumatic_iso_15552_cylinder",
+    "name": "ISO 15552 pnömatik silindir",
+    "seriesIds": [
+      "festo_dsbc",
+      "smc_cp96",
+      "smc_c96",
+      "parker_p1d",
+      "aventics_pra",
+      "airtac_si"
+    ]
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": "Muadil eşleştirme MVP için manuel eklenmiştir. Gerçek uygulamada teknik katalog ve saha doğrulaması gerekir.",
+    "id": "pneumatic_compact_cylinder",
+    "name": "Kompakt pnömatik silindir",
+    "seriesIds": [
+      "festo_adn",
+      "smc_cq2"
+    ]
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": "Muadil eşleştirme MVP için manuel eklenmiştir. Gerçek uygulamada teknik katalog ve saha doğrulaması gerekir.",
+    "id": "pneumatic_round_mini_cylinder",
+    "name": "Yuvarlak mini pnömatik silindir",
+    "seriesIds": [
+      "festo_dsnu",
+      "smc_c85"
+    ]
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": "CETOP 03 / NG6 hidrolik yön kontrol valfleri için manuel muadil grubu.",
+    "id": "hydraulic_cetop_03_ng6_valve",
+    "name": "CETOP 03 / NG6 hidrolik yön kontrol valfi",
+    "seriesIds": [
+      "rexroth_4we6",
+      "yuken_dsg01",
+      "vickers_dg4v3",
+      "atos_dhi",
+      "parker_d1vw"
+    ]
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": "CETOP 05 / NG10 hidrolik yön kontrol valfleri için manuel muadil grubu.",
+    "id": "hydraulic_cetop_05_ng10_valve",
+    "name": "CETOP 05 / NG10 hidrolik yön kontrol valfi",
+    "seriesIds": [
+      "rexroth_4we10",
+      "yuken_dsg03",
+      "vickers_dg4v5",
+      "atos_dhu",
+      "parker_d3w"
+    ]
+  }
+]

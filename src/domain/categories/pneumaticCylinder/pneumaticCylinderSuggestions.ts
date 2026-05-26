@@ -1,6 +1,8 @@
-import equivalentSeriesData from '@/data/equivalentSeries.json';
-import exampleProductCodesData from '@/data/exampleProductCodes.json';
-import parsingRulesData from '@/data/parsingRules.json';
+import {
+  getLegacyEquivalentGroups,
+  getLegacyParsingRules,
+  getPneumaticCatalogExampleCodes,
+} from '@/domain/catalog/adapters/catalogV2Adapter';
 import { identifyProduct } from '@/domain/resolver/identifyProduct';
 import { normalizeCode } from '@/domain/resolver/normalizeCode';
 
@@ -25,9 +27,9 @@ import type {
   SuggestionMissingField,
 } from '@/types/suggestion';
 
-const parsingRules = parsingRulesData as ParsingRuleRecord[];
-const exampleProductCodes = exampleProductCodesData as string[];
-const equivalentGroups = equivalentSeriesData as EquivalentGroupRecord[];
+const parsingRules = getLegacyParsingRules();
+const exampleProductCodes = getPneumaticCatalogExampleCodes();
+const equivalentGroups = getLegacyEquivalentGroups();
 
 export interface SeriesLessPneumaticFragment {
   boreMm: number;

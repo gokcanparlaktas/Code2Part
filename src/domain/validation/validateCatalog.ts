@@ -1,3 +1,7 @@
+/**
+ * Legacy v1 flat JSON diagnostics only (productSeries.json, parsingRules.json, etc.).
+ * Runtime catalog resolution and attribute extraction use validateCatalogV2 + catalog v2.
+ */
 import equivalentSeriesData from '@/data/equivalentSeries.json';
 import equivalenceProfilesData from '@/data/equivalenceProfiles.json';
 import parsingRulesData from '@/data/parsingRules.json';

@@ -2,6 +2,7 @@ import { Link, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { DemoDisclaimerNote } from '@/components/DemoDisclaimerNote';
 import {
   getSearchHistory,
   getUnresolvedSearches,
@@ -126,6 +127,8 @@ export default function HistoryScreen() {
           ))}
         </View>
       )}
+
+      <DemoDisclaimerNote compact />
     </ScrollView>
   );
 }

@@ -1,5 +1,5 @@
-import equivalentSeriesData from '@/data/equivalentSeries.json';
 import { getTechnicalAttributes } from '@/domain/attributes/getTechnicalAttributes';
+import { getLegacyEquivalentGroups } from '@/domain/catalog/adapters/catalogV2Adapter';
 import { getProductSeriesById } from '@/domain/resolver/productSeriesCatalog';
 import {
   HYDRAULIC_VALVE_CATEGORY,
@@ -15,7 +15,7 @@ import type {
 import { formatAttributeValue, formatConfidence } from '@/utils/formatConfidence';
 import { formatConfidencePercent } from '@/utils/confidenceScore';
 
-const equivalenceGroups = equivalentSeriesData as EquivalentGroupRecord[];
+const equivalenceGroups = getLegacyEquivalentGroups();
 
 export interface EvidenceDetailRow {
   label: string;

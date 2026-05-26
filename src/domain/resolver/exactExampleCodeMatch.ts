@@ -1,27 +1,7 @@
-import exampleProductCodesData from '@/data/exampleProductCodes.json';
-import hydraulicValveExampleCodesData from '@/data/hydraulicValveExampleCodes.json';
+import { getAllCatalogExampleCodes } from '@/domain/catalog/adapters/catalogV2Adapter';
 import { compactProductCode } from '@/domain/scoring/calculateSuggestionMatchPercentage';
 
-import { getAllProductSeries } from './productSeriesCatalog';
 import { normalizeCode } from './normalizeCode';
-
-let cachedExampleCodes: string[] | null = null;
-
-function collectCatalogExampleCodes(): string[] {
-  if (cachedExampleCodes) {
-    return cachedExampleCodes;
-  }
-
-  const fromSeries = getAllProductSeries().flatMap((series) => series.exampleProductCodes ?? []);
-  cachedExampleCodes = [
-    ...new Set([
-      ...(exampleProductCodesData as string[]),
-      ...(hydraulicValveExampleCodesData as string[]),
-      ...fromSeries,
-    ]),
-  ];
-  return cachedExampleCodes;
-}
 
 /**
  * Returns the catalog example string when the query matches a supported example code
@@ -34,7 +14,7 @@ export function findExactExampleCodeMatch(normalizedCode: string): string | null
 
   const compactQuery = compactProductCode(normalizedCode);
 
-  for (const example of collectCatalogExampleCodes()) {
+  for (const example of getAllCatalogExampleCodes()) {
     const normalizedExample = normalizeCode(example);
     if (normalizedExample === normalizedCode) {
       return example;

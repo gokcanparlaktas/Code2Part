@@ -1,6 +1,7 @@
 import { Link, router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Platform,
   Pressable,
   StyleSheet,
@@ -9,23 +10,26 @@ import {
   View,
 } from 'react-native';
 
+import { DemoDisclaimerNote } from '@/components/DemoDisclaimerNote';
+
 import { suggestProducts } from '@/domain/resolver/suggestProducts';
 import type { SuggestedProduct } from '@/types/suggestion';
 
 import { PartialSuggestionsPanel } from './PartialSuggestionsPanel';
 
 const EXAMPLES = [
-  'DSBC-50-100-PPVA-N3',
-  'CP96SDB50-100',
-  'CQ2B32-50D',
-  'SI50X100',
-  'P1D-S050MS-0100',
-  'DSNU-25-80-P-A',
+  '4WE6G-6X/EG24N9K4',
+  'DG4V-3-2A-M-U-D24-60',
+  'DSBC-63-200-PPVA',
+  'C96-40-80',
+  'SI-63-150',
+  'DSG-01-3C2-D24-N1-50',
 ];
 
 export function ProductCodeSearchCard() {
   const [code, setCode] = useState('');
   const [strokeHint, setStrokeHint] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
   const suggestions = useMemo(() => {
     const trimmed = code.trim();
@@ -53,13 +57,15 @@ export function ProductCodeSearchCard() {
 
   const handleSearch = () => {
     const trimmed = code.trim();
-    if (!trimmed) {
+    if (!trimmed || isSearching) {
       return;
     }
+    setIsSearching(true);
     router.push({
       pathname: '/result',
       params: { code: trimmed },
     });
+    setTimeout(() => setIsSearching(false), 400);
   };
 
   return (
@@ -108,9 +114,13 @@ export function ProductCodeSearchCard() {
           pressed && code.trim() ? styles.buttonPressed : null,
         ]}
         onPress={handleSearch}
-        disabled={!code.trim()}
+        disabled={!code.trim() || isSearching}
       >
-        <Text style={styles.buttonText}>Tanımla ve karşılaştır</Text>
+        {isSearching ? (
+          <ActivityIndicator color="#FFFFFF" />
+        ) : (
+          <Text style={styles.buttonText}>Tanımla ve karşılaştır</Text>
+        )}
       </Pressable>
 
       <Link href="/history" asChild>
@@ -131,6 +141,8 @@ export function ProductCodeSearchCard() {
           </Pressable>
         ))}
       </View>
+
+      <DemoDisclaimerNote compact />
     </View>
   );
 }

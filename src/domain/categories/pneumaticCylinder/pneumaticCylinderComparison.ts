@@ -1,4 +1,4 @@
-import equivalenceProfilesData from '@/data/equivalenceProfiles.json';
+import { lookupEquivalenceSummaryFromCatalog } from '@/domain/catalog/comparisonProfileBridge';
 import type {
   AttributeComparison,
   CheckItem,
@@ -6,16 +6,10 @@ import type {
   EquivalenceSummary,
   EquivalentCandidate,
 } from '@/types/compatibility';
-import type {
-  EquivalenceProfileRecord,
-  ProductIdentification,
-  TechnicalAttribute,
-} from '@/types/product';
+import type { ProductIdentification, TechnicalAttribute } from '@/types/product';
 import { formatAttributeValue } from '@/utils/formatConfidence';
 
 import { getPneumaticCylinderCheckItems } from './pneumaticCylinderCheckItems';
-
-const equivalenceProfiles = equivalenceProfilesData as EquivalenceProfileRecord[];
 
 function displayAttribute(attr: TechnicalAttribute<string | number>): string {
   return formatAttributeValue(attr.value, attr.unit);
@@ -104,18 +98,9 @@ function lookupEquivalenceSummary(
   compatibleCount: number,
   checkCount: number
 ): EquivalenceSummary {
-  const profile = equivalenceProfiles.find(
-    (p) =>
-      p.sourceSeriesId === source.seriesId &&
-      p.targetSeriesId === candidate.seriesId
-  );
-
-  if (profile) {
-    return {
-      matchLevelTr: profile.matchLevelTr,
-      summaryTr: profile.summaryTr,
-      riskLevel: profile.riskLevel,
-    };
+  const fromCatalog = lookupEquivalenceSummaryFromCatalog(source, candidate);
+  if (fromCatalog) {
+    return fromCatalog;
   }
 
   if (compatibleCount >= 4 && checkCount <= 2) {
