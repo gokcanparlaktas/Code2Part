@@ -169,5 +169,8 @@ export function comparePneumaticCylinders(
     different,
     checkItems,
     warnings: [...new Set([...warnings, ...profileComparison.warnings])],
+    profileScoring: {
+      scoredComparisons: profileComparison.scoredComparisons,
+    },
   };
 }

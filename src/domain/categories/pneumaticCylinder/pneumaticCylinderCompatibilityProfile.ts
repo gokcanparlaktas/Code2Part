@@ -5,6 +5,11 @@ import type { TechnicalAttribute } from '@/types/technicalAttribute';
 
 import { getTechnicalAttributes } from '@/domain/attributes/getTechnicalAttributes';
 import type { ProductCompatibilityProfile } from '@/domain/compatibilityProfiles/compatibilityProfile';
+import { normalizeCompatibilityProfile } from '@/domain/normalization/normalizeCompatibilityProfile';
+import {
+  normalizeCushioningAttribute,
+  normalizeStandardFamilyAttribute,
+} from '@/domain/normalization/normalizeTechnicalAttribute';
 
 type AttributeDef = ProductCompatibilityProfile['attributes'][string];
 
@@ -23,6 +28,8 @@ function fromTechAttr(
   return {
     label: fallback.label,
     value: tech?.value ?? null,
+    rawValue: tech?.value ?? null,
+    rawToken: typeof tech?.value === 'string' ? tech.value : undefined,
     unit: tech?.unit,
     importance: fallback.importance,
     compareMode: fallback.compareMode,
@@ -42,6 +49,7 @@ function fromCandidateString(options: {
   return {
     label: options.label,
     value: options.value,
+    rawValue: options.value,
     importance: options.importance,
     compareMode: options.compareMode,
     evidence: options.value ? 'series_table' : 'unknown',
@@ -56,7 +64,12 @@ export function buildPneumaticCylinderCompatibilityProfile(options: {
 }): ProductCompatibilityProfile {
   const attrs = options.identification ? getTechnicalAttributes(options.identification) : [];
 
-  const standardFamily =
+  const brand =
+    options.identification?.brand.value ??
+    options.candidate?.brand ??
+    undefined;
+
+  const standardFamilyRaw =
     options.identification?.standardFamily.value ??
     options.candidate?.standardFamily ??
     null;
@@ -65,12 +78,9 @@ export function buildPneumaticCylinderCompatibilityProfile(options: {
   const stroke = pickAttr(attrs, 'stroke');
   const cushioning = pickAttr(attrs, 'cushioning_token');
 
-  return {
+  const profile: ProductCompatibilityProfile = {
     productCategory: PNEUMATIC_CYLINDER_CATEGORY,
-    brand:
-      options.identification?.brand.value ??
-      options.candidate?.brand ??
-      undefined,
+    brand,
     series:
       options.identification?.series.value ??
       options.candidate?.series ??
@@ -82,15 +92,12 @@ export function buildPneumaticCylinderCompatibilityProfile(options: {
         importance: 'critical',
         compareMode: 'exact',
       }),
-      standardFamily: {
-        label: 'Standart ailesi',
-        value: standardFamily,
-        importance: 'critical',
-        compareMode: 'same_or_check',
-        evidence: standardFamily ? 'series_table' : 'unknown',
-        confidence: standardFamily ? 'medium' : 'unknown',
-        requiresCatalogCheck: standardFamily ? true : undefined,
-      },
+      standardFamily: normalizeStandardFamilyAttribute({
+        rawValue: standardFamilyRaw,
+        manufacturer: brand,
+        evidence: standardFamilyRaw ? 'series_table' : 'unknown',
+        confidence: standardFamilyRaw ? 'medium' : 'unknown',
+      }),
       bore: fromTechAttr(bore, {
         label: 'Çap (bore)',
         importance: 'critical',
@@ -101,11 +108,17 @@ export function buildPneumaticCylinderCompatibilityProfile(options: {
         importance: 'critical',
         compareMode: 'numeric',
       }),
-      cushioning: fromTechAttr(cushioning, {
-        label: 'Sönümleme tipi',
-        importance: 'important',
-        compareMode: 'same_or_check',
-      }),
+      cushioning: cushioning?.value
+        ? normalizeCushioningAttribute({
+            rawToken: String(cushioning.value),
+            manufacturer: brand,
+            evidence: cushioning.evidence,
+            confidence: cushioning.confidence,
+          })
+        : normalizeCushioningAttribute({
+            rawToken: null,
+            manufacturer: brand,
+          }),
       magneticPiston: {
         label: 'Manyetik piston',
         value: null,
@@ -164,5 +177,6 @@ export function buildPneumaticCylinderCompatibilityProfile(options: {
       },
     },
   };
-}
 
+  return normalizeCompatibilityProfile(profile);
+}

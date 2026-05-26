@@ -1,4 +1,7 @@
-import type { CompatibilityResult } from '@/types/compatibility';
+import type {
+  CompatibilityResult,
+  ScoredAttributeComparison,
+} from '@/types/compatibility';
 
 import {
   calculateMatchPercentage,
@@ -15,6 +18,7 @@ function buildResult(
     checkItems: number;
     checkSeverities: Array<'low' | 'medium' | 'high'>;
     warnings: number;
+    scoredComparisons: ScoredAttributeComparison[];
   }> = {}
 ): CompatibilityResult {
   const compatibleCount = overrides.compatible ?? 0;
@@ -60,6 +64,9 @@ function buildResult(
       severity: (checkSeverities[index] ?? 'medium') as const,
     })),
     warnings: Array.from({ length: warningCount }, (_, index) => `Uyarı ${index + 1}`),
+    profileScoring: overrides.scoredComparisons
+      ? { scoredComparisons: overrides.scoredComparisons }
+      : undefined,
   };
 }
 
@@ -70,77 +77,223 @@ describe('calculateMatchPercentage', () => {
     expect(clampMatchPercentage(67.4)).toBe(67);
   });
 
-  it('assigns low level for 0-49', () => {
+  it('assigns low/medium/high levels', () => {
     expect(resolveMatchPercentageLevel(0)).toBe('low');
     expect(resolveMatchPercentageLevel(49)).toBe('low');
-    expect(
-      calculateMatchPercentage(
-        buildResult({ different: 3, differentLabels: ['Çap', 'Strok', 'Montaj'] })
-      ).level
-    ).toBe('low');
-  });
-
-  it('assigns medium level for 50-79', () => {
     expect(resolveMatchPercentageLevel(50)).toBe('medium');
     expect(resolveMatchPercentageLevel(79)).toBe('medium');
-    expect(calculateMatchPercentage(buildResult({ checkItems: 5 })).level).toBe('medium');
-  });
-
-  it('assigns high level for 80-100', () => {
     expect(resolveMatchPercentageLevel(80)).toBe('high');
     expect(resolveMatchPercentageLevel(100)).toBe('high');
-    expect(calculateMatchPercentage(buildResult({})).percentage).toBe(100);
-    expect(calculateMatchPercentage(buildResult({})).level).toBe('high');
   });
 
-  it('returns 100 only when there are no different/check/warning items', () => {
-    expect(calculateMatchPercentage(buildResult({})).percentage).toBe(100);
-    expect(calculateMatchPercentage(buildResult({ checkItems: 1 })).percentage).toBeLessThan(100);
-    expect(calculateMatchPercentage(buildResult({ warnings: 1 })).percentage).toBeLessThan(100);
-    expect(calculateMatchPercentage(buildResult({ different: 1 })).percentage).toBeLessThan(100);
+  it('returns 100 only when all critical scored comparisons are compatible with no checks/warnings', () => {
+    const perfect = buildResult({
+      scoredComparisons: [
+        {
+          label: 'Çap (bore)',
+          sourceDisplay: '50 mm',
+          targetDisplay: '50 mm',
+          status: 'compatible',
+          importance: 'critical',
+        },
+        {
+          label: 'Strok',
+          sourceDisplay: '100 mm',
+          targetDisplay: '100 mm',
+          status: 'compatible',
+          importance: 'critical',
+        },
+      ],
+    });
+
+    expect(calculateMatchPercentage(perfect).percentage).toBe(100);
+    expect(
+      calculateMatchPercentage(
+        buildResult({
+          scoredComparisons: [
+            {
+              label: 'Çap (bore)',
+              sourceDisplay: '50 mm',
+              targetDisplay: '50 mm',
+              status: 'compatible',
+              importance: 'critical',
+            },
+            {
+              label: 'Sönümleme tipi',
+              sourceDisplay: 'PPVA',
+              targetDisplay: 'Bilinmiyor',
+              status: 'unknownOrCheck',
+              importance: 'important',
+            },
+          ],
+        })
+      ).percentage
+    ).toBeLessThan(100);
   });
 
-  it('reduces score for 5 unknown/check items (not 100)', () => {
-    const score = calculateRawMatchScore(buildResult({ checkItems: 5 }));
-    expect(score).toBeLessThan(100);
-    expect(calculateMatchPercentage(buildResult({ checkItems: 5 })).percentage).toBeLessThan(100);
-  });
-
-  it('reduces score for warnings', () => {
-    expect(calculateMatchPercentage(buildResult({ warnings: 2 })).percentage).toBe(90);
-  });
-
-  it('critical different item drops score significantly', () => {
-    const match = calculateMatchPercentage(buildResult({ different: 1, differentLabels: ['Çap'] }));
-    expect(match.percentage).toBe(70);
-    expect(match.level).toBe('medium');
-  });
-
-  it('critical unknown/check items use heavier penalty', () => {
-    const normal = calculateMatchPercentage(buildResult({ checkItems: 1, checkSeverities: ['medium'] }));
-    const critical = calculateMatchPercentage(buildResult({ checkItems: 1, checkSeverities: ['high'] }));
-    expect(normal.percentage).toBe(93);
-    expect(critical.percentage).toBe(88);
-  });
-
-  it('hydraulic-like critical unknowns should not show 100', () => {
+  it('scores compatible critical attributes above zero', () => {
     const match = calculateMatchPercentage(
       buildResult({
-        checkItems: 5,
-        checkSeverities: ['high', 'high', 'high', 'high', 'high'],
+        scoredComparisons: [
+          {
+            label: 'Çap (bore)',
+            sourceDisplay: '50 mm',
+            targetDisplay: '50 mm',
+            status: 'compatible',
+            importance: 'critical',
+          },
+          {
+            label: 'Strok',
+            sourceDisplay: '100 mm',
+            targetDisplay: '100 mm',
+            status: 'compatible',
+            importance: 'critical',
+          },
+          {
+            label: 'Standart ailesi',
+            sourceDisplay: 'ISO 15552',
+            targetDisplay: 'ISO 15552',
+            status: 'unknownOrCheck',
+            importance: 'critical',
+          },
+        ],
       })
     );
-    expect(match.percentage).toBe(40);
-    expect(match.level).toBe('low');
+
+    expect(match.percentage).toBeGreaterThan(0);
+    expect(match.level).not.toBe('low');
+  });
+
+  it('reduces score for critical different attributes', () => {
+    const withDifferentStroke = calculateMatchPercentage(
+      buildResult({
+        scoredComparisons: [
+          {
+            label: 'Çap (bore)',
+            sourceDisplay: '50 mm',
+            targetDisplay: '50 mm',
+            status: 'compatible',
+            importance: 'critical',
+          },
+          {
+            label: 'Strok',
+            sourceDisplay: '100 mm',
+            targetDisplay: '80 mm',
+            status: 'different',
+            importance: 'critical',
+          },
+        ],
+      })
+    );
+
+    const withSameStroke = calculateMatchPercentage(
+      buildResult({
+        scoredComparisons: [
+          {
+            label: 'Çap (bore)',
+            sourceDisplay: '50 mm',
+            targetDisplay: '50 mm',
+            status: 'compatible',
+            importance: 'critical',
+          },
+          {
+            label: 'Strok',
+            sourceDisplay: '100 mm',
+            targetDisplay: '100 mm',
+            status: 'compatible',
+            importance: 'critical',
+          },
+        ],
+      })
+    );
+
+    expect(withDifferentStroke.percentage).toBeLessThan(withSameStroke.percentage);
+  });
+
+  it('returns zero when there are no compatible points and penalties exist', () => {
+    const match = calculateMatchPercentage(
+      buildResult({
+        scoredComparisons: [
+          {
+            label: 'CETOP / NG ölçüsü',
+            sourceDisplay: 'NG6',
+            targetDisplay: 'NG10',
+            status: 'different',
+            importance: 'critical',
+          },
+        ],
+      })
+    );
+
+    expect(match.percentage).toBe(0);
+  });
+
+  it('applies warning penalties', () => {
+    const withoutWarnings = calculateMatchPercentage(
+      buildResult({
+        scoredComparisons: [
+          {
+            label: 'Bobin voltajı',
+            sourceDisplay: '24V DC',
+            targetDisplay: '24V DC',
+            status: 'compatible',
+            importance: 'critical',
+          },
+        ],
+      })
+    );
+
+    const withWarnings = calculateMatchPercentage({
+      ...buildResult({
+        scoredComparisons: [
+          {
+            label: 'Bobin voltajı',
+            sourceDisplay: '24V DC',
+            targetDisplay: '24V DC',
+            status: 'compatible',
+            importance: 'critical',
+          },
+        ],
+      }),
+      warnings: ['Katalog kontrolü gerekir'],
+    });
+
+    expect(withWarnings.percentage).toBeLessThan(withoutWarnings.percentage);
+  });
+
+  it('uses fallback scoring when profileScoring is missing', () => {
+    const result = buildResult({
+      compatible: 2,
+      checkItems: 1,
+      checkSeverities: ['medium'],
+    });
+
+    expect(calculateRawMatchScore(result)).toBeGreaterThan(0);
+    expect(calculateMatchPercentage(result).percentage).toBeLessThan(100);
   });
 
   it('returns color for each level', () => {
-    expect(calculateMatchPercentage(buildResult({})).color).toBe('#16A34A');
-    expect(calculateMatchPercentage(buildResult({ checkItems: 5 })).color).toBe('#F59E0B');
     expect(
       calculateMatchPercentage(
-        buildResult({ checkItems: 5, checkSeverities: ['high', 'high', 'high', 'high', 'high'] })
+        buildResult({
+          scoredComparisons: [
+            {
+              label: 'Çap (bore)',
+              sourceDisplay: '50 mm',
+              targetDisplay: '50 mm',
+              status: 'compatible',
+              importance: 'critical',
+            },
+            {
+              label: 'Strok',
+              sourceDisplay: '100 mm',
+              targetDisplay: '100 mm',
+              status: 'compatible',
+              importance: 'critical',
+            },
+          ],
+        })
       ).color
-    ).toBe('#DC2626');
+    ).toBe('#16A34A');
   });
 });

@@ -1,4 +1,8 @@
-import type { AttributeComparison, CheckItem } from '@/types/compatibility';
+import type {
+  AttributeComparison,
+  CheckItem,
+  ScoredAttributeComparison,
+} from '@/types/compatibility';
 import type { ProductCompatibilityProfile } from './compatibilityProfile';
 
 export type CompatibilityProfileSections = {
@@ -11,6 +15,7 @@ export type CompatibilityProfileSections = {
 export type CompatibilityProfileComparisonDetailed = CompatibilityProfileSections & {
   comparisons: AttributeComparison[];
   checkItems: CheckItem[];
+  scoredComparisons: ScoredAttributeComparison[];
 };
 
 function formatValue(value: string | number | boolean | null, unit?: string): string {
@@ -21,6 +26,28 @@ function formatValue(value: string | number | boolean | null, unit?: string): st
     return value ? 'Var' : 'Yok';
   }
   return unit ? `${value} ${unit}` : String(value);
+}
+
+function comparableValue(
+  attribute: ProductCompatibilityProfile['attributes'][string]
+): string | number | boolean | null {
+  if (attribute.canonicalValue !== undefined && attribute.canonicalValue !== null) {
+    return attribute.canonicalValue;
+  }
+  return attribute.value;
+}
+
+function displayValue(attribute: ProductCompatibilityProfile['attributes'][string]): string {
+  if (attribute.displayValue !== undefined && attribute.displayValue !== null) {
+    return String(attribute.displayValue);
+  }
+  return formatValue(attribute.value, attribute.unit);
+}
+
+function hasCanonicalMapping(
+  attribute: ProductCompatibilityProfile['attributes'][string]
+): boolean {
+  return attribute.canonicalValue !== undefined && attribute.canonicalValue !== null;
 }
 
 function severityFromImportance(
@@ -41,16 +68,19 @@ function compareSingleAttribute(options: {
 }): { comparison: AttributeComparison | null; checkItem: CheckItem | null; sentence: string | null } {
   const { source, target } = options;
   const label = source.label;
-  const sourceDisplay = formatValue(source.value, source.unit);
-  const targetDisplay = formatValue(target.value, target.unit);
+  const sourceDisplay = displayValue(source);
+  const targetDisplay = displayValue(target);
 
   if (source.compareMode === 'ignore') {
     return { comparison: null, checkItem: null, sentence: null };
   }
 
+  const sourceComparable = comparableValue(source);
+  const targetComparable = comparableValue(target);
+
   const eitherUnknown =
-    source.value === null ||
-    target.value === null ||
+    sourceComparable === null ||
+    targetComparable === null ||
     source.evidence === 'unknown' ||
     target.evidence === 'unknown' ||
     source.evidence === 'inferred' ||
@@ -59,20 +89,23 @@ function compareSingleAttribute(options: {
   const requiresCatalogCheck =
     Boolean(source.requiresCatalogCheck) || Boolean(target.requiresCatalogCheck);
 
-  const bothPresent = source.value !== null && target.value !== null;
-  const same = bothPresent && String(source.value) === String(target.value);
+  const bothPresent = sourceComparable !== null && targetComparable !== null;
+  const same = bothPresent && String(sourceComparable) === String(targetComparable);
+  const canonicalMatch =
+    same && hasCanonicalMapping(source) && hasCanonicalMapping(target);
 
   const highConfidenceSame =
     same &&
-    source.confidence === 'high' &&
-    target.confidence === 'high' &&
-    !requiresCatalogCheck;
+    (canonicalMatch ||
+      (source.confidence === 'high' &&
+        target.confidence === 'high' &&
+        !requiresCatalogCheck));
 
   const numericSame =
     source.compareMode === 'numeric' &&
-    typeof source.value === 'number' &&
-    typeof target.value === 'number' &&
-    source.value === target.value;
+    typeof sourceComparable === 'number' &&
+    typeof targetComparable === 'number' &&
+    sourceComparable === targetComparable;
 
   const status: AttributeComparison['status'] = (() => {
     if (source.compareMode === 'presence') {
@@ -92,15 +125,17 @@ function compareSingleAttribute(options: {
     }
 
     if (source.compareMode === 'same_or_check') {
-      if (highConfidenceSame) {
+      if (canonicalMatch || highConfidenceSame) {
         return 'compatible';
       }
       return same ? 'unknownOrCheck' : 'different';
     }
 
     if (source.compareMode === 'catalog_check') {
-      // Never mark fully compatible unless it is truly verified (high confidence, no catalog-check flag).
-      return highConfidenceSame ? 'compatible' : 'unknownOrCheck';
+      if (canonicalMatch || highConfidenceSame) {
+        return 'compatible';
+      }
+      return 'unknownOrCheck';
     }
 
     return 'unknownOrCheck';
@@ -159,12 +194,28 @@ export function compareCompatibilityProfilesDetailed(
   const warnings: string[] = [];
   const comparisons: AttributeComparison[] = [];
   const checkItems: CheckItem[] = [];
+  const scoredComparisons: ScoredAttributeComparison[] = [];
 
   if (sourceProfile.productCategory !== candidateProfile.productCategory) {
     const msg = 'Ürün kategorisi farklı: Bu iki ürün doğrudan uyumlu kabul edilmez.';
     different.push(msg);
     warnings.push(msg);
-    return { compatible, different, unknownOrCheck, warnings, comparisons, checkItems };
+    scoredComparisons.push({
+      label: 'Ürün kategorisi',
+      sourceDisplay: sourceProfile.productCategory,
+      targetDisplay: candidateProfile.productCategory,
+      status: 'different',
+      importance: 'critical',
+    });
+    return {
+      compatible,
+      different,
+      unknownOrCheck,
+      warnings,
+      comparisons,
+      checkItems,
+      scoredComparisons,
+    };
   }
 
   for (const [key, sourceAttr] of Object.entries(sourceProfile.attributes)) {
@@ -180,12 +231,23 @@ export function compareCompatibilityProfilesDetailed(
         reasonTr: `${sourceAttr.label} için muadil tarafta bilgi yok. Katalogdan doğrulanmalıdır.`,
         severity: severityFromImportance(sourceAttr.importance),
       });
+      scoredComparisons.push({
+        label: sourceAttr.label,
+        sourceDisplay,
+        targetDisplay: 'Doğrulanamadı',
+        status: 'unknownOrCheck',
+        importance: sourceAttr.importance,
+      });
       continue;
     }
 
     const result = compareSingleAttribute({ source: sourceAttr, target: targetAttr });
     if (result.comparison) {
       comparisons.push(result.comparison);
+      scoredComparisons.push({
+        ...result.comparison,
+        importance: sourceAttr.importance,
+      });
     }
     if (result.checkItem) {
       checkItems.push(result.checkItem);
@@ -206,5 +268,13 @@ export function compareCompatibilityProfilesDetailed(
     warnings.push('Bazı alanlar kesin değil: Sipariş öncesinde katalog kontrolü gerekir.');
   }
 
-  return { compatible, different, unknownOrCheck, warnings, comparisons, checkItems };
+  return {
+    compatible,
+    different,
+    unknownOrCheck,
+    warnings,
+    comparisons,
+    checkItems,
+    scoredComparisons,
+  };
 }

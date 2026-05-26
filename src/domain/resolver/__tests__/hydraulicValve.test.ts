@@ -76,11 +76,11 @@ describe('hydraulic_valve category', () => {
     expect(checkFields).toContain('Debi değeri');
 
     // Known-equal attributes should be compatible (not "kontrol gerekli")
-    expect(compatibleLabels).toContain('CETOP / NG ölçüsü');
+    expect(compatibleLabels).toContain('Montaj standardı');
     expect(compatibleLabels).toContain('Bobin voltajı');
 
-    // Known-different attributes should be different (not "kontrol gerekli")
-    expect(differentLabels).toContain('Konnektör kodu');
+    // Generic plug-in vs specific DIN connector requires catalog check, not a hard mismatch
+    expect(checkFields).toContain('Konnektör tipi');
     // Cross-manufacturer function tokens require catalog check, not full compatibility
     expect(compatibleLabels).not.toContain('Sürgü / fonksiyon kodu');
     expect(checkFields).toContain('Sürgü sembolü / fonksiyon');
@@ -114,7 +114,7 @@ describe('hydraulic_valve category', () => {
     };
 
     const result = compareProducts(ng6, candidate);
-    expect(result.different.some((d) => d.label === 'CETOP / NG ölçüsü')).toBe(true);
+    expect(result.different.some((d) => d.label === 'Montaj standardı')).toBe(true);
   });
 
   describe('suggestions', () => {

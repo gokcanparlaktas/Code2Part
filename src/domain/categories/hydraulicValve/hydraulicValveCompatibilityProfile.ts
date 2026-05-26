@@ -5,6 +5,7 @@ import type { TechnicalAttribute } from '@/types/technicalAttribute';
 
 import { getTechnicalAttributes } from '@/domain/attributes/getTechnicalAttributes';
 import type { ProductCompatibilityProfile } from '@/domain/compatibilityProfiles/compatibilityProfile';
+import { normalizeCompatibilityProfile } from '@/domain/normalization/normalizeCompatibilityProfile';
 
 type AttributeDef = ProductCompatibilityProfile['attributes'][string];
 
@@ -35,9 +36,12 @@ function fromTechAttr(
   fallback: Partial<AttributeDef> & Pick<AttributeDef, 'label' | 'importance' | 'compareMode'>
 ): AttributeDef {
   const normalizedValue = (tech as any)?.normalizedValue;
+  const sourceToken = (tech as any)?.sourceToken as string | undefined;
   return {
     label: fallback.label,
     value: normalizedValue !== undefined && normalizedValue !== null ? normalizedValue : tech?.value ?? null,
+    rawValue: tech?.value ?? null,
+    rawToken: sourceToken,
     unit: tech?.unit,
     importance: fallback.importance,
     compareMode: fallback.compareMode,
@@ -100,7 +104,7 @@ export function buildHydraulicValveCompatibilityProfile(options: {
     options.identification?.productCategory.value ??
     null;
 
-  return {
+  const profile: ProductCompatibilityProfile = {
     productCategory: HYDRAULIC_VALVE_CATEGORY,
     brand:
       options.identification?.brand.value ??
@@ -211,5 +215,7 @@ export function buildHydraulicValveCompatibilityProfile(options: {
       }),
     },
   };
+
+  return normalizeCompatibilityProfile(profile);
 }
 

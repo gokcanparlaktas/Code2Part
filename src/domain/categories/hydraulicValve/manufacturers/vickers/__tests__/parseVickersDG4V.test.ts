@@ -136,7 +136,7 @@ describe('parseVickersDG4V', () => {
     const sameCompatible = sameSpool.compatible.length;
     const diffCompatible = differentSpring.compatible.length;
     expect(sameCompatible).toBeGreaterThan(diffCompatible);
-    expect(differentSpring.different.some((c) => c.label === 'Yay düzeni')).toBe(true);
+    expect(differentSpring.different.some((c) => c.label === 'Merkezleme')).toBe(true);
     expect(calculateMatchPercentage(sameSpool).percentage).toBeGreaterThanOrEqual(
       calculateMatchPercentage(differentSpring).percentage
     );
@@ -168,6 +168,6 @@ describe('parseVickersDG4V', () => {
         normalizeCode('DG4V-5-2A-M-U-H7-60')
       ),
     });
-    expect(result.different.some((c) => c.label === 'CETOP / NG ölçüsü')).toBe(true);
+    expect(result.different.some((c) => c.label === 'Montaj standardı')).toBe(true);
   });
 });

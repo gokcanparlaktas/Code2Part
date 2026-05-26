@@ -9,6 +9,14 @@ export type ProductCompatibilityProfile = {
     {
       label: string;
       value: string | number | boolean | null;
+      /** User-facing primary text (canonical engineering meaning). */
+      displayValue?: string;
+      canonicalValue?: string | number | boolean | null;
+      rawTokenLabel?: string;
+      rawValue?: string | number | boolean | null;
+      rawToken?: string;
+      manufacturer?: string;
+      sourceDocument?: string;
       unit?: string;
       importance: 'critical' | 'important' | 'optional';
       evidence: 'code' | 'series_table' | 'standard' | 'inferred' | 'unknown';

@@ -11,11 +11,21 @@ export type MatchLevelTr =
   | 'Mekanik muadil adayı'
   | 'Fonksiyonel alternatif';
 
+export type AttributeImportance = 'critical' | 'important' | 'optional';
+
 export interface AttributeComparison {
   label: string;
   sourceDisplay: string;
   targetDisplay: string;
   status: CompatibilityStatus;
+}
+
+export interface ScoredAttributeComparison extends AttributeComparison {
+  importance: AttributeImportance;
+}
+
+export interface ProfileScoringData {
+  scoredComparisons: ScoredAttributeComparison[];
 }
 
 export interface CheckItem {
@@ -50,4 +60,6 @@ export interface CompatibilityResult {
   different: AttributeComparison[];
   checkItems: CheckItem[];
   warnings: string[];
+  /** Universal profile comparisons used for match percentage scoring. */
+  profileScoring?: ProfileScoringData;
 }

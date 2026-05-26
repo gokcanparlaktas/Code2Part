@@ -1,5 +1,15 @@
 import { getTechnicalAttributes } from '@/domain/attributes/getTechnicalAttributes';
 import {
+  normalizeConnectorDisplay,
+  normalizeManualOverrideDisplay,
+  normalizeVoltageDisplay,
+} from '@/domain/normalization/canonicalAttributeDisplay';
+import {
+  normalizeCushioningAttribute,
+  normalizeStandardFamilyAttribute,
+  formatNormalizedAttributeForDisplay,
+} from '@/domain/normalization/normalizeTechnicalAttribute';
+import {
   HYDRAULIC_VALVE_CATEGORY,
   PNEUMATIC_CYLINDER_CATEGORY,
 } from '@/types/category';
@@ -93,13 +103,75 @@ export function buildProductDetailRows(
         rowFromIdentificationAttribute('Sürgü / fonksiyon kodu', identification.valveSpoolFunction)
       );
     }
-    if (identification.valveCoilVoltage) {
-      rows.push(rowFromIdentificationAttribute('Bobin voltajı', identification.valveCoilVoltage));
+    const voltageAttr = pickAttribute(attributes, 'voltage');
+    if (voltageAttr || identification.valveCoilVoltage) {
+      const normalized = normalizeVoltageDisplay({
+        rawValue: voltageAttr?.value ? String(voltageAttr.value) : identification.valveCoilVoltage?.value,
+        rawToken: (voltageAttr as { sourceToken?: string })?.sourceToken,
+        sourceManufacturer: identification.brand.value ?? undefined,
+      });
+      if (normalized) {
+        rows.push({
+          label: 'Bobin voltajı',
+          value: formatNormalizedAttributeForDisplay({
+            value: normalized.displayValue,
+            canonicalValue: normalized.canonicalValue,
+            rawToken: normalized.rawToken,
+            rawTokenLabel: normalized.rawTokenLabel,
+          }),
+          evidence: voltageAttr?.evidence === 'code' ? 'Ürün kodundan' : 'Seri tablosundan',
+          requiresCheck: normalized.requiresCatalogCheck ?? false,
+        });
+      } else if (identification.valveCoilVoltage) {
+        rows.push(rowFromIdentificationAttribute('Bobin voltajı', identification.valveCoilVoltage));
+      }
     }
 
     const connector = pickAttribute(attributes, 'connector_token');
-    if (connector) {
-      rows.push(rowFromParsedTechnicalAttribute({ ...connector, label: 'Konnektör kodu' }));
+    const connectorType = pickAttribute(attributes, 'connector');
+    if (connector || connectorType) {
+      const normalized = normalizeConnectorDisplay({
+        rawValue: connectorType?.value ? String(connectorType.value) : null,
+        rawToken: connector?.value ? String(connector.value) : undefined,
+        sourceManufacturer: identification.brand.value ?? undefined,
+      });
+      if (normalized) {
+        rows.push({
+          label: 'Konnektör',
+          value: formatNormalizedAttributeForDisplay({
+            value: normalized.displayValue,
+            canonicalValue: normalized.canonicalValue,
+            rawToken: normalized.rawToken,
+            rawTokenLabel: normalized.rawTokenLabel,
+          }),
+          evidence: 'Ürün kodundan',
+          requiresCheck: normalized.requiresCatalogCheck ?? false,
+        });
+      } else if (connector) {
+        rows.push(rowFromParsedTechnicalAttribute({ ...connector, label: 'Konnektör kodu' }));
+      }
+    }
+
+    const manualOverride = pickAttribute(attributes, 'manual_override');
+    if (manualOverride) {
+      const normalized = normalizeManualOverrideDisplay({
+        rawValue: manualOverride.value ? String(manualOverride.value) : null,
+        rawToken: (manualOverride as { sourceToken?: string })?.sourceToken,
+        sourceManufacturer: identification.brand.value ?? undefined,
+      });
+      if (normalized) {
+        rows.push({
+          label: 'Manuel kumanda',
+          value: formatNormalizedAttributeForDisplay({
+            value: normalized.displayValue,
+            canonicalValue: normalized.canonicalValue,
+            rawToken: normalized.rawToken,
+            rawTokenLabel: normalized.rawTokenLabel,
+          }),
+          evidence: 'Ürün kodundan',
+          requiresCheck: normalized.requiresCatalogCheck ?? false,
+        });
+      }
     }
 
     const revision = pickAttribute(attributes, 'revision');
@@ -111,16 +183,44 @@ export function buildProductDetailRows(
   }
 
   if (identification.resolverCategoryKey === PNEUMATIC_CYLINDER_CATEGORY) {
+    const standardFamily = normalizeStandardFamilyAttribute({
+      rawValue: identification.standardFamily.value,
+      manufacturer: identification.brand.value ?? undefined,
+      evidence: identification.standardFamily.evidence,
+      confidence: identification.confidence,
+    });
+
     const rows: ProductDetailRow[] = [
       ...baseRows,
-      rowFromIdentificationAttribute('Standart ailesi', identification.standardFamily),
+      {
+        label: 'Standart ailesi',
+        value: formatNormalizedAttributeForDisplay(standardFamily),
+        evidence: formatEvidence(identification.standardFamily.evidence),
+        requiresCheck: standardFamily.requiresCatalogCheck ?? identification.standardFamily.requiresCheck,
+      },
       rowFromIdentificationAttribute('Çap', identification.bore),
       rowFromIdentificationAttribute('Strok', identification.stroke),
     ];
 
     const cushioning = pickAttribute(attributes, 'cushioning_token');
     if (cushioning) {
-      rows.push(rowFromParsedTechnicalAttribute(cushioning));
+      const normalized = normalizeCushioningAttribute({
+        rawToken: String(cushioning.value),
+        manufacturer: identification.brand.value ?? undefined,
+        evidence: cushioning.evidence,
+        confidence: cushioning.confidence,
+      });
+      rows.push({
+        label: normalized.label,
+        value: formatNormalizedAttributeForDisplay(normalized),
+        evidence:
+          cushioning.evidence === 'code'
+            ? 'Ürün kodundan'
+            : cushioning.evidence === 'series_table'
+              ? 'Seri tablosundan'
+              : 'Bilinmiyor',
+        requiresCheck: normalized.requiresCatalogCheck ?? cushioning.confidence === 'low',
+      });
     }
 
     const opts = pickAttribute(attributes, 'options');

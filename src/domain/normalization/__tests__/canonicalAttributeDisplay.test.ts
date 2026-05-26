@@ -1,0 +1,108 @@
+import {
+  normalizeConnectorDisplay,
+  normalizeCushioningDisplay,
+  normalizeManualOverrideDisplay,
+  normalizeStandardFamilyDisplay,
+  normalizeVoltageDisplay,
+} from '../canonicalAttributeDisplay';
+import { compareCompatibilityProfilesDetailed } from '@/domain/compatibilityProfiles/compareCompatibilityProfiles';
+import { buildHydraulicValveCompatibilityProfile } from '@/domain/categories/hydraulicValve/hydraulicValveCompatibilityProfile';
+import { compareProducts } from '@/domain/resolver/compareProducts';
+import { identifyProduct, getProductSeriesById } from '@/domain/resolver/identifyProduct';
+import { normalizeCode } from '@/domain/resolver/normalizeCode';
+import { buildProductDetailRows } from '@/domain/presentation/buildProductDetailRows';
+
+describe('canonicalAttributeDisplay', () => {
+  it('maps G24 and D24 to same 24V DC canonical value', () => {
+    const g24 = normalizeVoltageDisplay({ rawToken: 'G24' });
+    const d24 = normalizeVoltageDisplay({ rawToken: 'D24' });
+    expect(g24?.canonicalValue).toBe('24V DC');
+    expect(d24?.canonicalValue).toBe('24V DC');
+    expect(g24?.displayValue).toBe('24V DC');
+    expect(g24?.rawTokenLabel).toBe('Kod: G24');
+  });
+
+  it('maps EG24 and D24 to same 24V DC', () => {
+    const eg24 = normalizeVoltageDisplay({ rawToken: 'EG24' });
+    const d24 = normalizeVoltageDisplay({ rawToken: 'D24' });
+    expect(eg24?.canonicalValue).toBe(d24?.canonicalValue);
+  });
+
+  it('maps K4 to DIN EN 175301-803 display', () => {
+    const k4 = normalizeConnectorDisplay({ rawToken: 'K4' });
+    expect(k4?.displayValue).toBe('DIN EN 175301-803');
+    expect(k4?.displayValue).not.toBe('K4');
+    expect(k4?.rawTokenLabel).toBe('Kod: K4');
+  });
+
+  it('maps N9 to concealed manual override', () => {
+    const n9 = normalizeManualOverrideDisplay({ rawToken: 'N9' });
+    expect(n9?.displayValue).toContain('Gizli');
+    expect(n9?.displayValue).toContain('manuel');
+  });
+
+  it('maps N3 to ISO 15552', () => {
+    const n3 = normalizeStandardFamilyDisplay({ rawValue: 'N3' });
+    expect(n3?.displayValue).toBe('ISO 15552');
+    expect(n3?.canonicalValue).toBe('ISO_15552');
+  });
+
+  it('maps PPVA to adjustable pneumatic cushioning', () => {
+    const ppva = normalizeCushioningDisplay({ rawToken: 'PPVA' });
+    expect(ppva?.displayValue).toBe('Ayarlanabilir pnömatik sönümleme');
+  });
+
+  it('maps PPVA and PPV to same cushioning canonical value', () => {
+    const ppva = normalizeCushioningDisplay({ rawToken: 'PPVA' });
+    const ppv = normalizeCushioningDisplay({ rawToken: 'PPV' });
+    expect(ppva?.canonicalValue).toBe(ppv?.canonicalValue);
+  });
+});
+
+describe('canonicalAttributeDisplay integration', () => {
+  it('Rexroth vs Yuken voltage compares as compatible 24V DC, not G24/D24', () => {
+    const source = identifyProduct('4WE6E-6X/EG24N9K4', normalizeCode('4WE6E-6X/EG24N9K4'));
+    const targetSeries = getProductSeriesById('yuken_dsg01')!;
+    const targetCode = 'DSG-01-3C2-D24-N1-50';
+    const candidate = {
+      seriesId: targetSeries.id,
+      brand: targetSeries.brand,
+      series: targetSeries.series,
+      productType: targetSeries.productType,
+      productCategory: targetSeries.productCategory,
+      standardFamily: targetSeries.standardFamily,
+      suggestedCode: targetCode,
+      targetIdentification: identifyProduct(targetCode, normalizeCode(targetCode)),
+    };
+
+    const result = compareProducts(source, candidate);
+    const voltage = result.compatible.find((c) => c.label === 'Bobin voltajı');
+    expect(voltage?.status).toBe('compatible');
+    expect(voltage?.sourceDisplay).toBe('24V DC');
+    expect(voltage?.targetDisplay).toBe('24V DC');
+    expect(voltage?.sourceDisplay).not.toContain('EG24');
+    expect(voltage?.targetDisplay).not.toContain('D24');
+    expect(result.different.some((c) => c.label === 'Bobin voltajı')).toBe(false);
+    expect(result.different.some((c) => c.label === 'Bobin kodu')).toBe(false);
+  });
+
+  it('hydraulic profile comparison uses canonical voltage display', () => {
+    const source = identifyProduct('4WE6E-6X/EG24N9K4', normalizeCode('4WE6E-6X/EG24N9K4'));
+    const target = identifyProduct('DSG-01-3C2-D24-N1-50', normalizeCode('DSG-01-3C2-D24-N1-50'));
+    const comparison = compareCompatibilityProfilesDetailed(
+      buildHydraulicValveCompatibilityProfile({ identification: source }),
+      buildHydraulicValveCompatibilityProfile({ identification: target })
+    );
+    const voltage = comparison.comparisons.find((c) => c.label === 'Bobin voltajı');
+    expect(voltage?.status).toBe('compatible');
+    expect(voltage?.sourceDisplay).toBe('24V DC');
+  });
+
+  it('product detail shows canonical connector meaning for Rexroth K4', () => {
+    const id = identifyProduct('4WE6E-6X/EG24N9K4', normalizeCode('4WE6E-6X/EG24N9K4'));
+    const rows = buildProductDetailRows(id);
+    const connector = rows.find((r) => r.label === 'Konnektör');
+    expect(connector?.value).toContain('DIN EN 175301-803');
+    expect(connector?.value).toContain('Kod: K4');
+  });
+});

@@ -46,9 +46,9 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     };
 
     const result = compareProducts(source, candidate);
-    expect(result.compatible.some((c) => c.label === 'Konnektör kodu')).toBe(true);
-    expect(result.compatible.find((c) => c.label === 'Konnektör kodu')?.sourceDisplay).toBe(
-      'DIN EN 175301-803'
+    expect(result.compatible.some((c) => c.label === 'Konnektör tipi')).toBe(true);
+    expect(result.compatible.find((c) => c.label === 'Konnektör tipi')?.sourceDisplay).toBe(
+      'DIN 43650 Form A / EN 175301-803'
     );
   });
 
@@ -238,7 +238,7 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     };
 
     const result = compareProducts(source, candidate);
-    expect(result.different.some((c) => c.label === 'CETOP / NG ölçüsü')).toBe(true);
+    expect(result.different.some((c) => c.label === 'Montaj standardı')).toBe(true);
   });
 
   it('CETOP/NG mismatch remains different even if function tokens match', () => {
@@ -257,7 +257,7 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     };
 
     const result = compareProducts(source, candidate);
-    expect(result.different.some((c) => c.label === 'CETOP / NG ölçüsü')).toBe(true);
+    expect(result.different.some((c) => c.label === 'Montaj standardı')).toBe(true);
     expect(result.compatible.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(false);
     expect(
       result.checkItems.some((c) => c.field === 'Sürgü / fonksiyon kodu') ||

@@ -10,14 +10,14 @@ import { formatAttributeValue } from '@/utils/formatConfidence';
 
 import { getTechnicalAttributes } from '@/domain/attributes/getTechnicalAttributes';
 import {
-  behaviorComparisonToCompatibilityResult,
-  buildCategoryComparison,
-} from '@/domain/categories/hydraulicValve/behavior/behaviorComparisonToCompatibility';
+  buildCandidateFallbackCanonicalProfile,
+  buildHydraulicValveCanonicalProfile,
+} from '@/domain/canonical/hydraulicValve/buildHydraulicValveCanonicalProfile';
 import {
-  buildCandidateFallbackBehaviorProfile,
-  buildHydraulicValveBehaviorProfile,
-} from '@/domain/categories/hydraulicValve/behavior/buildHydraulicValveBehaviorProfile';
-import { compareHydraulicValveBehaviorProfiles } from '@/domain/categories/hydraulicValve/behavior/compareHydraulicValveBehaviorProfiles';
+  canonicalComparisonToCompatibilityResult,
+  compareHydraulicValveCanonicalProfiles,
+} from '@/domain/canonical/hydraulicValve/compareHydraulicValveCanonicalProfiles';
+import { buildCategoryComparison } from '@/domain/categories/hydraulicValve/behavior/behaviorComparisonToCompatibility';
 import { compareValveFunctionBehavior } from '@/domain/categories/hydraulicValve/functionMappings/compareValveFunctionBehavior';
 import {
   getHydraulicValveCheckItems,
@@ -237,6 +237,19 @@ function lookupEquivalenceSummary(
   };
 }
 
+function buildHydraulicValveProfileScoring(
+  source: ProductIdentification,
+  candidate: EquivalentCandidate
+) {
+  const target = candidate.targetIdentification;
+  const sourceProfile = buildHydraulicValveCompatibilityProfile({ identification: source });
+  const targetProfile = buildHydraulicValveCompatibilityProfile({
+    identification: target,
+    candidate,
+  });
+  return compareCompatibilityProfilesDetailed(sourceProfile, targetProfile).scoredComparisons;
+}
+
 export function compareHydraulicValves(
   source: ProductIdentification,
   candidate: EquivalentCandidate
@@ -249,24 +262,23 @@ export function compareHydraulicValves(
     source.resolverCategoryKey === 'hydraulic_valve' && sourceAttrs.length > 0;
 
   if (useBehaviorProfiles) {
-    const sourceProfile = buildHydraulicValveBehaviorProfile({
+    const sourceProfile = buildHydraulicValveCanonicalProfile({
       identification: source,
       attributes: sourceAttrs,
     });
     const targetProfile = target
-      ? buildHydraulicValveBehaviorProfile({
+      ? buildHydraulicValveCanonicalProfile({
           identification: target,
           attributes: targetAttrs,
         })
-      : buildCandidateFallbackBehaviorProfile(candidate);
+      : buildCandidateFallbackCanonicalProfile(candidate);
 
-    const behavior = compareHydraulicValveBehaviorProfiles(sourceProfile, targetProfile);
+    const canonical = compareHydraulicValveCanonicalProfiles(sourceProfile, targetProfile);
 
-    return behaviorComparisonToCompatibilityResult({
+    return canonicalComparisonToCompatibilityResult({
       source,
       candidate,
-      behavior,
-      categoryComparison: buildCategoryComparison(source, candidate),
+      canonical,
     });
   }
 
@@ -372,5 +384,8 @@ export function compareHydraulicValvesFromAttributes(
     different,
     checkItems,
     warnings: [...new Set([...warnings, ...profileComparison.warnings])],
+    profileScoring: {
+      scoredComparisons: profileComparison.scoredComparisons,
+    },
   };
 }

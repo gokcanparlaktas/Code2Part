@@ -1,6 +1,11 @@
 import type { AttributeComparison, CompatibilityStatus } from '@/types/compatibility';
 
 import {
+  normalizeConnectorDisplay,
+  normalizeVoltageDisplay,
+} from '@/domain/normalization/canonicalAttributeDisplay';
+
+import {
   CENTER_CONDITION_LABEL_TR,
   CENTERING_LABEL_TR,
   isExactManufacturerFunctionMatch,
@@ -153,26 +158,15 @@ function compareKnownEnumField(options: {
 function compareVoltage(
   source: HydraulicValveBehaviorProfile,
   target: HydraulicValveBehaviorProfile,
-  crossBrand: boolean
+  _crossBrand: boolean
 ): AttributeComparison {
   const sourceCode = source.voltageCode ?? undefined;
   const targetCode = target.voltageCode ?? undefined;
-  const sourceDisplay = source.voltage ?? sourceCode ?? 'Doğrulanamadı';
-  const targetDisplay = target.voltage ?? targetCode ?? 'Doğrulanamadı';
 
   if (
     (sourceCode && UNRESOLVED_VOLTAGE_CODES.has(sourceCode)) ||
     (targetCode && UNRESOLVED_VOLTAGE_CODES.has(targetCode))
   ) {
-    return {
-      label: 'Bobin voltajı',
-      sourceDisplay: displayOrUnknown(sourceCode ?? source.voltage),
-      targetDisplay: displayOrUnknown(targetCode ?? target.voltage),
-      status: 'unknownOrCheck',
-    };
-  }
-
-  if (!source.voltage || !target.voltage) {
     return {
       label: 'Bobin voltajı',
       sourceDisplay: displayOrUnknown(source.voltage ?? sourceCode),
@@ -181,19 +175,42 @@ function compareVoltage(
     };
   }
 
-  if (source.voltage === target.voltage) {
+  const sourceNorm = normalizeVoltageDisplay({
+    rawValue: source.voltage,
+    rawToken: sourceCode,
+    sourceManufacturer: source.brand,
+  });
+  const targetNorm = normalizeVoltageDisplay({
+    rawValue: target.voltage,
+    rawToken: targetCode,
+    sourceManufacturer: target.brand,
+  });
+
+  const sourceDisplay = sourceNorm?.displayValue ?? displayOrUnknown(source.voltage ?? sourceCode);
+  const targetDisplay = targetNorm?.displayValue ?? displayOrUnknown(target.voltage ?? targetCode);
+
+  if (!sourceNorm || !targetNorm) {
     return {
       label: 'Bobin voltajı',
-      sourceDisplay: source.voltage,
-      targetDisplay: target.voltage,
+      sourceDisplay,
+      targetDisplay,
+      status: 'unknownOrCheck',
+    };
+  }
+
+  if (sourceNorm.canonicalValue === targetNorm.canonicalValue) {
+    return {
+      label: 'Bobin voltajı',
+      sourceDisplay,
+      targetDisplay,
       status: 'compatible',
     };
   }
 
   return {
     label: 'Bobin voltajı',
-    sourceDisplay: source.voltage,
-    targetDisplay: target.voltage,
+    sourceDisplay,
+    targetDisplay,
     status: 'different',
   };
 }
@@ -201,14 +218,25 @@ function compareVoltage(
 function compareConnector(
   source: HydraulicValveBehaviorProfile,
   target: HydraulicValveBehaviorProfile,
-  crossBrand: boolean
+  _crossBrand: boolean
 ): AttributeComparison {
-  const sourceKey = source.connectorCode ?? source.connector ?? undefined;
-  const targetKey = target.connectorCode ?? target.connector ?? undefined;
-  const sourceDisplay = displayOrUnknown(source.connector ?? sourceKey);
-  const targetDisplay = displayOrUnknown(target.connector ?? targetKey);
+  const sourceNorm = normalizeConnectorDisplay({
+    rawValue: source.connector,
+    rawToken: source.connectorCode ?? undefined,
+    sourceManufacturer: source.brand,
+  });
+  const targetNorm = normalizeConnectorDisplay({
+    rawValue: target.connector,
+    rawToken: target.connectorCode ?? undefined,
+    sourceManufacturer: target.brand,
+  });
 
-  if (!sourceKey || !targetKey) {
+  const sourceDisplay =
+    sourceNorm?.displayValue ?? displayOrUnknown(source.connector ?? source.connectorCode);
+  const targetDisplay =
+    targetNorm?.displayValue ?? displayOrUnknown(target.connector ?? target.connectorCode);
+
+  if (!sourceNorm || !targetNorm) {
     return {
       label: 'Konnektör kodu',
       sourceDisplay,
@@ -217,7 +245,7 @@ function compareConnector(
     };
   }
 
-  if (sourceKey === targetKey || source.connector === target.connector) {
+  if (sourceNorm.canonicalValue === targetNorm.canonicalValue) {
     return {
       label: 'Konnektör kodu',
       sourceDisplay,
@@ -348,21 +376,18 @@ export function compareHydraulicValveBehaviorProfiles(
   pushComparison(result, compareVoltage(source, target, crossBrand));
 
   if (source.voltageCode || target.voltageCode) {
-    const sourceCode = displayOrUnknown(source.voltageCode);
-    const targetCode = displayOrUnknown(target.voltageCode);
     const unresolved =
       (source.voltageCode && UNRESOLVED_VOLTAGE_CODES.has(source.voltageCode)) ||
       (target.voltageCode && UNRESOLVED_VOLTAGE_CODES.has(target.voltageCode));
-    pushComparison(result, {
-      label: 'Bobin kodu',
-      sourceDisplay: sourceCode,
-      targetDisplay: targetCode,
-      status: unresolved
-        ? 'unknownOrCheck'
-        : source.voltageCode === target.voltageCode
-          ? 'compatible'
-          : 'different',
-    });
+
+    if (unresolved) {
+      pushComparison(result, {
+        label: 'Bobin kodu',
+        sourceDisplay: displayOrUnknown(source.voltageCode),
+        targetDisplay: displayOrUnknown(target.voltageCode),
+        status: 'unknownOrCheck',
+      });
+    }
   }
 
   pushComparison(result, compareConnector(source, target, crossBrand));
