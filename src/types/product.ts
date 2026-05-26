@@ -4,6 +4,7 @@ import type {
   RiskLevel,
 } from './compatibility';
 import type { DataReliabilityMetadata } from './catalogMetadata';
+import type { ProductResolverCategory } from './category';
 
 export type EvidenceLevel =
   | 'code'
@@ -27,6 +28,7 @@ export interface ProductIdentification {
   inputCode: string;
   normalizedCode: string;
   seriesId: string | null;
+  resolverCategoryKey: ProductResolverCategory | null;
   matched: boolean;
   outcome: IdentificationOutcome;
   brand: TechnicalAttribute<string>;
@@ -44,6 +46,7 @@ export interface ProductSeriesRecord extends DataReliabilityMetadata {
   brand: string;
   series: string;
   technology: string;
+  resolverCategory: ProductResolverCategory;
   category: string;
   equivalenceGroup: string;
   productType: string;

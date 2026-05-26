@@ -118,18 +118,6 @@ function resolveOutcome(
   return 'full';
 }
 
-function applySuggestedCodeTemplate(
-  template: string,
-  bore: number,
-  stroke: number,
-  codePrefix: string
-): string {
-  return template
-    .replace(/\{bore\}/g, String(bore))
-    .replace(/\{stroke\}/g, String(stroke))
-    .replace(/\{prefix\}/g, codePrefix);
-}
-
 function emptyIdentification(
   inputCode: string,
   normalizedCode: string
@@ -138,6 +126,7 @@ function emptyIdentification(
     inputCode,
     normalizedCode,
     seriesId: null,
+    resolverCategoryKey: null,
     matched: false,
     outcome: 'not_found',
     brand: unknownAttribute(),
@@ -168,6 +157,7 @@ export function identifyProduct(
     inputCode,
     normalizedCode,
     seriesId: series.id,
+    resolverCategoryKey: series.resolverCategory,
     matched: outcome !== 'not_found',
     outcome,
     brand: attributeFromSeries(series.brand),
@@ -185,28 +175,7 @@ export function identifyProduct(
   };
 }
 
-export function buildSuggestedEquivalentCode(
-  source: ProductIdentification,
-  targetSeries: ProductSeriesRecord
-): string | null {
-  if (
-    source.bore.value === null ||
-    source.stroke.value === null ||
-    source.bore.requiresCheck ||
-    source.stroke.requiresCheck ||
-    source.bore.evidence !== 'code' ||
-    source.stroke.evidence !== 'code'
-  ) {
-    return null;
-  }
-
-  const bore = Math.round(source.bore.value);
-  const stroke = Math.round(source.stroke.value);
-  const template =
-    targetSeries.suggestedCodeTemplate ?? '{prefix}-{bore}-{stroke}';
-
-  return applySuggestedCodeTemplate(template, bore, stroke, targetSeries.codePrefix);
-}
+export { buildSuggestedEquivalentCode } from './buildSuggestedEquivalentCode';
 
 export function getProductSeriesById(id: string): ProductSeriesRecord | undefined {
   return productSeries.find((s) => s.id === id);

@@ -1,20 +1,22 @@
-import parsingRulesData from '@/data/parsingRules.json';
 import productSeriesData from '@/data/productSeries.json';
+import {
+  buildPneumaticCylinderExampleCode,
+  buildPneumaticCylinderSuggestionTextTr,
+  computePneumaticCylinderMissingFields,
+  detectPneumaticCylinderPartialDimensions,
+  suggestSeriesLessPneumaticCylinders,
+} from '@/domain/categories/pneumaticCylinder/pneumaticCylinderSuggestions';
+import { PNEUMATIC_CYLINDER_CATEGORY } from '@/types/category';
 import { identifyProduct } from './identifyProduct';
 import { normalizeCode } from './normalizeCode';
-import type {
-  ParsingRuleRecord,
-  ProductSeriesRecord,
-} from '@/types/product';
+import type { ProductSeriesRecord } from '@/types/product';
 import type {
   SuggestionConfidence,
   SuggestionMatchedBy,
   SuggestedProduct,
-  SuggestionMissingField,
 } from '@/types/suggestion';
 
 const productSeries = productSeriesData as ProductSeriesRecord[];
-const parsingRules = parsingRulesData as ParsingRuleRecord[];
 
 const BRAND_ALIASES: { brand: string; aliases: string[] }[] = [
   { brand: 'Festo', aliases: ['FESTO'] },
@@ -30,10 +32,6 @@ interface MatchCandidate {
   score: number;
   boreMm?: number;
   strokeMm?: number;
-}
-
-function escapeRegex(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function getSeriesPrefixes(series: ProductSeriesRecord): string[] {
@@ -53,70 +51,56 @@ function confidenceFromScore(score: number): SuggestionConfidence {
   return 'low';
 }
 
-function tryFullParserMatch(
-  normalized: string,
-  seriesId: string
-): { boreMm?: number; strokeMm?: number } | null {
-  const rules = parsingRules.filter((r) => r.seriesId === seriesId);
-  for (const rule of rules) {
-    const match = normalized.match(new RegExp(rule.pattern));
-    if (!match) {
-      continue;
-    }
-    const bore = Number(match[rule.boreGroup]);
-    const stroke = Number(match[rule.strokeGroup]);
-    if (!Number.isNaN(bore) && !Number.isNaN(stroke)) {
-      return { boreMm: bore, strokeMm: stroke };
-    }
-  }
-  return null;
-}
-
-function tryPartialDimensionParse(
+function detectPartialDimensions(
   normalized: string,
   series: ProductSeriesRecord,
   prefix: string
 ): { boreMm?: number; strokeMm?: number } {
-  const full = tryFullParserMatch(normalized, series.id);
-  if (full) {
-    return full;
+  if (series.resolverCategory === PNEUMATIC_CYLINDER_CATEGORY) {
+    return detectPneumaticCylinderPartialDimensions(normalized, series, prefix);
   }
-
-  const escaped = escapeRegex(prefix);
-
-  const patterns = [
-    new RegExp(`^${escaped}-(\\d+)-(\\d+)`),
-    new RegExp(`^${escaped}-(\\d+)$`),
-    new RegExp(`^${escaped}(\\d+)X(\\d+)$`, 'i'),
-    new RegExp(`^${escaped}(\\d+)X(\\d+)?$`, 'i'),
-    new RegExp(`^${escaped}(\\d+)$`, 'i'),
-    new RegExp(`^${escaped}B(\\d+)-(\\d+)D?$`, 'i'),
-    new RegExp(`^${escaped}B(\\d+)$`, 'i'),
-    new RegExp(`^${escaped}N(\\d+)-(\\d+)$`, 'i'),
-    new RegExp(`^${escaped}S(\\d{3})MS-(\\d+)$`, 'i'),
-    new RegExp(`^${escaped}S(\\d{3})MS$`, 'i'),
-  ];
-
-  for (const pattern of patterns) {
-    const match = normalized.match(pattern);
-    if (!match) {
-      continue;
-    }
-    const bore = match[1] ? Number(match[1]) : undefined;
-    const stroke = match[2] ? Number(match[2]) : undefined;
-    const result: { boreMm?: number; strokeMm?: number } = {};
-    if (bore !== undefined && !Number.isNaN(bore)) {
-      result.boreMm = bore;
-    }
-    if (stroke !== undefined && !Number.isNaN(stroke)) {
-      result.strokeMm = stroke;
-    }
-    if (result.boreMm !== undefined || result.strokeMm !== undefined) {
-      return result;
-    }
-  }
-
   return {};
+}
+
+function buildExampleCode(
+  series: ProductSeriesRecord,
+  boreMm?: number,
+  strokeMm?: number
+): string {
+  if (series.resolverCategory === PNEUMATIC_CYLINDER_CATEGORY) {
+    return buildPneumaticCylinderExampleCode(series, boreMm, strokeMm);
+  }
+  return series.codePrefix;
+}
+
+function computeMissingFields(
+  normalized: string,
+  series: ProductSeriesRecord,
+  boreMm?: number,
+  strokeMm?: number
+) {
+  if (series.resolverCategory === PNEUMATIC_CYLINDER_CATEGORY) {
+    return computePneumaticCylinderMissingFields(normalized, boreMm, strokeMm);
+  }
+  return [];
+}
+
+function buildSuggestionTextTr(
+  series: ProductSeriesRecord,
+  boreMm?: number,
+  strokeMm?: number,
+  missingFields: ReturnType<typeof computeMissingFields> = []
+): string {
+  if (series.resolverCategory === PNEUMATIC_CYLINDER_CATEGORY) {
+    return buildPneumaticCylinderSuggestionTextTr(
+      series.brand,
+      series.series,
+      boreMm,
+      strokeMm,
+      missingFields
+    );
+  }
+  return `Bu kod ${series.brand} ${series.series} serisine ait olabilir.`;
 }
 
 function matchSeriesPrefix(normalized: string, series: ProductSeriesRecord): MatchCandidate | null {
@@ -125,7 +109,7 @@ function matchSeriesPrefix(normalized: string, series: ProductSeriesRecord): Mat
       return { series, matchedBy: 'series_prefix', score: 92 };
     }
     if (normalized.startsWith(prefix)) {
-      const dims = tryPartialDimensionParse(normalized, series, prefix);
+      const dims = detectPartialDimensions(normalized, series, prefix);
       return {
         series,
         matchedBy: dims.boreMm !== undefined ? 'partial_regex' : 'series_prefix',
@@ -168,76 +152,9 @@ function matchContains(normalized: string, series: ProductSeriesRecord): MatchCa
   return null;
 }
 
-function buildExampleCode(
-  series: ProductSeriesRecord,
-  boreMm?: number,
-  strokeMm?: number
-): string {
-  const prefix = series.codePrefix;
-  const template = series.suggestedCodeTemplate ?? '{prefix}-{bore}-{stroke}';
-
-  if (boreMm !== undefined && strokeMm !== undefined) {
-    return template
-      .replace(/\{bore\}/g, String(boreMm))
-      .replace(/\{stroke\}/g, String(strokeMm))
-      .replace(/\{prefix\}/g, prefix);
-  }
-  if (boreMm !== undefined) {
-    if (template.includes('{bore}')) {
-      return template
-        .replace(/\{bore\}/g, String(boreMm))
-        .replace(/\{stroke\}/g, '')
-        .replace(/\{prefix\}/g, prefix)
-        .replace(/--/g, '-')
-        .replace(/-$/, '');
-    }
-    return `${prefix}-${boreMm}`;
-  }
-  return prefix;
-}
-
-function computeMissingFields(
-  normalized: string,
-  boreMm?: number,
-  strokeMm?: number
-): SuggestionMissingField[] {
-  const missing: SuggestionMissingField[] = [];
-  if (boreMm === undefined) {
-    missing.push('bore');
-  }
-  if (strokeMm === undefined) {
-    missing.push('stroke');
-  }
-  if (normalized.includes('-') && missing.length > 0) {
-    missing.push('options');
-  }
-  return missing;
-}
-
-function buildSuggestionTextTr(
-  brand: string,
-  series: string,
-  boreMm?: number,
-  strokeMm?: number,
-  missingFields: SuggestionMissingField[] = []
-): string {
-  const base = `Bu kod ${brand} ${series} serisine ait olabilir.`;
-
-  if (boreMm !== undefined && missingFields.includes('stroke')) {
-    return `${base} Çap ${boreMm} mm olarak algılandı, strok bilgisi eksik.`;
-  }
-  if (missingFields.includes('bore') && missingFields.includes('stroke')) {
-    return `${base} Çap ve strok bilgisi eksik görünüyor.`;
-  }
-  if (missingFields.length > 0) {
-    return `${base} Bazı teknik alanlar henüz tam okunamadı.`;
-  }
-  return `${base} Kod yapısı bu seriyle uyumlu görünüyor.`;
-}
-
 function toSuggestedProduct(candidate: MatchCandidate, normalized: string): SuggestedProduct {
   const { series, matchedBy, score, boreMm, strokeMm } = candidate;
-  const missingFields = computeMissingFields(normalized, boreMm, strokeMm);
+  const missingFields = computeMissingFields(normalized, series, boreMm, strokeMm);
 
   return {
     seriesId: series.id,
@@ -254,13 +171,7 @@ function toSuggestedProduct(candidate: MatchCandidate, normalized: string): Sugg
     },
     missingFields,
     exampleCodeFormat: buildExampleCode(series, boreMm, strokeMm),
-    suggestionTextTr: buildSuggestionTextTr(
-      series.brand,
-      series.series,
-      boreMm,
-      strokeMm,
-      missingFields
-    ),
+    suggestionTextTr: buildSuggestionTextTr(series, boreMm, strokeMm, missingFields),
   };
 }
 
@@ -292,8 +203,32 @@ export function suggestProducts(rawInput: string, limit = 5): SuggestedProduct[]
     }
   }
 
-  return [...bestBySeries.values()]
+  const prefixSuggestions = [...bestBySeries.values()]
     .sort((a, b) => b.score - a.score)
-    .slice(0, limit)
     .map((candidate) => toSuggestedProduct(candidate, normalized));
+
+  const seriesLessSuggestions = suggestSeriesLessPneumaticCylinders(
+    normalized,
+    productSeries,
+    limit
+  );
+
+  const merged = new Map<string, SuggestedProduct>();
+  const scoreRank: Record<SuggestionConfidence, number> = {
+    high: 3,
+    medium: 2,
+    low: 1,
+  };
+
+  for (const suggestion of [...seriesLessSuggestions, ...prefixSuggestions]) {
+    const key = `${suggestion.seriesId}:${suggestion.exampleCodeFormat}`;
+    const existing = merged.get(key);
+    if (!existing || scoreRank[suggestion.confidence] > scoreRank[existing.confidence]) {
+      merged.set(key, suggestion);
+    }
+  }
+
+  return [...merged.values()]
+    .sort((a, b) => scoreRank[b.confidence] - scoreRank[a.confidence])
+    .slice(0, limit);
 }

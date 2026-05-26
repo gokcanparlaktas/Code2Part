@@ -1,9 +1,6 @@
 import equivalentSeriesData from '@/data/equivalentSeries.json';
-import {
-  buildSuggestedEquivalentCode,
-  getProductSeriesById,
-  identifyProduct,
-} from './identifyProduct';
+import { buildSuggestedEquivalentCode } from './buildSuggestedEquivalentCode';
+import { getProductSeriesById, identifyProduct } from './identifyProduct';
 import type { EquivalentCandidate } from '@/types/compatibility';
 import type {
   EquivalentGroupRecord,

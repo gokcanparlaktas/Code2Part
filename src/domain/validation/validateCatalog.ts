@@ -14,6 +14,7 @@ const REQUIRED_SERIES_FIELDS = [
   'brand',
   'series',
   'technology',
+  'resolverCategory',
   'category',
   'equivalenceGroup',
 ] as const;
@@ -26,6 +27,7 @@ interface CatalogProductSeries extends CatalogRecordWithReliability {
   brand?: string;
   series?: string;
   technology?: string;
+  resolverCategory?: string;
   category?: string;
   equivalenceGroup?: string;
   equivalenceGroupId?: string;

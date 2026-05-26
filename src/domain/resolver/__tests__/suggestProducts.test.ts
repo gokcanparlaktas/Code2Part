@@ -58,4 +58,34 @@ describe('suggestProducts', () => {
   it('returns empty suggestions for "UNKNOWN"', () => {
     expect(suggestProducts('UNKNOWN')).toEqual([]);
   });
+
+  it('suggests DSBC-50-100-PPVA-N3 for series-less "50-100-ppva"', () => {
+    const suggestions = suggestProducts('50-100-ppva');
+    expect(
+      suggestions.some((s) => s.exampleCodeFormat === 'DSBC-50-100-PPVA-N3')
+    ).toBe(true);
+    expect(suggestions.every((s) => s.confidence !== 'high')).toBe(true);
+    expect(
+      suggestions.some((s) => s.suggestionTextTr.includes('kesin sayılmamalıdır'))
+    ).toBe(true);
+  });
+
+  it('returns pneumatic cylinder suggestions for series-less "50-100"', () => {
+    const suggestions = suggestProducts('50-100');
+    expect(suggestions.length).toBeGreaterThanOrEqual(1);
+    expect(
+      suggestions.every((s) => s.detectedAttributes.boreMm === 50 && s.detectedAttributes.strokeMm === 100)
+    ).toBe(true);
+    expect(suggestions.every((s) => s.confidence !== 'high')).toBe(true);
+    expect(
+      suggestions.some((s) => s.suggestionTextTr.includes('Seri öneki girilmedi'))
+    ).toBe(true);
+  });
+
+  it('does not mark unknown series as certain for dimension-only fragments', () => {
+    const suggestions = suggestProducts('50-100');
+    const dimensionOnly = suggestions.filter((s) => s.matchedBy === 'dimension_fragment');
+    expect(dimensionOnly.length).toBeGreaterThan(0);
+    expect(dimensionOnly.every((s) => s.confidence === 'low')).toBe(true);
+  });
 });

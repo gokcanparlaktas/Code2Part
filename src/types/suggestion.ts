@@ -4,7 +4,9 @@ export type SuggestionMatchedBy =
   | 'series_prefix'
   | 'brand_alias'
   | 'partial_regex'
-  | 'contains';
+  | 'contains'
+  | 'dimension_fragment'
+  | 'example_code_contains';
 
 export type SuggestionMissingField = 'bore' | 'stroke' | 'options';
 

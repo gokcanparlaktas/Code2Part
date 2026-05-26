@@ -1,9 +1,39 @@
-import { compareProducts } from '../compareProducts';
+import { compareProducts, resolveResolverCategory } from '../compareProducts';
 import { findEquivalents } from '../findEquivalents';
 import { identifyProduct } from '../identifyProduct';
 import { normalizeCode } from '../normalizeCode';
 
 describe('compareProducts', () => {
+  it('routes pneumatic_cylinder products to pneumatic cylinder comparison rules', () => {
+    const input = 'DSBC-50-100-PPVA-N3';
+    const normalized = normalizeCode(input);
+    const source = identifyProduct(input, normalized);
+
+    expect(resolveResolverCategory(source)).toBe('pneumatic_cylinder');
+    expect(source.resolverCategoryKey).toBe('pneumatic_cylinder');
+  });
+
+  it('returns generic comparison warning for unsupported resolver category', () => {
+    const input = 'DSBC-50-100-PPVA-N3';
+    const normalized = normalizeCode(input);
+    const source = identifyProduct(input, normalized);
+    const equivalents = findEquivalents(source);
+    const cp96 = equivalents.find((e) => e.series === 'CP96');
+
+    expect(cp96).toBeDefined();
+
+    const unsupportedSource = {
+      ...source,
+      resolverCategoryKey: 'hydraulic_valve' as const,
+    };
+
+    const result = compareProducts(unsupportedSource, cp96!);
+
+    expect(result.warnings).toContain(
+      'Bu ürün kategorisi için detaylı karşılaştırma kuralları henüz eklenmemiştir.'
+    );
+  });
+
   it('compares DSBC-50-100-PPVA-N3 with SMC CP96 equivalent', () => {
     const input = 'DSBC-50-100-PPVA-N3';
     const normalized = normalizeCode(input);
@@ -26,6 +56,6 @@ describe('compareProducts', () => {
     expect(checkFields).toContain('Sensör uyumu');
     expect(checkFields).toContain('Sönümleme seçeneği');
     expect(checkFields).toContain('Montaj aksesuarları');
-    expect(checkFields).toContain('Marka');
+    expect(checkFields).toContain('Üretici / seri farkı');
   });
 });
