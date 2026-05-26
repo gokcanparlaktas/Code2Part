@@ -34,6 +34,8 @@
     "start": "expo start",
     "start:clear": "expo start --clear",
     "android": "expo run:android",
+    "prebuild:android": "expo prebuild --platform android && node scripts/apply-android-fullscreen-splash.js",
+    "postprebuild": "node scripts/apply-android-fullscreen-splash.js",
     "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest",

@@ -72,9 +72,9 @@ export function parseHydraulicSpoolFunction(
     return attributeInferred(yukenMatch[0]);
   }
 
-  const vickersMatch = normalizedCode.match(/-(\d)[A-Z]-/);
+  const vickersMatch = normalizedCode.match(/-(\d[A-Z])-/);
   if (vickersMatch && series.series.startsWith('DG4V')) {
-    return attributeInferred(`Position ${vickersMatch[1]}`);
+    return attributeFromCode(vickersMatch[1]);
   }
 
   return unknownAttribute();

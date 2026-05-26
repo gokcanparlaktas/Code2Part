@@ -9,7 +9,19 @@ export type SuggestionMatchedBy =
   | 'example_code_contains'
   | 'token_match';
 
-export type SuggestionMissingField = 'bore' | 'stroke' | 'options';
+export type PneumaticSuggestionMissingField = 'bore' | 'stroke' | 'options';
+
+export type HydraulicSuggestionMissingField =
+  | 'spool_function'
+  | 'coil_voltage'
+  | 'connector'
+  | 'flow_pressure'
+  | 'manual_override'
+  | 'seal_material';
+
+export type SuggestionMissingField =
+  | PneumaticSuggestionMissingField
+  | HydraulicSuggestionMissingField;
 
 export interface SuggestedProductDetectedAttributes {
   boreMm?: number;

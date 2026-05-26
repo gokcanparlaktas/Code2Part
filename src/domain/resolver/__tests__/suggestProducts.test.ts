@@ -1,3 +1,5 @@
+import { identifyProduct } from '../identifyProduct';
+import { normalizeCode } from '../normalizeCode';
 import { suggestProducts } from '../suggestProducts';
 
 function firstSuggestion(input: string) {
@@ -170,9 +172,16 @@ describe('suggestProducts', () => {
     ).toBe(true);
   });
 
-  it('suggests CP96-50-100 for "cp96 50 100"', () => {
+  it('does not suggest when "cp96 50 100" is an exact catalog example (identified instead)', () => {
     const suggestions = suggestProducts('cp96 50 100');
-    expect(suggestions.some((s) => s.exampleCodeFormat === 'CP96-50-100')).toBe(true);
+    expect(suggestions).toHaveLength(0);
+
+    const identification = identifyProduct(
+      'cp96 50 100',
+      normalizeCode('cp96 50 100')
+    );
+    expect(identification.outcome).toBe('full');
+    expect(identification.series.value).toBe('CP96');
   });
 
   it('does not create noisy suggestions for a lone short numeric token', () => {

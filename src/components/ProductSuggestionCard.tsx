@@ -10,16 +10,23 @@ interface ProductSuggestionCardProps {
   onPress: () => void;
 }
 
+const MISSING_FIELD_LABELS: Record<SuggestedProduct['missingFields'][number], string> = {
+  bore: 'çap',
+  stroke: 'strok',
+  options: 'seçenekler',
+  spool_function: 'sürgü/fonksiyon',
+  coil_voltage: 'bobin voltajı',
+  connector: 'konnektör',
+  flow_pressure: 'basınç/debi',
+  manual_override: 'manuel kumanda',
+  seal_material: 'conta',
+};
+
 function formatMissing(fields: SuggestedProduct['missingFields']): string {
   if (fields.length === 0) {
     return 'Eksik alan yok';
   }
-  const labels: Record<string, string> = {
-    bore: 'çap',
-    stroke: 'strok',
-    options: 'seçenekler',
-  };
-  return `Eksik: ${fields.map((f) => labels[f] ?? f).join(', ')}`;
+  return `Eksik: ${fields.map((f) => MISSING_FIELD_LABELS[f] ?? f).join(', ')}`;
 }
 
 export function ProductSuggestionCard({ query, suggestion, onPress }: ProductSuggestionCardProps) {

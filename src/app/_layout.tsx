@@ -1,9 +1,15 @@
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AppSplashScreen } from '@/components/AppSplashScreen';
+
+SplashScreen.preventAutoHideAsync();
+
 export default function RootLayout() {
   return (
+    <AppSplashScreen>
     <SafeAreaProvider>
       <StatusBar style="dark" />
       <Stack
@@ -22,5 +28,6 @@ export default function RootLayout() {
         <Stack.Screen name="diagnostics" options={{ title: 'Veri Kontrolü' }} />
       </Stack>
     </SafeAreaProvider>
+    </AppSplashScreen>
   );
 }

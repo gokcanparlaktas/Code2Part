@@ -7,9 +7,9 @@ import type {
   SuggestionConfidence,
   SuggestionMatchedBy,
   SuggestedProduct,
-  SuggestionMissingField,
 } from '@/types/suggestion';
 
+import { computeHydraulicValveMissingFields } from './computeHydraulicValveMissingFields';
 import {
   buildTokenizedQuery,
   collectSeriesPrefixes,
@@ -90,14 +90,6 @@ export function suggestHydraulicValveProducts(
     }
     seen.add(key);
 
-    const missingFields: SuggestionMissingField[] = ['options'];
-    if (identification.valveSpoolFunction?.evidence === 'unknown') {
-      missingFields.push('bore');
-    }
-    if (identification.valveCoilVoltage?.evidence === 'unknown') {
-      missingFields.push('stroke');
-    }
-
     suggestions.push({
       seriesId: series.id,
       brand: series.brand,
@@ -108,7 +100,7 @@ export function suggestHydraulicValveProducts(
       confidence: confidenceFromScore(match.score),
       matchedBy: 'token_match' as SuggestionMatchedBy,
       detectedAttributes: {},
-      missingFields,
+      missingFields: computeHydraulicValveMissingFields(identification),
       exampleCodeFormat: code,
       suggestionTextTr: buildHydraulicSuggestionTextTr(code, series.brand, series.series),
     });

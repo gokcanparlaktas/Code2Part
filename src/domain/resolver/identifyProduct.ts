@@ -5,7 +5,9 @@ import {
 import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
 import { calculateProductReliability } from '@/domain/reliability/calculateProductReliability';
 
+import { findExactExampleCodeMatch } from './exactExampleCodeMatch';
 import { getAllProductSeries } from './productSeriesCatalog';
+import { normalizeCode } from './normalizeCode';
 import type {
   ConfidenceLevel,
   IdentificationOutcome,
@@ -147,10 +149,12 @@ function emptyIdentification(
 function identifyHydraulicValveProduct(
   inputCode: string,
   normalizedCode: string,
-  series: ProductSeriesRecord
+  series: ProductSeriesRecord,
+  options?: { forceFullIdentification?: boolean }
 ): ProductIdentification {
   const hydraulicAttrs = parseHydraulicValveAttributes(normalizedCode, series);
-  const outcome = hydraulicAttrs.parsedFromCode ? 'full' : 'series_only';
+  const outcome =
+    options?.forceFullIdentification || hydraulicAttrs.parsedFromCode ? 'full' : 'series_only';
 
   const identification: ProductIdentification = {
     inputCode,
@@ -177,14 +181,60 @@ function identifyHydraulicValveProduct(
   };
 
   const reliability = calculateProductReliability(identification);
-  identification.confidence = reliability.confidence;
+  identification.confidence = options?.forceFullIdentification
+    ? 'high'
+    : reliability.confidence;
   return identification;
+}
+
+function identifyFromExactExample(
+  inputCode: string,
+  canonicalNormalized: string,
+  series: ProductSeriesRecord
+): ProductIdentification {
+  if (series.resolverCategory === HYDRAULIC_VALVE_CATEGORY) {
+    return identifyHydraulicValveProduct(inputCode, canonicalNormalized, series, {
+      forceFullIdentification: true,
+    });
+  }
+
+  const { bore, stroke, parsed } = parseDimensions(canonicalNormalized, series.id);
+
+  return {
+    inputCode,
+    normalizedCode: canonicalNormalized,
+    seriesId: series.id,
+    resolverCategoryKey: series.resolverCategory,
+    matched: true,
+    outcome: 'full',
+    brand: attributeFromSeries(series.brand),
+    series: attributeFromSeries(series.series),
+    productType: attributeFromSeries(series.productType),
+    productCategory: attributeFromSeries(series.productCategory),
+    standardFamily: {
+      value: series.standardFamily,
+      evidence: 'standard',
+      requiresCheck: false,
+    },
+    bore: parsed ? bore : unknownAttribute(),
+    stroke: parsed ? stroke : unknownAttribute(),
+    confidence: parsed ? series.confidenceWhenMatched : 'high',
+  };
 }
 
 export function identifyProduct(
   inputCode: string,
   normalizedCode: string
 ): ProductIdentification {
+  const exactExample = findExactExampleCodeMatch(normalizedCode);
+  if (exactExample) {
+    const canonicalNormalized = normalizeCode(exactExample);
+    const series = findSeriesByCode(canonicalNormalized);
+    if (series) {
+      return identifyFromExactExample(inputCode, canonicalNormalized, series);
+    }
+  }
+
   const series = findSeriesByCode(normalizedCode);
 
   if (!series) {

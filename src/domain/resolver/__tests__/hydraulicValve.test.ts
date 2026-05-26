@@ -12,6 +12,22 @@ function identify(input: string) {
 }
 
 describe('hydraulic_valve category', () => {
+  it('identifies DG4V-3-2A-M-U-H7-60 as full hydraulic_valve (exact catalog example)', () => {
+    const result = identify('DG4V-3-2A-M-U-H7-60');
+    expect(result.resolverCategoryKey).toBe('hydraulic_valve');
+    expect(result.outcome).toBe('full');
+    expect(result.brand.value).toBe('Vickers');
+    expect(result.series.value).toBe('DG4V-3');
+    expect(result.confidence).toBe('high');
+  });
+
+  it('identifies spaced compact DG4V example as the same product', () => {
+    const result = identify('dg4v 3 2a m u h7 60');
+    expect(result.outcome).toBe('full');
+    expect(result.series.value).toBe('DG4V-3');
+    expect(result.resolverCategoryKey).toBe('hydraulic_valve');
+  });
+
   it('identifies 4WE6 as hydraulic_valve', () => {
     const result = identify('4WE6E-6X/EG24N9K4');
     expect(result.resolverCategoryKey).toBe('hydraulic_valve');
@@ -153,6 +169,20 @@ describe('hydraulic_valve category', () => {
             (s.series === 'DHI' || s.series === 'DHU')
         )
       ).toBe(true);
+    });
+
+    it('hydraulic suggestion missing labels exclude pneumatic fields', () => {
+      const suggestions = suggestProducts('DG4V 3');
+      const hydraulic = suggestions.find((s) => s.exampleCodeFormat.includes('DG4V-3'));
+      expect(hydraulic).toBeDefined();
+
+      const missingText = hydraulic!.missingFields.join(',');
+      expect(missingText).not.toContain('stroke');
+      expect(missingText).not.toContain('bore');
+      expect(missingText).not.toContain('options');
+      expect(hydraulic!.missingFields).not.toContain('stroke');
+      expect(hydraulic!.missingFields).not.toContain('bore');
+      expect(hydraulic!.missingFields).not.toContain('options');
     });
   });
 });

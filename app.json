@@ -34,7 +34,8 @@
           "backgroundColor": "#0A1628",
           "enableFullScreenImage_legacy": true
         }
-      ]
+      ],
+      "./plugins/withAndroidFullscreenSplash.js"
     ],
     "experiments": {
       "typedRoutes": true
