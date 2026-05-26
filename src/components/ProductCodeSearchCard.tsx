@@ -89,6 +89,7 @@ export function ProductCodeSearchCard() {
       {suggestions.length > 0 ? (
         <PartialSuggestionsPanel
           title="Bunlar olabilir"
+          query={code}
           suggestions={suggestions}
           onSelectSuggestion={handleSelectSuggestion}
         />

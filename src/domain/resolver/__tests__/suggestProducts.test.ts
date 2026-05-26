@@ -5,7 +5,20 @@ function firstSuggestion(input: string) {
   return suggestions[0];
 }
 
+import { getSuggestionReactKey } from '@/types/suggestion';
+
+function expectUniqueReactKeys(suggestions: ReturnType<typeof suggestProducts>): void {
+  const keys = suggestions.map(getSuggestionReactKey);
+  expect(new Set(keys).size).toBe(keys.length);
+}
+
 describe('suggestProducts', () => {
+  it('returns suggestions with unique React list keys', () => {
+    for (const input of ['DSBC', 'DSBC-50', '50-100', '50 N3', 'DSBC 50 100']) {
+      expectUniqueReactKeys(suggestProducts(input));
+    }
+  });
+
   it('suggests Festo DSBC for "DSBC"', () => {
     const suggestion = firstSuggestion('DSBC');
     expect(suggestion).toBeDefined();

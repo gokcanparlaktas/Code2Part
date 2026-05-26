@@ -1,6 +1,11 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import {
+  MATCH_PERCENTAGE_RING_SIZE,
+  MatchPercentageRing,
+} from '@/components/common/MatchPercentageRing';
+import { calculateMatchPercentage } from '@/domain/scoring/calculateMatchPercentage';
 import type { AttributeComparison, CheckItem, CompatibilityResult } from '@/types/compatibility';
 import { formatCollapsedRiskHint } from '@/utils/formatRisk';
 
@@ -73,6 +78,7 @@ export function EquivalentAccordionCard({
   const hasChecks = result.checkItems.length > 0;
   const modelCode = candidate.suggestedCode ?? 'Model oluşturulamadı';
   const riskHint = formatCollapsedRiskHint(summary.riskLevel, hasChecks);
+  const matchPercentage = calculateMatchPercentage(result);
 
   return (
     <View style={[styles.card, expanded && styles.cardExpanded]}>
@@ -83,17 +89,24 @@ export function EquivalentAccordionCard({
         accessibilityState={{ expanded }}
       >
         <View style={styles.headerTop}>
-          <Text style={styles.brandSeries}>
-            {candidate.brand} {candidate.series}
-          </Text>
-          <Text style={styles.chevron}>{expanded ? '▼' : '▶'}</Text>
+          <View style={styles.titleBlock}>
+            <Text style={styles.brandSeries}>
+              {candidate.brand} {candidate.series}
+            </Text>
+            <Text style={styles.modelLine}>
+              <Text style={styles.modelLabel}>Model: </Text>
+              {modelCode}
+            </Text>
+            <Text style={styles.matchLevel}>{summary.matchLevelTr}</Text>
+            <Text style={styles.riskHint}>{riskHint}</Text>
+          </View>
+          <View style={styles.headerTrailing}>
+            <MatchPercentageRing match={matchPercentage} />
+            <View style={styles.chevronAlign}>
+              <Text style={styles.chevron}>{expanded ? '▼' : '▶'}</Text>
+            </View>
+          </View>
         </View>
-        <Text style={styles.modelLine}>
-          <Text style={styles.modelLabel}>Model: </Text>
-          {modelCode}
-        </Text>
-        <Text style={styles.matchLevel}>{summary.matchLevelTr}</Text>
-        <Text style={styles.riskHint}>{riskHint}</Text>
       </Pressable>
 
       {expanded ? (
@@ -150,27 +163,41 @@ const styles = StyleSheet.create({
     borderColor: '#93C5FD',
   },
   header: {
-    gap: 6,
     padding: 16,
   },
   headerPressed: {
     backgroundColor: '#F8FAFC',
   },
   headerTop: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
+  titleBlock: {
+    flex: 1,
+    gap: 2,
+    paddingRight: 8,
+  },
   brandSeries: {
     color: '#0F172A',
-    flex: 1,
     fontSize: 18,
     fontWeight: '800',
+    lineHeight: 22,
+  },
+  headerTrailing: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 4,
+  },
+  chevronAlign: {
+    height: MATCH_PERCENTAGE_RING_SIZE,
+    justifyContent: 'center',
   },
   chevron: {
     color: '#64748B',
     fontSize: 14,
     fontWeight: '700',
+    width: 14,
   },
   modelLine: {
     color: '#1E40AF',

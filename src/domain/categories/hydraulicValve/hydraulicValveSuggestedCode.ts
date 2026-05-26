@@ -1,4 +1,4 @@
-import { getProductSeriesById } from '@/domain/resolver/identifyProduct';
+import { getProductSeriesById } from '@/domain/resolver/productSeriesCatalog';
 import type { ProductIdentification, ProductSeriesRecord } from '@/types/product';
 
 const SERIES_EXAMPLE_CODES: Record<string, string> = {

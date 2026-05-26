@@ -1,10 +1,11 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { MatchPercentageRing } from '@/components/common/MatchPercentageRing';
+import { matchPercentageFromSuggestion } from '@/domain/scoring/suggestionMatchPercentage';
 import type { SuggestedProduct } from '@/types/suggestion';
 
-import { SuggestionConfidenceBadge } from './SuggestionConfidenceBadge';
-
 interface ProductSuggestionCardProps {
+  query: string;
   suggestion: SuggestedProduct;
   onPress: () => void;
 }
@@ -21,19 +22,20 @@ function formatMissing(fields: SuggestedProduct['missingFields']): string {
   return `Eksik: ${fields.map((f) => labels[f] ?? f).join(', ')}`;
 }
 
-export function ProductSuggestionCard({ suggestion, onPress }: ProductSuggestionCardProps) {
+export function ProductSuggestionCard({ query, suggestion, onPress }: ProductSuggestionCardProps) {
   const { detectedAttributes } = suggestion;
+  const matchPercentage = matchPercentageFromSuggestion(query, suggestion);
 
   return (
     <Pressable
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
       onPress={onPress}
     >
-      <View style={styles.header}>
+      <View style={styles.headerRow}>
         <Text style={styles.title}>
           {suggestion.brand} {suggestion.series}
         </Text>
-        <SuggestionConfidenceBadge confidence={suggestion.confidence} />
+        <MatchPercentageRing match={matchPercentage} />
       </View>
 
       <Text style={styles.meta}>{suggestion.productTypeTr}</Text>
@@ -65,8 +67,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#EFF6FF',
     borderColor: '#93C5FD',
   },
-  header: {
-    alignItems: 'center',
+  headerRow: {
+    alignItems: 'flex-start',
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
@@ -75,6 +77,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '700',
+    paddingRight: 8,
   },
   meta: {
     color: '#475569',

@@ -1,7 +1,7 @@
 import equivalentSeriesData from '@/data/equivalentSeries.json';
 import parsingRulesData from '@/data/parsingRules.json';
 import productSeriesData from '@/data/productSeries.json';
-import { getProductSeriesById } from '@/domain/resolver/identifyProduct';
+import { getProductSeriesById } from '@/domain/resolver/productSeriesCatalog';
 import type {
   DataReliabilityMetadata,
   ReliabilitySummary,

@@ -1,12 +1,11 @@
-import equivalentSeriesData from '@/data/equivalentSeries.json';
-import hydraulicValveSeriesData from '@/data/hydraulicValveSeries.json';
 import parsingRulesData from '@/data/parsingRules.json';
-import productSeriesData from '@/data/productSeries.json';
 import {
   parseHydraulicValveAttributes,
   resolveHydraulicValveConfidence,
 } from '@/domain/categories/hydraulicValve/hydraulicValveIdentify';
 import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
+
+import { getAllProductSeries } from './productSeriesCatalog';
 import type {
   ConfidenceLevel,
   IdentificationOutcome,
@@ -16,10 +15,6 @@ import type {
   TechnicalAttribute,
 } from '@/types/product';
 
-const productSeries = [
-  ...(productSeriesData as ProductSeriesRecord[]),
-  ...(hydraulicValveSeriesData as ProductSeriesRecord[]),
-];
 const parsingRules = parsingRulesData as ParsingRuleRecord[];
 
 function attributeFromSeries<T extends string | number>(
@@ -52,7 +47,7 @@ function findSeriesByCode(normalizedCode: string): ProductSeriesRecord | null {
     return null;
   }
 
-  const candidates = productSeries
+  const candidates = getAllProductSeries()
     .flatMap((series) =>
       getSeriesPrefixes(series).map((prefix) => ({ series, prefix }))
     )
@@ -221,16 +216,8 @@ export function identifyProduct(
   };
 }
 
-export { buildSuggestedEquivalentCode } from './buildSuggestedEquivalentCode';
-
-export function getProductSeriesById(id: string): ProductSeriesRecord | undefined {
-  return productSeries.find((s) => s.id === id);
-}
-
-export function getAllProductSeries(): ProductSeriesRecord[] {
-  return productSeries;
-}
-
-export function getEquivalentGroups() {
-  return equivalentSeriesData;
-}
+export {
+  getAllProductSeries,
+  getEquivalentGroups,
+  getProductSeriesById,
+} from './productSeriesCatalog';

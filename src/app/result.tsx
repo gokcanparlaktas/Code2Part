@@ -93,6 +93,7 @@ export default function ResultScreen() {
               </Text>
               <PartialSuggestionsPanel
                 title="Olası seriler"
+                query={inputCode}
                 suggestions={suggestions}
               />
             </>

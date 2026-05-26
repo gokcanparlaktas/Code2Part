@@ -9,7 +9,7 @@ import type {
 import type { ProductIdentification, TechnicalAttribute } from '@/types/product';
 import { formatAttributeValue } from '@/utils/formatConfidence';
 
-import { getProductSeriesById } from './identifyProduct';
+import { getProductSeriesById } from './productSeriesCatalog';
 
 const UNSUPPORTED_CATEGORY_WARNING =
   'Bu ürün kategorisi için detaylı karşılaştırma kuralları henüz eklenmemiştir.';

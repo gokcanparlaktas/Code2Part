@@ -1,5 +1,5 @@
 import equivalentSeriesData from '@/data/equivalentSeries.json';
-import { getProductSeriesById } from '@/domain/resolver/identifyProduct';
+import { getProductSeriesById } from '@/domain/resolver/productSeriesCatalog';
 import type { EquivalentGroupRecord } from '@/types/product';
 import type {
   ConfidenceLevel,

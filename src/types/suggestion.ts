@@ -30,3 +30,7 @@ export interface SuggestedProduct {
   exampleCodeFormat: string;
   suggestionTextTr: string;
 }
+
+export function getSuggestionReactKey(suggestion: SuggestedProduct): string {
+  return `${suggestion.seriesId}:${suggestion.exampleCodeFormat}:${suggestion.matchedBy}`;
+}

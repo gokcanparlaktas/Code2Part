@@ -1,17 +1,19 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import type { SuggestedProduct } from '@/types/suggestion';
+import { getSuggestionReactKey, type SuggestedProduct } from '@/types/suggestion';
 
 import { ProductSuggestionCard } from './ProductSuggestionCard';
 
 interface PartialSuggestionsPanelProps {
   title: string;
+  query: string;
   suggestions: SuggestedProduct[];
   onSelectSuggestion?: (suggestion: SuggestedProduct) => void;
 }
 
 export function PartialSuggestionsPanel({
   title,
+  query,
   suggestions,
   onSelectSuggestion,
 }: PartialSuggestionsPanelProps) {
@@ -25,7 +27,8 @@ export function PartialSuggestionsPanel({
       <View style={styles.list}>
         {suggestions.map((suggestion) => (
           <ProductSuggestionCard
-            key={suggestion.seriesId}
+            key={getSuggestionReactKey(suggestion)}
+            query={query}
             suggestion={suggestion}
             onPress={() => onSelectSuggestion?.(suggestion)}
           />
