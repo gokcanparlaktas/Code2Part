@@ -56,6 +56,10 @@ function compareAttribute(
   return { label, sourceDisplay, targetDisplay, status: 'different' };
 }
 
+type AttributeWithNormalized = ReturnType<typeof getTechnicalAttributes>[number] & {
+  normalizedValue?: string | number | null;
+};
+
 function getAttrValue(
   attributes: ReturnType<typeof getTechnicalAttributes>,
   key: string
@@ -68,11 +72,32 @@ function getAttrValue(
   return `${match.value}${unit}`;
 }
 
+/** Prefer normalized machine values (e.g. spring_centered) when present. */
+function getComparableAttrValue(
+  attributes: ReturnType<typeof getTechnicalAttributes>,
+  key: string
+): string | null {
+  const match = attributes.find((a) => a.key === key) as AttributeWithNormalized | undefined;
+  if (!match) {
+    return null;
+  }
+  if (match.normalizedValue !== undefined && match.normalizedValue !== null) {
+    return String(match.normalizedValue);
+  }
+  if (match.value === null) {
+    return null;
+  }
+  const unit = match.unit ? ` ${match.unit}` : '';
+  return `${match.value}${unit}`;
+}
+
 function getFunctionTokenForComparison(
   attributes: ReturnType<typeof getTechnicalAttributes>
 ): string | null {
   return (
-    getAttrValue(attributes, 'function_token') ?? getAttrValue(attributes, 'spool_symbol')
+    getAttrValue(attributes, 'function_token') ??
+    getAttrValue(attributes, 'spool_function_code') ??
+    getAttrValue(attributes, 'spool_symbol')
   );
 }
 
@@ -221,6 +246,24 @@ export function compareHydraulicValves(
       sourceValue: sourceConnector,
       targetValue: targetConnector,
       missingMessageTr: 'Konnektör kodu eksik veya doğrulanamadı.',
+    }),
+    compareOptionalString({
+      label: 'Konum sayısı',
+      sourceValue: getComparableAttrValue(sourceAttrs, 'number_of_positions'),
+      targetValue: target ? getComparableAttrValue(targetAttrs, 'number_of_positions') : null,
+      missingMessageTr: 'Konum sayısı katalogdan doğrulanmalıdır.',
+    }),
+    compareOptionalString({
+      label: 'Yay düzeni',
+      sourceValue: getComparableAttrValue(sourceAttrs, 'spring_arrangement'),
+      targetValue: target ? getComparableAttrValue(targetAttrs, 'spring_arrangement') : null,
+      missingMessageTr: 'Yay düzeni katalogdan doğrulanmalıdır.',
+    }),
+    compareOptionalString({
+      label: 'Sürgü tipi',
+      sourceValue: getAttrValue(sourceAttrs, 'spool_type'),
+      targetValue: target ? getAttrValue(targetAttrs, 'spool_type') : null,
+      missingMessageTr: 'Sürgü tipi katalogdan doğrulanmalıdır.',
     }),
     compareOptionalString({
       label: 'Manuel kumanda',

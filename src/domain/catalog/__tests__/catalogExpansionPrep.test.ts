@@ -30,7 +30,7 @@ describe('catalog expansion prep', () => {
       }).find((a) => a.key === 'connector_token');
 
       expect(connector?.value).toBe('N1');
-      expect(connector?.confidence).toBe('low');
+      expect(connector?.confidence).toBe('high');
     });
 
     it('extracts pneumatic bore/stroke from catalog parsingRules before fallback', () => {

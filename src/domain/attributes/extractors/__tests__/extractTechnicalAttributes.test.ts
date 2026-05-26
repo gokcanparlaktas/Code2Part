@@ -90,7 +90,7 @@ describe('extractTechnicalAttributes (catalog v2 driven)', () => {
       expect(connector?.requiresCatalogCheck).toBe(false);
     });
 
-    it('extracts connector token with check required on non-catalog hydraulic series', () => {
+    it('extracts Yuken DSG connector via dedicated parser', () => {
       const code = 'DSG-01-3C2-D24-N1-50';
       const id = identifyProduct(code, normalizeCode(code));
       const connector = extractHydraulicAttributes({
@@ -99,8 +99,8 @@ describe('extractTechnicalAttributes (catalog v2 driven)', () => {
       }).find((a) => a.key === 'connector_token');
 
       expect(connector?.value).toBe('N1');
-      expect(connector?.confidence).toBe('low');
-      expect(connector?.requiresCatalogCheck).toBe(true);
+      expect(connector?.confidence).toBe('high');
+      expect(connector?.requiresCatalogCheck).toBe(false);
     });
   });
 

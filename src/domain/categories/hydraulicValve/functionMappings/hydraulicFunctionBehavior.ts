@@ -150,6 +150,23 @@ const HYDRAULIC_FUNCTION_BEHAVIORS: HydraulicFunctionBehavior[] = [
     confidence: 'medium',
     requiresCatalogCheck: true,
   }),
+  entry('Yuken', 'DSG-01', '3C9', {
+    positions: 3,
+    centering: 'spring_centered',
+    centerCondition: 'unknown',
+    normallyState: 'unknown',
+    confidence: 'medium',
+    requiresCatalogCheck: true,
+    note: 'Yuken DSG spool type; katalogdan doğrulanmalıdır.',
+  }),
+  entry('Yuken', 'DSG-03', '3C9', {
+    positions: 3,
+    centering: 'spring_centered',
+    centerCondition: 'unknown',
+    normallyState: 'unknown',
+    confidence: 'medium',
+    requiresCatalogCheck: true,
+  }),
   entry('Yuken', 'DSG-01', '3C12', {
     positions: 3,
     centering: 'spring_centered',

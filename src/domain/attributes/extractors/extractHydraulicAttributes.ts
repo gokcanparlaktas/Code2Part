@@ -9,6 +9,10 @@ import {
   isRexrothWE6Code,
   parseRexrothWE6,
 } from '@/domain/categories/hydraulicValve/manufacturers/rexroth/parseRexrothWE6';
+import {
+  isYukenDSGCode,
+  parseYukenDSG,
+} from '@/domain/categories/hydraulicValve/manufacturers/yuken/parseYukenDSG';
 import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
 import type { CatalogFunctionMapping, CatalogSeries } from '@/types/catalog';
 import type { TechnicalAttributeResult } from '@/types/technicalAttributeResult';
@@ -236,6 +240,19 @@ export function extractHydraulicAttributes(
     const rexrothAttrs = parseRexrothWE6(options.inputCode);
     if (rexrothAttrs) {
       return rexrothAttrs;
+    }
+  }
+
+  const useYukenDSGParser =
+    series?.id === 'yuken_dsg01' ||
+    series?.id === 'yuken_dsg03' ||
+    series?.codePrefix?.startsWith('DSG-') ||
+    isYukenDSGCode(normalized);
+
+  if (useYukenDSGParser) {
+    const yukenAttrs = parseYukenDSG(options.inputCode);
+    if (yukenAttrs) {
+      return yukenAttrs;
     }
   }
 
