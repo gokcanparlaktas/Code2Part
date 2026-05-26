@@ -3,6 +3,15 @@ import exampleProductCodesData from '@/data/exampleProductCodes.json';
 import parsingRulesData from '@/data/parsingRules.json';
 import { identifyProduct } from '@/domain/resolver/identifyProduct';
 import { normalizeCode } from '@/domain/resolver/normalizeCode';
+
+import {
+  buildTokenizedQuery,
+  collectSeriesPrefixes,
+  extractBoreStrokeFromTokens,
+  isEligibleTokenQuery,
+  scoreProductCodeAgainstTokens,
+} from './pneumaticCylinderTokenMatch';
+import type { TokenMatchScore } from './pneumaticCylinderTokenMatch';
 import { PNEUMATIC_CYLINDER_CATEGORY } from '@/types/category';
 import type {
   EquivalentGroupRecord,
@@ -31,8 +40,8 @@ interface SeriesLessSuggestionBuild {
   seriesKnown: boolean;
   matchedBy: SuggestionMatchedBy;
   score: number;
-  boreMm: number;
-  strokeMm: number;
+  boreMm?: number;
+  strokeMm?: number;
   exampleCodeFormat: string;
   missingFields: SuggestionMissingField[];
   suggestionTextTr: string;
@@ -145,8 +154,8 @@ function buildSeriesLessSuggestion(
     confidence: confidenceFromSeriesLessScore(build.score),
     matchedBy: build.matchedBy,
     detectedAttributes: {
-      boreMm: build.boreMm,
-      strokeMm: build.strokeMm,
+      ...(build.boreMm !== undefined ? { boreMm: build.boreMm } : {}),
+      ...(build.strokeMm !== undefined ? { strokeMm: build.strokeMm } : {}),
     },
     missingFields: build.missingFields,
     exampleCodeFormat: build.exampleCodeFormat,
@@ -275,6 +284,108 @@ function suggestionsFromEquivalenceGroups(
   }
 
   return builds;
+}
+
+const TOKEN_SUGGESTION_MAX = 8;
+
+export function buildTokenMatchSuggestionTextTr(
+  exampleCode: string,
+  brand: string,
+  series: string
+): string {
+  return (
+    `Bu kod parçaları ${exampleCode} (${brand} ${series}) ile eşleşiyor olabilir. ` +
+    'Seri kesin değilse teknik değerleri kontrol edin.'
+  );
+}
+
+function confidenceFromTokenScore(score: number): SuggestionConfidence {
+  if (score >= 75) {
+    return 'medium';
+  }
+  return 'low';
+}
+
+export function suggestTokenMatchedPneumaticCylinders(
+  rawInput: string,
+  productSeries: ProductSeriesRecord[],
+  limit = TOKEN_SUGGESTION_MAX
+): SuggestedProduct[] {
+  const query = buildTokenizedQuery(rawInput);
+  if (!isEligibleTokenQuery(query.tokens)) {
+    return [];
+  }
+
+  const seriesPrefixes = collectSeriesPrefixes(
+    productSeries.filter((s) => s.resolverCategory === PNEUMATIC_CYLINDER_CATEGORY)
+  );
+
+  const scored = exampleProductCodes
+    .map((code) => {
+      const normalizedCode = normalizeCode(code);
+      const match = scoreProductCodeAgainstTokens(normalizedCode, query, seriesPrefixes);
+      if (!match) {
+        return null;
+      }
+      return { code: normalizedCode, match };
+    })
+    .filter((entry): entry is { code: string; match: TokenMatchScore } => entry !== null)
+    .sort((a, b) => b.match.score - a.match.score);
+
+  const builds: SeriesLessSuggestionBuild[] = [];
+  const seen = new Set<string>();
+
+  for (const { code, match } of scored) {
+    if (builds.length >= limit) {
+      break;
+    }
+
+    const identification = identifyProduct(code, code);
+    if (!identification.seriesId) {
+      continue;
+    }
+
+    const series = productSeries.find((s) => s.id === identification.seriesId);
+    if (!series || series.resolverCategory !== PNEUMATIC_CYLINDER_CATEGORY) {
+      continue;
+    }
+
+    const dedupeKey = `${series.id}:${code}`;
+    if (seen.has(dedupeKey)) {
+      continue;
+    }
+    seen.add(dedupeKey);
+
+    const dims = extractBoreStrokeFromTokens(query.tokens);
+    const boreMm = identification.bore.value ?? dims.boreMm ?? match.boreMm;
+    const strokeMm = identification.stroke.value ?? dims.strokeMm ?? match.strokeMm;
+
+    builds.push({
+      series,
+      seriesKnown: match.seriesTokenMatched || identification.outcome === 'full',
+      matchedBy: 'token_match',
+      score: match.score,
+      boreMm: boreMm ?? undefined,
+      strokeMm: strokeMm ?? undefined,
+      exampleCodeFormat: code,
+      missingFields: computePneumaticCylinderMissingFields(
+        query.compact,
+        boreMm ?? undefined,
+        strokeMm ?? undefined
+      ),
+      suggestionTextTr: buildTokenMatchSuggestionTextTr(code, series.brand, series.series),
+    });
+  }
+
+  return builds
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((build) => ({
+      ...buildSeriesLessSuggestion(build),
+      confidence: confidenceFromTokenScore(build.score),
+      matchedBy: 'token_match' as const,
+      suggestionTextTr: build.suggestionTextTr,
+    }));
 }
 
 export function suggestSeriesLessPneumaticCylinders(

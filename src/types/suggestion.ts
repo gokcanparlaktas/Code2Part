@@ -6,7 +6,8 @@ export type SuggestionMatchedBy =
   | 'partial_regex'
   | 'contains'
   | 'dimension_fragment'
-  | 'example_code_contains';
+  | 'example_code_contains'
+  | 'token_match';
 
 export type SuggestionMissingField = 'bore' | 'stroke' | 'options';
 

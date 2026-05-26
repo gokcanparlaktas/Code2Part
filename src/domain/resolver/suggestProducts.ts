@@ -5,7 +5,9 @@ import {
   computePneumaticCylinderMissingFields,
   detectPneumaticCylinderPartialDimensions,
   suggestSeriesLessPneumaticCylinders,
+  suggestTokenMatchedPneumaticCylinders,
 } from '@/domain/categories/pneumaticCylinder/pneumaticCylinderSuggestions';
+import { isEligibleTokenQuery, tokenizeForMatching } from '@/domain/categories/pneumaticCylinder/pneumaticCylinderTokenMatch';
 import { PNEUMATIC_CYLINDER_CATEGORY } from '@/types/category';
 import { identifyProduct } from './identifyProduct';
 import { normalizeCode } from './normalizeCode';
@@ -175,9 +177,26 @@ function toSuggestedProduct(candidate: MatchCandidate, normalized: string): Sugg
   };
 }
 
+function suggestionSortScore(suggestion: SuggestedProduct): number {
+  const confidenceWeight = { high: 300, medium: 200, low: 100 };
+  const matchedByWeight: Record<SuggestedProduct['matchedBy'], number> = {
+    example_code_contains: 90,
+    token_match: 85,
+    series_prefix: 80,
+    partial_regex: 75,
+    dimension_fragment: 55,
+    brand_alias: 40,
+    contains: 30,
+  };
+  return confidenceWeight[suggestion.confidence] + (matchedByWeight[suggestion.matchedBy] ?? 0);
+}
+
 export function suggestProducts(rawInput: string, limit = 5): SuggestedProduct[] {
   const normalized = normalizeCode(rawInput);
-  if (normalized.length < 2) {
+  const queryTokens = tokenizeForMatching(rawInput);
+  const tokenEligible = isEligibleTokenQuery(queryTokens);
+
+  if (normalized.length < 2 && !tokenEligible) {
     return [];
   }
 
@@ -213,22 +232,27 @@ export function suggestProducts(rawInput: string, limit = 5): SuggestedProduct[]
     limit
   );
 
-  const merged = new Map<string, SuggestedProduct>();
-  const scoreRank: Record<SuggestionConfidence, number> = {
-    high: 3,
-    medium: 2,
-    low: 1,
-  };
+  const tokenSuggestions = suggestTokenMatchedPneumaticCylinders(
+    rawInput,
+    productSeries,
+    Math.max(limit, 8)
+  );
 
-  for (const suggestion of [...seriesLessSuggestions, ...prefixSuggestions]) {
+  const merged = new Map<string, SuggestedProduct>();
+
+  for (const suggestion of [
+    ...tokenSuggestions,
+    ...seriesLessSuggestions,
+    ...prefixSuggestions,
+  ]) {
     const key = `${suggestion.seriesId}:${suggestion.exampleCodeFormat}`;
     const existing = merged.get(key);
-    if (!existing || scoreRank[suggestion.confidence] > scoreRank[existing.confidence]) {
+    if (!existing || suggestionSortScore(suggestion) > suggestionSortScore(existing)) {
       merged.set(key, suggestion);
     }
   }
 
   return [...merged.values()]
-    .sort((a, b) => scoreRank[b.confidence] - scoreRank[a.confidence])
+    .sort((a, b) => suggestionSortScore(b) - suggestionSortScore(a))
     .slice(0, limit);
 }

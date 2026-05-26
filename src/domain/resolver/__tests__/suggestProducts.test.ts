@@ -84,8 +84,123 @@ describe('suggestProducts', () => {
 
   it('does not mark unknown series as certain for dimension-only fragments', () => {
     const suggestions = suggestProducts('50-100');
-    const dimensionOnly = suggestions.filter((s) => s.matchedBy === 'dimension_fragment');
-    expect(dimensionOnly.length).toBeGreaterThan(0);
-    expect(dimensionOnly.every((s) => s.confidence === 'low')).toBe(true);
+    expect(suggestions.length).toBeGreaterThan(0);
+    expect(suggestions.every((s) => s.confidence !== 'high')).toBe(true);
+    expect(
+      suggestions.some(
+        (s) => s.matchedBy === 'dimension_fragment' || s.matchedBy === 'token_match'
+      )
+    ).toBe(true);
+  });
+
+  it('suggests DSBC-50-100-PPVA-N3 for token query "50 N3"', () => {
+    const suggestions = suggestProducts('50 N3');
+    expect(
+      suggestions.some((s) => s.exampleCodeFormat === 'DSBC-50-100-PPVA-N3')
+    ).toBe(true);
+    expect(suggestions.every((s) => s.confidence !== 'high')).toBe(true);
+  });
+
+  it('does not suggest codes missing a query token for "50 n3"', () => {
+    const suggestions = suggestProducts('50 n3');
+    const codes = suggestions.map((s) => s.exampleCodeFormat);
+    expect(codes).not.toContain('DSBC-32-25-PPSA-N3');
+    expect(codes).not.toContain('ADN-32-50');
+    expect(codes).toContain('DSBC-50-100-PPVA-N3');
+  });
+
+  it('suggests DSBC-50-100-PPVA-N3 for token query "ppva n3"', () => {
+    const suggestions = suggestProducts('ppva n3');
+    expect(
+      suggestions.some((s) => s.exampleCodeFormat === 'DSBC-50-100-PPVA-N3')
+    ).toBe(true);
+    expect(
+      suggestions.every((s) => {
+        const compact = s.exampleCodeFormat.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+        return compact.includes('PPVA') && compact.includes('N3');
+      })
+    ).toBe(true);
+  });
+
+  it('suggests products with bore 50 and stroke 100 for "50 100"', () => {
+    const suggestions = suggestProducts('50 100');
+    expect(suggestions.length).toBeGreaterThanOrEqual(1);
+    expect(
+      suggestions.some(
+        (s) => s.detectedAttributes.boreMm === 50 && s.detectedAttributes.strokeMm === 100
+      )
+    ).toBe(true);
+    expect(suggestions.every((s) => s.confidence !== 'high')).toBe(true);
+    expect(
+      suggestions.every((s) => {
+        const tokens = s.exampleCodeFormat
+          .toUpperCase()
+          .split(/[\s\-_/]+/)
+          .map((t) => t.replace(/[^A-Z0-9]/g, ''));
+        const compact = s.exampleCodeFormat.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+        const has50 = tokens.includes('50') || /(^|[^0-9])50([^0-9]|$)/.test(compact);
+        const has100 = tokens.includes('100') || /(^|[^0-9])100([^0-9]|$)/.test(compact);
+        return has50 && has100;
+      })
+    ).toBe(true);
+  });
+
+  it('prioritizes DSBC-50-100-PPVA-N3 for "50 100 ppva"', () => {
+    const suggestions = suggestProducts('50 100 ppva');
+    expect(suggestions[0]?.exampleCodeFormat).toBe('DSBC-50-100-PPVA-N3');
+  });
+
+  it('suggests DSBC-50-100-PPVA-N3 for spaced series query "DSBC 50 100"', () => {
+    const suggestions = suggestProducts('DSBC 50 100');
+    expect(
+      suggestions.some((s) => s.exampleCodeFormat === 'DSBC-50-100-PPVA-N3')
+    ).toBe(true);
+  });
+
+  it('suggests CP96-50-100 for "cp96 50 100"', () => {
+    const suggestions = suggestProducts('cp96 50 100');
+    expect(suggestions.some((s) => s.exampleCodeFormat === 'CP96-50-100')).toBe(true);
+  });
+
+  it('does not create noisy suggestions for a lone short numeric token', () => {
+    expect(suggestProducts('50')).toEqual([]);
+  });
+
+  it('does not create suggestions for input shorter than 3 characters alone', () => {
+    expect(suggestProducts('ab')).toEqual([]);
+  });
+
+  it('suggests CP96SDB50-100 for compact fragment "SDB"', () => {
+    const suggestions = suggestProducts('SDB');
+    expect(suggestions.some((s) => s.exampleCodeFormat === 'CP96SDB50-100')).toBe(true);
+  });
+
+  it('suggests P1D-S050MS-0100 for compact fragments "S050" and "050MS"', () => {
+    expect(
+      suggestProducts('S050').some((s) => s.exampleCodeFormat === 'P1D-S050MS-0100')
+    ).toBe(true);
+    expect(
+      suggestProducts('050MS').some((s) => s.exampleCodeFormat === 'P1D-S050MS-0100')
+    ).toBe(true);
+  });
+
+  it('suggests CQ2B32-50D for fragment "CQ2B"', () => {
+    expect(suggestProducts('CQ2B').some((s) => s.exampleCodeFormat === 'CQ2B32-50D')).toBe(
+      true
+    );
+  });
+
+  it('suggests C85N25-80 for fragment "C85N"', () => {
+    expect(suggestProducts('C85N').some((s) => s.exampleCodeFormat === 'C85N25-80')).toBe(
+      true
+    );
+  });
+
+  it('still rejects partial multi-token matches for "50 n3"', () => {
+    const suggestions = suggestProducts('50 n3');
+    const codes = suggestions.map((s) => s.exampleCodeFormat);
+    expect(codes).not.toContain('DSBC-32-25-PPSA-N3');
+    expect(codes).not.toContain('ADN-32-50');
+    expect(codes).toContain('DSBC-50-100-PPVA-N3');
   });
 });
