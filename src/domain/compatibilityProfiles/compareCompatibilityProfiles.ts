@@ -3,6 +3,8 @@ import type {
   CheckItem,
   ScoredAttributeComparison,
 } from '@/types/compatibility';
+import { UNKNOWN_CANONICAL_KEY } from '@/types/canonicalAttribute';
+
 import type { ProductCompatibilityProfile } from './compatibilityProfile';
 
 export type CompatibilityProfileSections = {
@@ -47,7 +49,17 @@ function displayValue(attribute: ProductCompatibilityProfile['attributes'][strin
 function hasCanonicalMapping(
   attribute: ProductCompatibilityProfile['attributes'][string]
 ): boolean {
-  return attribute.canonicalValue !== undefined && attribute.canonicalValue !== null;
+  return (
+    attribute.canonicalKey !== UNKNOWN_CANONICAL_KEY &&
+    attribute.canonicalValue !== undefined &&
+    attribute.canonicalValue !== null
+  );
+}
+
+function isUnresolvedCanonicalAttribute(
+  attribute: ProductCompatibilityProfile['attributes'][string]
+): boolean {
+  return attribute.canonicalKey === UNKNOWN_CANONICAL_KEY;
 }
 
 function severityFromImportance(
@@ -86,11 +98,34 @@ function compareSingleAttribute(options: {
     source.evidence === 'inferred' ||
     target.evidence === 'inferred';
 
+  const sourceUnresolved = isUnresolvedCanonicalAttribute(source);
+  const targetUnresolved = isUnresolvedCanonicalAttribute(target);
+
   const requiresCatalogCheck =
     Boolean(source.requiresCatalogCheck) || Boolean(target.requiresCatalogCheck);
 
   const bothPresent = sourceComparable !== null && targetComparable !== null;
   const same = bothPresent && String(sourceComparable) === String(targetComparable);
+
+  if (sourceUnresolved && targetUnresolved) {
+    const comparison: AttributeComparison = {
+      label,
+      sourceDisplay,
+      targetDisplay,
+      status: 'unknownOrCheck',
+    };
+    return {
+      comparison,
+      checkItem: {
+        field: label,
+        sourceValue: sourceDisplay,
+        targetValue: targetDisplay,
+        reasonTr: `${label} katalogdan doğrulanmalıdır.`,
+        severity: severityFromImportance(source.importance),
+      },
+      sentence: `${label} kontrol edilmeli: ${sourceDisplay} / ${targetDisplay}`,
+    };
+  }
   const canonicalMatch =
     same && hasCanonicalMapping(source) && hasCanonicalMapping(target);
 

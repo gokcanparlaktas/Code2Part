@@ -7,9 +7,10 @@ import { getTechnicalAttributes } from '@/domain/attributes/getTechnicalAttribut
 import type { ProductCompatibilityProfile } from '@/domain/compatibilityProfiles/compatibilityProfile';
 import { normalizeCompatibilityProfile } from '@/domain/normalization/normalizeCompatibilityProfile';
 import {
-  normalizeCushioningAttribute,
-  normalizeStandardFamilyAttribute,
-} from '@/domain/normalization/normalizeTechnicalAttribute';
+  buildPneumaticCushioningAttribute,
+  buildPneumaticStandardFamilyAttribute,
+  type PneumaticVariantTokenInput,
+} from '@/domain/canonical/pneumatic/pneumaticCanonicalAttributes';
 
 type AttributeDef = ProductCompatibilityProfile['attributes'][string];
 
@@ -79,6 +80,17 @@ export function buildPneumaticCylinderCompatibilityProfile(options: {
   const cushioning =
     pickAttr(attrs, 'cushioning_type') ?? pickAttr(attrs, 'cushioning_token');
 
+  const seriesName =
+    options.identification?.series.value ?? options.candidate?.series ?? undefined;
+
+  const variantCodes: PneumaticVariantTokenInput[] = attrs
+    .filter((a) => a.key === 'variant_code' && a.value !== null)
+    .map((a) => ({
+      token: String(a.value),
+      evidence: a.evidence,
+      confidence: a.confidence,
+    }));
+
   const profile: ProductCompatibilityProfile = {
     productCategory: PNEUMATIC_CYLINDER_CATEGORY,
     brand,
@@ -93,9 +105,11 @@ export function buildPneumaticCylinderCompatibilityProfile(options: {
         importance: 'critical',
         compareMode: 'exact',
       }),
-      standardFamily: normalizeStandardFamilyAttribute({
-        rawValue: standardFamilyRaw,
+      standardFamily: buildPneumaticStandardFamilyAttribute({
+        seriesStandardLabel: standardFamilyRaw,
+        variantCodes,
         manufacturer: brand,
+        series: seriesName,
         evidence: standardFamilyRaw ? 'series_table' : 'unknown',
         confidence: standardFamilyRaw ? 'medium' : 'unknown',
       }),
@@ -109,17 +123,13 @@ export function buildPneumaticCylinderCompatibilityProfile(options: {
         importance: 'critical',
         compareMode: 'numeric',
       }),
-      cushioning: cushioning?.value
-        ? normalizeCushioningAttribute({
-            rawToken: String(cushioning.value),
-            manufacturer: brand,
-            evidence: cushioning.evidence,
-            confidence: cushioning.confidence,
-          })
-        : normalizeCushioningAttribute({
-            rawToken: null,
-            manufacturer: brand,
-          }),
+      cushioning: buildPneumaticCushioningAttribute({
+        rawToken: cushioning?.value ? String(cushioning.value) : null,
+        manufacturer: brand,
+        series: seriesName,
+        evidence: cushioning?.evidence,
+        confidence: cushioning?.confidence,
+      }),
       magneticPiston: {
         label: 'Manyetik piston',
         value: null,

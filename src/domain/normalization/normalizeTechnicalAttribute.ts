@@ -1,7 +1,13 @@
+import { canonicalResolvedToProfileAttribute } from '@/domain/canonical/canonicalToCompatibilityAttribute';
+import {
+  formatRawTokenEvidenceLabel,
+  isUnknownCanonical,
+  resolveCanonicalAttribute,
+} from '@/domain/canonical/resolveCanonicalAttribute';
 import type { ProductCompatibilityProfile } from '@/domain/compatibilityProfiles/compatibilityProfile';
+import { PNEUMATIC_CYLINDER_CATEGORY } from '@/types/category';
 
 import {
-  formatCanonicalDisplayValue,
   getCanonicalCushioningDisplay,
   getCanonicalStandardFamilyDisplay,
   normalizeCushioningToken,
@@ -57,7 +63,9 @@ export function normalizeStandardFamilyAttribute(options: {
     canonicalValue: canonical,
     rawValue: options.rawValue,
     rawToken: options.rawValue ?? undefined,
-    rawTokenLabel: options.rawValue ? `Kod: ${options.rawValue}` : undefined,
+    rawTokenLabel: options.rawValue
+      ? formatRawTokenEvidenceLabel(String(options.rawValue))
+      : undefined,
     manufacturer: options.manufacturer,
     importance: 'critical',
     compareMode: 'same_or_check',
@@ -71,43 +79,79 @@ export function normalizeStandardFamilyAttribute(options: {
 export function normalizeCushioningAttribute(options: {
   rawToken: string | null;
   manufacturer?: string;
+  series?: string;
   evidence?: EvidenceLevel;
   confidence?: ConfidenceLevel;
   sourceDocument?: string;
 }): NormalizedTechnicalAttribute {
-  const canonical = normalizeCushioningToken(options.rawToken);
   const evidence = options.evidence ?? (options.rawToken ? 'code' : 'unknown');
   const confidence = options.confidence ?? (options.rawToken ? 'medium' : 'unknown');
 
-  if (!canonical) {
+  if (!options.rawToken) {
+    return {
+      label: 'Sönümleme tipi',
+      value: null,
+      importance: 'important',
+      compareMode: 'same_or_check',
+      evidence: 'unknown',
+      confidence: 'unknown',
+      requiresCatalogCheck: true,
+      sourceDocument: options.sourceDocument,
+    };
+  }
+
+  const resolved = resolveCanonicalAttribute({
+    category: PNEUMATIC_CYLINDER_CATEGORY,
+    manufacturer: options.manufacturer,
+    series: options.series,
+    attributeKey: 'cushioning_type',
+    rawToken: options.rawToken,
+    evidence,
+    confidence,
+  });
+
+  if (!isUnknownCanonical(resolved)) {
+    return canonicalResolvedToProfileAttribute(resolved, {
+      label: 'Sönümleme tipi',
+      importance: 'important',
+      compareMode: 'same_or_check',
+      sourceDocument: options.sourceDocument,
+    });
+  }
+
+  const legacyCanonical = normalizeCushioningToken(options.rawToken);
+  if (!legacyCanonical) {
     return {
       label: 'Sönümleme tipi',
       value: options.rawToken,
+      canonicalKey: resolved.canonicalKey,
       rawValue: options.rawToken,
-      rawToken: options.rawToken ?? undefined,
+      rawToken: options.rawToken,
+      rawTokenLabel: formatRawTokenEvidenceLabel(options.rawToken),
       manufacturer: options.manufacturer,
       importance: 'important',
       compareMode: 'same_or_check',
       evidence,
       confidence,
-      requiresCatalogCheck: options.rawToken ? true : undefined,
+      requiresCatalogCheck: true,
       sourceDocument: options.sourceDocument,
     };
   }
 
+  const display = getCanonicalCushioningDisplay(legacyCanonical);
   return {
     label: 'Sönümleme tipi',
-    value: getCanonicalCushioningDisplay(canonical),
-    displayValue: getCanonicalCushioningDisplay(canonical),
-    canonicalValue: canonical,
+    value: display,
+    displayValue: display,
+    canonicalValue: legacyCanonical,
     rawValue: options.rawToken,
-    rawToken: options.rawToken ?? undefined,
-    rawTokenLabel: options.rawToken ? `Kod: ${options.rawToken}` : undefined,
+    rawToken: options.rawToken,
+    rawTokenLabel: formatRawTokenEvidenceLabel(options.rawToken),
     manufacturer: options.manufacturer,
     importance: 'important',
     compareMode: 'same_or_check',
     evidence,
-    confidence: canonical ? 'high' : confidence,
+    confidence: 'high',
     requiresCatalogCheck: false,
     sourceDocument: options.sourceDocument,
   };
@@ -116,27 +160,27 @@ export function normalizeCushioningAttribute(options: {
 export function formatNormalizedAttributeForDisplay(
   attribute: Pick<
     NormalizedTechnicalAttribute,
-    'value' | 'rawToken' | 'rawTokenLabel' | 'manufacturer' | 'canonicalValue'
+    'value' | 'displayValue' | 'rawToken' | 'rawTokenLabel' | 'canonicalValue' | 'canonicalKey'
   >
 ): string {
-  const displayValue =
-    attribute.value === null || attribute.value === undefined
+  const primary =
+    attribute.displayValue ??
+    (attribute.value === null || attribute.value === undefined
       ? 'Bilinmiyor — kontrol gerekli'
-      : String(attribute.value);
+      : String(attribute.value));
 
-  if (!attribute.canonicalValue) {
-    return displayValue;
+  if (attribute.canonicalKey === 'unknown' || !attribute.canonicalValue) {
+    if (attribute.rawTokenLabel) {
+      return `${primary}\n${attribute.rawTokenLabel}`;
+    }
+    return primary;
   }
 
   if (attribute.rawTokenLabel) {
-    return `${displayValue}\n${attribute.rawTokenLabel}`;
+    return `${primary}\n${attribute.rawTokenLabel}`;
   }
 
-  return formatCanonicalDisplayValue({
-    displayValue,
-    rawToken: attribute.rawToken,
-    manufacturer: attribute.manufacturer,
-  });
+  return primary;
 }
 
 export type { CanonicalCushioningType, CanonicalStandardFamily };

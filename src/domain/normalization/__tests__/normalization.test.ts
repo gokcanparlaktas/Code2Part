@@ -20,20 +20,20 @@ import { buildProductDetailRows } from '@/domain/presentation/buildProductDetail
 import { calculateMatchPercentage } from '@/domain/scoring/calculateMatchPercentage';
 
 describe('normalizeTechnicalAttribute', () => {
-  it('maps Festo PPVA to pneumatic_adjustable', () => {
+  it('maps Festo PPVA to ADJUSTABLE_PNEUMATIC_CUSHIONING', () => {
     const normalized = normalizeCushioningAttribute({ rawToken: 'PPVA', manufacturer: 'Festo' });
-    expect(normalized.canonicalValue).toBe('pneumatic_adjustable');
-    expect(normalized.value).toBe(getCanonicalCushioningDisplay('pneumatic_adjustable'));
+    expect(normalized.canonicalValue).toBe('ADJUSTABLE_PNEUMATIC_CUSHIONING');
+    expect(normalized.displayValue).toBe('Ayarlanabilir pnömatik sönümleme');
   });
 
-  it('maps PPS to pneumatic_self_adjusting', () => {
+  it('maps PPS to SELF_ADJUSTING_PNEUMATIC_CUSHIONING', () => {
     const normalized = normalizeCushioningAttribute({ rawToken: 'PPS', manufacturer: 'Festo' });
-    expect(normalized.canonicalValue).toBe('pneumatic_self_adjusting');
+    expect(normalized.canonicalValue).toBe('SELF_ADJUSTING_PNEUMATIC_CUSHIONING');
   });
 
-  it('maps P to elastic_cushioning', () => {
+  it('maps P to ELASTIC_CUSHIONING', () => {
     const normalized = normalizeCushioningAttribute({ rawToken: 'P', manufacturer: 'Festo' });
-    expect(normalized.canonicalValue).toBe('elastic_cushioning');
+    expect(normalized.canonicalValue).toBe('ELASTIC_CUSHIONING');
   });
 
   it('maps N3 to ISO_15552', () => {
@@ -54,7 +54,8 @@ describe('normalizeTechnicalAttribute', () => {
     expect(formatNormalizedAttributeForDisplay(normalized)).toContain(
       'Ayarlanabilir pnömatik sönümleme'
     );
-    expect(formatNormalizedAttributeForDisplay(normalized)).toContain('Kod: PPVA');
+    expect(formatNormalizedAttributeForDisplay(normalized)).toContain('Kod kanıtı: PPVA');
+    expect(formatNormalizedAttributeForDisplay(normalized)).not.toMatch(/^PPVA/m);
   });
 });
 
@@ -126,7 +127,8 @@ describe('normalization integration', () => {
     const rows = buildProductDetailRows(id);
     const cushioning = rows.find((row) => row.label === 'Sönümleme tipi');
     expect(cushioning?.value).toContain('Ayarlanabilir pnömatik sönümleme');
-    expect(cushioning?.value).toContain('Kod: PPVA');
+    expect(cushioning?.value).toContain('Kod kanıtı: PPVA');
+    expect(cushioning?.value).not.toContain('\nPPVA\n');
   });
 
   it('reduces score less when canonical standard family matches', () => {

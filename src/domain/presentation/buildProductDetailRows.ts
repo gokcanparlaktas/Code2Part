@@ -4,10 +4,15 @@ import {
   formatBehaviorDescriptionForUi,
 } from '@/domain/canonical/hydraulicValve/hydraulicValveBehaviorDescriptions';
 import {
-  normalizeCushioningAttribute,
-  normalizeStandardFamilyAttribute,
-  formatNormalizedAttributeForDisplay,
-} from '@/domain/normalization/normalizeTechnicalAttribute';
+  buildPneumaticCushioningAttribute,
+  buildPneumaticStandardFamilyDisplayValue,
+  type PneumaticVariantTokenInput,
+} from '@/domain/canonical/pneumatic/pneumaticCanonicalAttributes';
+import { formatCanonicalDetailValue } from '@/domain/presentation/formatCanonicalDetailValue';
+import {
+  isUnknownCanonical,
+  resolveCanonicalAttribute,
+} from '@/domain/canonical/resolveCanonicalAttribute';
 import {
   HYDRAULIC_VALVE_CATEGORY,
   PNEUMATIC_CYLINDER_CATEGORY,
@@ -69,6 +74,16 @@ function pickAttribute(
   return attributes.find((a) => a.key === key && a.value !== null);
 }
 
+function collectVariantInputs(attributes: TechnicalAttribute[]): PneumaticVariantTokenInput[] {
+  return attributes
+    .filter((a) => a.key === 'variant_code' && a.value !== null)
+    .map((a) => ({
+      token: String(a.value),
+      evidence: a.evidence,
+      confidence: a.confidence,
+    }));
+}
+
 function behaviorEvidenceLabel(description: {
   confidence: string;
   requiresCatalogCheck: boolean;
@@ -83,6 +98,31 @@ function behaviorEvidenceLabel(description: {
     return 'Seri tablosundan';
   }
   return 'Bilinmiyor';
+}
+
+function profileAttributeToDetailRow(
+  label: string,
+  attr: ReturnType<typeof buildPneumaticCushioningAttribute>,
+  evidenceFallback: string,
+): ProductDetailRow {
+  let display =
+    attr.displayValue ??
+    (attr.value === null || attr.value === undefined ? 'Bilinmiyor — kontrol gerekli' : String(attr.value));
+
+  if (
+    attr.rawTokenLabel &&
+    !display.includes('Kod kanıtı:') &&
+    !display.includes(attr.rawTokenLabel)
+  ) {
+    display = `${display}\n${attr.rawTokenLabel}`;
+  }
+
+  return {
+    label,
+    value: display,
+    evidence: evidenceFallback,
+    requiresCheck: Boolean(attr.requiresCatalogCheck),
+  };
 }
 
 export function buildProductDetailRows(
@@ -117,7 +157,8 @@ export function buildProductDetailRows(
       });
     }
 
-    const revision = pickAttribute(attributes, 'revision');
+    const revision =
+      pickAttribute(attributes, 'design_series') ?? pickAttribute(attributes, 'revision');
     if (revision) {
       rows.push(rowFromParsedTechnicalAttribute(revision));
     }
@@ -126,20 +167,22 @@ export function buildProductDetailRows(
   }
 
   if (identification.resolverCategoryKey === PNEUMATIC_CYLINDER_CATEGORY) {
-    const standardFamily = normalizeStandardFamilyAttribute({
-      rawValue: identification.standardFamily.value,
-      manufacturer: identification.brand.value ?? undefined,
-      evidence: identification.standardFamily.evidence,
-      confidence: identification.confidence,
-    });
+    const brand = identification.brand.value ?? undefined;
+    const series = identification.series.value ?? undefined;
+    const variantCodes = collectVariantInputs(attributes);
 
     const rows: ProductDetailRow[] = [
       ...baseRows,
       {
         label: 'Standart ailesi',
-        value: formatNormalizedAttributeForDisplay(standardFamily),
+        value: buildPneumaticStandardFamilyDisplayValue({
+          seriesStandardLabel: identification.standardFamily.value,
+          variantCodes,
+          manufacturer: brand,
+          series,
+        }),
         evidence: formatEvidence(identification.standardFamily.evidence),
-        requiresCheck: standardFamily.requiresCatalogCheck ?? identification.standardFamily.requiresCheck,
+        requiresCheck: identification.standardFamily.requiresCheck,
       },
       rowFromIdentificationAttribute('Çap', identification.bore),
       rowFromIdentificationAttribute('Strok', identification.stroke),
@@ -149,28 +192,41 @@ export function buildProductDetailRows(
       pickAttribute(attributes, 'cushioning_type') ??
       pickAttribute(attributes, 'cushioning_token');
     if (cushioning) {
-      const normalized = normalizeCushioningAttribute({
+      const cushioningAttr = buildPneumaticCushioningAttribute({
         rawToken: String(cushioning.value),
-        manufacturer: identification.brand.value ?? undefined,
+        manufacturer: brand,
+        series,
         evidence: cushioning.evidence,
         confidence: cushioning.confidence,
       });
-      rows.push({
-        label: normalized.label,
-        value: formatNormalizedAttributeForDisplay(normalized),
-        evidence:
-          cushioning.evidence === 'code'
-            ? 'Ürün kodundan'
-            : cushioning.evidence === 'series_table'
-              ? 'Seri tablosundan'
-              : 'Bilinmiyor',
-        requiresCheck: normalized.requiresCatalogCheck ?? cushioning.confidence === 'low',
-      });
+      rows.push(
+        profileAttributeToDetailRow(
+          'Sönümleme tipi',
+          cushioningAttr,
+          cushioning.evidence === 'code' ? 'Ürün kodundan' : 'Seri tablosundan',
+        ),
+      );
     }
 
-    const opts = pickAttribute(attributes, 'options');
-    if (opts) {
-      rows.push(rowFromParsedTechnicalAttribute(opts));
+    for (const variant of variantCodes) {
+      const resolved = resolveCanonicalAttribute({
+        category: PNEUMATIC_CYLINDER_CATEGORY,
+        manufacturer: brand,
+        series,
+        attributeKey: 'variant_code',
+        rawToken: variant.token,
+        evidence: variant.evidence,
+        confidence: variant.confidence,
+      });
+      if (!isUnknownCanonical(resolved) && resolved.canonicalKey === 'ISO_15552') {
+        continue;
+      }
+      rows.push({
+        label: 'Varyant kodu',
+        value: formatCanonicalDetailValue(resolved),
+        evidence: variant.evidence === 'code' ? 'Ürün kodundan' : 'Bilinmiyor',
+        requiresCheck: resolved.requiresCatalogCheck,
+      });
     }
 
     return rows;

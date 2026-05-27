@@ -114,6 +114,12 @@ export const CANONICAL_MAPPING_ENTRIES: CanonicalMappingEntry[] = [
     'SELF_ADJUSTING_PNEUMATIC_CUSHIONING',
     'Kendinden ayarlı pnömatik sönümleme',
   ),
+  cushioningEntry(
+    'cushioning_p',
+    'P',
+    'ELASTIC_CUSHIONING',
+    'Elastik tampon',
+  ),
 
   // Festo DSBC variant_code N3 supports ISO 15552 (code evidence; primary standard from series table)
   {

@@ -11,6 +11,8 @@ export type ProductCompatibilityProfile = {
       value: string | number | boolean | null;
       /** User-facing primary text (canonical engineering meaning). */
       displayValue?: string;
+      /** Machine-readable canonical key; `unknown` must never compare as compatible with itself. */
+      canonicalKey?: string;
       canonicalValue?: string | number | boolean | null;
       rawTokenLabel?: string;
       rawValue?: string | number | boolean | null;

@@ -1,59 +1,25 @@
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { formatCanonicalDetailLines } from "@/domain/presentation/formatCanonicalDetailValue";
 import { buildProductDetailRows } from "@/domain/presentation/buildProductDetailRows";
 import type { ProductIdentification } from "@/types/product";
-import type {
-    AttributeEvidenceSource,
-    TechnicalAttribute,
-} from "@/types/technicalAttribute";
 
 interface TechnicalAttributesCardProps {
   identification: ProductIdentification;
 }
 
-const EVIDENCE_LABELS: Record<AttributeEvidenceSource, string> = {
-  code: "Koddan alındı",
-  series_table: "Seri bilgisinden",
-  standard: "Standart bilgisinden",
-  inferred: "Tahmini",
-  unknown: "Doğrulanamadı",
-};
+function DetailValueBlock({ value }: { value: string }) {
+  const { primary, evidenceLines } = formatCanonicalDetailLines(value);
 
-const CONFIDENCE_LABELS: Record<TechnicalAttribute["confidence"], string> = {
-  high: "Yüksek güven",
-  medium: "Orta güven",
-  low: "Düşük güven",
-  unknown: "Belirsiz",
-};
-
-function formatValue(
-  value: TechnicalAttribute["value"],
-  unit?: string,
-): string {
-  if (value === null) {
-    return "Doğrulanamadı";
-  }
-  if (typeof value === "boolean") {
-    return value ? "Evet" : "Hayır";
-  }
-  return unit ? `${value} ${unit}` : String(value);
-}
-
-function AttributeRow({ attribute }: { attribute: TechnicalAttribute }) {
   return (
-    <View style={styles.row}>
-      <Text style={styles.fieldLabel}>{attribute.label}</Text>
-      <Text style={styles.fieldValue}>
-        {formatValue(attribute.value, attribute.unit)}
-      </Text>
-      <Text style={styles.meta}>
-        {EVIDENCE_LABELS[attribute.evidence]} •{" "}
-        {CONFIDENCE_LABELS[attribute.confidence]}
-      </Text>
-      {attribute.note ? (
-        <Text style={styles.note}>{attribute.note}</Text>
-      ) : null}
+    <View style={styles.valueBlock}>
+      <Text style={styles.fieldValue}>{primary}</Text>
+      {evidenceLines.map((line) => (
+        <Text key={line} style={styles.codeEvidence}>
+          {line}
+        </Text>
+      ))}
     </View>
   );
 }
@@ -88,7 +54,7 @@ export function TechnicalAttributesCard({
           {rows.map((row) => (
             <View key={row.label} style={styles.row}>
               <Text style={styles.fieldLabel}>{row.label}</Text>
-              <Text style={styles.fieldValue}>{row.value}</Text>
+              <DetailValueBlock value={row.value} />
               <Text style={styles.meta}>
                 {row.evidence}
                 {row.requiresCheck ? " • Kontrol gerekli" : ""}
@@ -141,6 +107,9 @@ const styles = StyleSheet.create({
     gap: 4,
     padding: 11,
   },
+  valueBlock: {
+    gap: 3,
+  },
   fieldLabel: {
     color: "#64748B",
     fontSize: 13,
@@ -151,15 +120,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "800",
   },
+  codeEvidence: {
+    color: "#475569",
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 18,
+  },
   meta: {
     color: "#64748B",
     fontSize: 12,
     fontWeight: "600",
-  },
-  note: {
-    color: "#475569",
-    fontSize: 12,
-    lineHeight: 17,
-    marginTop: 1,
+    marginTop: 2,
   },
 });

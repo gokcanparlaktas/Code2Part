@@ -4,6 +4,7 @@ import type { ProductIdentification } from "@/types/product";
 import type { TechnicalAttribute } from "@/types/technicalAttribute";
 
 import { getTechnicalAttributes } from "@/domain/attributes/getTechnicalAttributes";
+import { canonicalResolvedToProfileAttribute } from "@/domain/canonical/canonicalToCompatibilityAttribute";
 import {
   isUnknownCanonical,
   resolveCanonicalAttribute,
@@ -39,15 +40,21 @@ function pickFirstAttr(
   return null;
 }
 
-function resolvedCoilVoltageAttr(
+function buildCoilVoltageProfileAttribute(
   attrs: TechnicalAttribute[],
   identification: ProductIdentification | null,
-): ReturnType<typeof pickAttr> {
+): AttributeDef {
   const coilRating = pickFirstAttr(attrs, ["coil_rating", "coil_voltage_code"]);
   const legacyVoltage = pickAttr(attrs, "voltage");
+
   if (!coilRating?.value) {
-    return legacyVoltage;
+    return fromTechAttr(legacyVoltage, {
+      label: "Bobin voltajı",
+      importance: "critical",
+      compareMode: "same_or_check",
+    });
   }
+
   const rawToken = String(coilRating.value);
   const resolved = resolveCanonicalAttribute({
     category: HYDRAULIC_VALVE_CATEGORY,
@@ -55,17 +62,23 @@ function resolvedCoilVoltageAttr(
     series: identification?.series.value ?? undefined,
     attributeKey: "coil_rating",
     rawToken,
+    evidence: coilRating.evidence,
+    confidence: coilRating.confidence,
   });
-  if (isUnknownCanonical(resolved)) {
-    return legacyVoltage;
+
+  if (isUnknownCanonical(resolved) && legacyVoltage) {
+    return fromTechAttr(legacyVoltage, {
+      label: "Bobin voltajı",
+      importance: "critical",
+      compareMode: "same_or_check",
+    });
   }
-  return {
-    ...coilRating,
-    key: "voltage",
-    value: resolved.displayValue,
-    normalizedValue: resolved.canonicalValue,
-    requiresCatalogCheck: resolved.requiresCatalogCheck,
-  };
+
+  return canonicalResolvedToProfileAttribute(resolved, {
+    label: "Bobin voltajı",
+    importance: "critical",
+    compareMode: "same_or_check",
+  });
 }
 
 function attrValueString(
@@ -134,7 +147,7 @@ export function buildHydraulicValveCompatibilityProfile(options: {
 
   const cetop = pickAttr(attrs, "cetop_ng") ?? null;
 
-  const voltage = resolvedCoilVoltageAttr(attrs, options.identification);
+  const voltageCode = pickFirstAttr(attrs, ["coil_rating", "coil_voltage_code"]);
   const functionToken = pickFirstAttr(attrs, ["function_code", "function_token"]);
   const spoolSymbol = pickAttr(attrs, "spool_symbol");
   const connector = pickAttr(attrs, "connector");
@@ -157,8 +170,6 @@ export function buildHydraulicValveCompatibilityProfile(options: {
 
   const valveWays = pickAttr(attrs, "valve_ways");
   const sealMaterial = pickAttr(attrs, "seal_material");
-
-  const voltageCode = pickFirstAttr(attrs, ["coil_rating", "coil_voltage_code"]);
 
   const productCategoryValue =
     options.candidate?.productCategory ??
@@ -222,11 +233,7 @@ export function buildHydraulicValveCompatibilityProfile(options: {
         importance: "important",
         compareMode: "catalog_check",
       }),
-      voltage: fromTechAttr(voltage, {
-        label: "Bobin voltajı",
-        importance: "critical",
-        compareMode: "same_or_check",
-      }),
+      voltage: buildCoilVoltageProfileAttribute(attrs, options.identification),
       voltageCode: fromTechAttr(voltageCode, {
         label: "Bobin kodu",
         importance: "important",
