@@ -19,10 +19,14 @@ import {
   saveUnresolvedSearch,
 } from '@/services/localSearchStore';
 import { isSeriesDataUnverified } from '@/utils/catalogReliability';
+import {
+  decodeProductCodeFromRoute,
+  productCodeEquivalentsHref,
+} from '@/utils/productCodeRouteParam';
 
 export default function ResultScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
-  const inputCode = typeof code === 'string' ? code.trim() : '';
+  const inputCode = decodeProductCodeFromRoute(code);
   const [alreadySaved, setAlreadySaved] = useState(false);
 
   const { identification, hasEquivalents, isUnresolved, suggestions } = useMemo(() => {
@@ -61,10 +65,7 @@ export default function ResultScreen() {
     !isUnresolved && isSeriesDataUnverified(identification.seriesId);
 
   const openEquivalents = () => {
-    router.push({
-      pathname: '/equivalents',
-      params: { code: inputCode },
-    });
+    router.push(productCodeEquivalentsHref(inputCode));
   };
 
   const handleSaveUnresolved = async () => {

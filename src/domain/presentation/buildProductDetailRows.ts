@@ -154,7 +154,12 @@ export function buildProductDetailRows(
       const revision =
         pickAttribute(attributes, 'design_series') ?? pickAttribute(attributes, 'revision');
       if (revision) {
-        rows.push(rowFromParsedTechnicalAttribute(revision));
+        const label = (revision.label ?? '').trim().toLowerCase();
+        const isRawDesignSeriesCode =
+          revision.key === 'design_series' && (label.includes('kodu') || label.includes('code'));
+        if (!isRawDesignSeriesCode) {
+          rows.push(rowFromParsedTechnicalAttribute(revision));
+        }
       }
     }
 

@@ -1,3 +1,16 @@
+import { normalizeProductCode } from '@/domain/attributes/extractors/attributeNormalization';
+import {
+  isRexrothWE6Code,
+  parseRexrothWE6,
+} from '@/domain/categories/hydraulicValve/manufacturers/rexroth/parseRexrothWE6';
+import {
+  isVickersDG4VCode,
+  parseVickersDG4V,
+} from '@/domain/categories/hydraulicValve/manufacturers/vickers/parseVickersDG4V';
+import {
+  isYukenDSGCode,
+  parseYukenDSG,
+} from '@/domain/categories/hydraulicValve/manufacturers/yuken/parseYukenDSG';
 import type {
   ConfidenceLevel,
   ProductSeriesRecord,
@@ -93,6 +106,41 @@ export function parseHydraulicSpoolFunction(
   return unknownAttribute();
 }
 
+/** True when a manufacturer parser can read a complete product code (not prefix-only). */
+export function canFullyParseHydraulicProductCode(
+  inputCode: string,
+  series: ProductSeriesRecord
+): boolean {
+  const normalized = normalizeProductCode(inputCode);
+
+  if (
+    series.codePrefix.startsWith('4WE6') ||
+    series.codePrefix.startsWith('4WE10') ||
+    isRexrothWE6Code(normalized)
+  ) {
+    return parseRexrothWE6(inputCode) !== null;
+  }
+
+  if (
+    series.series.startsWith('DSG') ||
+    series.codePrefix.startsWith('DSG-') ||
+    isYukenDSGCode(normalized)
+  ) {
+    return parseYukenDSG(inputCode) !== null;
+  }
+
+  if (
+    series.series.startsWith('DG4V') ||
+    series.codePrefix.startsWith('DG4V-') ||
+    isVickersDG4VCode(normalized)
+  ) {
+    return parseVickersDG4V(inputCode) !== null;
+  }
+
+  const { valveCoilVoltage } = parseHydraulicValveAttributes(normalized, series);
+  return valveCoilVoltage.evidence === 'code';
+}
+
 export function parseHydraulicValveAttributes(
   normalizedCode: string,
   series: ProductSeriesRecord
@@ -106,8 +154,7 @@ export function parseHydraulicValveAttributes(
   const valveCoilVoltage = parseHydraulicCoilVoltage(normalizedCode, series);
   const valveSpoolFunction = parseHydraulicSpoolFunction(normalizedCode, series);
 
-  const parsedFromCode =
-    valveCoilVoltage.evidence === 'code' || valveSpoolFunction.evidence === 'code';
+  const parsedFromCode = valveCoilVoltage.evidence === 'code';
 
   return {
     cetopNgSize: attributeFromSeries(cetopLabel, 'standard'),

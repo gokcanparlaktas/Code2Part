@@ -18,6 +18,8 @@ import {
 } from '@/domain/resolver/suggestProducts';
 import type { SuggestedProduct } from '@/types/suggestion';
 
+import { productCodeResultHref } from '@/utils/productCodeRouteParam';
+
 import { PartialSuggestionsPanel } from './PartialSuggestionsPanel';
 
 const EXAMPLES = [
@@ -75,10 +77,7 @@ export function ProductCodeSearchCard() {
       return;
     }
     setIsSearching(true);
-    router.push({
-      pathname: '/result',
-      params: { code: trimmed },
-    });
+    router.push(productCodeResultHref(trimmed));
     setTimeout(() => setIsSearching(false), 400);
   };
 

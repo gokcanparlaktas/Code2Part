@@ -32,8 +32,25 @@ describe('suggestProducts autocomplete', () => {
     expect(result.suggestions).toHaveLength(1);
     expect(result.suggestions[0]?.matchedBy).toBe('exact_match');
     expect(result.suggestions[0]?.exampleCodeFormat).toBe(normalizeCode(code));
-    expect(result.suggestions[0]?.suggestionTextTr).toContain('Tam kod eşleşmesi');
+    expect(result.suggestions[0]?.suggestionTextTr).toBe(
+      `Tam kod eşleşmesi: Vickers ${normalizeCode(code)}`
+    );
     expect(result.hasMoreResults).toBe(false);
+  });
+
+  it('Rexroth 4WE6E-7X/HG24N9K4 with slash identifies and suggests exact match', () => {
+    const code = '4WE6E-7X/HG24N9K4';
+    const identification = identifyProduct(code, normalizeCode(code));
+    expect(identification.outcome).toBe('full');
+    expect(identification.seriesId).toBe('rexroth_4we6');
+
+    const result = suggestProductsDetailed(code);
+    expect(result.suggestions).toHaveLength(1);
+    expect(result.suggestions[0]?.matchedBy).toBe('exact_match');
+    expect(result.suggestions[0]?.exampleCodeFormat).toBe(code);
+    expect(result.suggestions[0]?.suggestionTextTr).toBe(
+      `Tam kod eşleşmesi: Rexroth ${code}`
+    );
   });
 
   it('exact match does not duplicate generic series-prefix suggestion', () => {

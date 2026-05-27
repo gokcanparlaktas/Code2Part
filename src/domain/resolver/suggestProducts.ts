@@ -247,7 +247,7 @@ function buildExactIdentificationSuggestion(
     },
     missingFields,
     exampleCodeFormat: identification.normalizedCode,
-    suggestionTextTr: `Tam kod eşleşmesi: ${series.brand} ${series.series}`,
+    suggestionTextTr: `Tam kod eşleşmesi: ${series.brand} ${identification.normalizedCode}`,
   };
 }
 

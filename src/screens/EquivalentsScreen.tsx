@@ -9,10 +9,11 @@ import { SourceProductSummary } from '@/components/SourceProductSummary';
 import { sortCompatibilityResultsByMatchPercentage } from '@/domain/presentation/sortCompatibilityResults';
 import { resolveProductSearch } from '@/domain/resolver/resolveProductSearch';
 import { isEquivalenceMappingUnverified } from '@/utils/catalogReliability';
+import { decodeProductCodeFromRoute } from '@/utils/productCodeRouteParam';
 
 function EquivalentsScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
-  const inputCode = typeof code === 'string' ? code.trim() : '';
+  const inputCode = decodeProductCodeFromRoute(code);
 
   const { identification, compatibilityResults, isResolvable } = useMemo(() => {
     const resolved = resolveProductSearch(inputCode);

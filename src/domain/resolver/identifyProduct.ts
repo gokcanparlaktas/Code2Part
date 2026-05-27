@@ -1,6 +1,4 @@
-import {
-  parseHydraulicValveAttributes,
-} from '@/domain/categories/hydraulicValve/hydraulicValveIdentify';
+import { parseHydraulicValveAttributes, canFullyParseHydraulicProductCode } from '@/domain/categories/hydraulicValve/hydraulicValveIdentify';
 import { getLegacyParsingRules } from '@/domain/catalog/adapters/catalogV2Adapter';
 import { calculateProductReliability } from '@/domain/reliability/calculateProductReliability';
 import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
@@ -151,7 +149,9 @@ function identifyHydraulicValveProduct(
 ): ProductIdentification {
   const hydraulicAttrs = parseHydraulicValveAttributes(normalizedCode, series);
   const outcome =
-    options?.forceFullIdentification || hydraulicAttrs.parsedFromCode ? 'full' : 'series_only';
+    options?.forceFullIdentification || canFullyParseHydraulicProductCode(inputCode, series)
+      ? 'full'
+      : 'series_only';
 
   const identification: ProductIdentification = {
     inputCode,

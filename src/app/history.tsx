@@ -9,6 +9,7 @@ import {
 } from '@/services/localSearchStore';
 import type { SearchHistoryEntry, UnresolvedSearchEntry } from '@/types/searchHistory';
 import { formatConfidencePercent } from '@/utils/confidenceScore';
+import { productCodeResultHref } from '@/utils/productCodeRouteParam';
 
 function formatDate(iso: string): string {
   const date = new Date(iso);
@@ -23,7 +24,7 @@ function formatDate(iso: string): string {
 
 function HistoryRow({ entry }: { entry: SearchHistoryEntry }) {
   return (
-    <Link href={{ pathname: '/result', params: { code: entry.originalInput } }} asChild>
+    <Link href={productCodeResultHref(entry.originalInput)} asChild>
       <Pressable style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}>
         <View style={styles.rowHeader}>
           <Text style={styles.rowCode}>{entry.normalizedCode}</Text>
@@ -61,7 +62,7 @@ function HistoryRow({ entry }: { entry: SearchHistoryEntry }) {
 
 function UnresolvedRow({ entry }: { entry: UnresolvedSearchEntry }) {
   return (
-    <Link href={{ pathname: '/result', params: { code: entry.originalInput } }} asChild>
+    <Link href={productCodeResultHref(entry.originalInput)} asChild>
       <Pressable style={({ pressed }) => [styles.unresolvedRow, pressed && styles.rowPressed]}>
         <Text style={styles.rowCode}>{entry.normalizedCode}</Text>
         <Text style={styles.rowDate}>{formatDate(entry.savedAt)}</Text>
