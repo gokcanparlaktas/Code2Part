@@ -10,7 +10,7 @@ import { identifyProduct } from '@/domain/resolver/identifyProduct';
 import { normalizeCode } from '@/domain/resolver/normalizeCode';
 
 describe('pneumaticCanonicalAttributes', () => {
-  it('merges series ISO 15552 with N3 variant as Kod kanıtı only', () => {
+  it('merges series ISO 15552 with N3 variant kept as internal evidence only', () => {
     const attr = buildPneumaticStandardFamilyAttribute({
       seriesStandardLabel: 'ISO 15552',
       variantCodes: [{ token: 'N3', evidence: 'code', confidence: 'high' }],
@@ -21,13 +21,13 @@ describe('pneumaticCanonicalAttributes', () => {
     });
 
     expect(attr.canonicalValue).toBe('ISO_15552');
-    expect(attr.displayValue).toContain('ISO 15552');
-    expect(attr.displayValue).toContain('Kod kanıtı: N3');
-    expect(attr.displayValue).not.toMatch(/^N3/m);
+    expect(attr.displayValue).toBe('ISO 15552');
+    expect(attr.rawTokenLabel).toBe('Kod kanıtı: N3');
+    expect(attr.displayValue).not.toContain('Kod kanıtı:');
 
     const lines = formatCanonicalDetailLines(attr.displayValue ?? '');
     expect(lines.primary).toBe('ISO 15552');
-    expect(lines.evidenceLines).toContain('Kod kanıtı: N3');
+    expect(lines.evidenceLines).toHaveLength(0);
   });
 
   it('DSBC profile uses canonical standard family for CP96 comparison', () => {
@@ -65,7 +65,7 @@ describe('pneumaticCanonicalAttributes', () => {
       manufacturer: id.brand.value ?? undefined,
       series: id.series.value ?? undefined,
     });
-    expect(display).toContain('ISO 15552');
-    expect(display).toContain('Kod kanıtı: N3');
+    expect(display).toBe('ISO 15552');
+    expect(display).not.toContain('Kod kanıtı:');
   });
 });

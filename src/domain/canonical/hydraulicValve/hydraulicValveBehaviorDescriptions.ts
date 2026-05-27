@@ -119,8 +119,15 @@ export function getWaysPositionsBehaviorText(
 
 export function formatBehaviorDescriptionForUi(description: HydraulicBehaviorDescription): string {
   const primary = description.primaryDescription;
-  const details = (description.details ?? []).filter(Boolean).filter((line) => line !== primary);
+  const details = (description.details ?? [])
+    .filter(Boolean)
+    .filter((line) => line !== primary)
+    .filter((line) => !line.startsWith('Kod kanıtı:'));
   return [primary, ...details].filter(Boolean).join('\n');
+}
+
+function isVickersSpoolFunctionToken(token?: string | null): boolean {
+  return Boolean(token?.trim().match(/^\d[A-Z]$/i));
 }
 
 function parseFunctionTokenParts(raw: string): { positions?: string; spring?: string; centerType?: string } {
@@ -253,7 +260,8 @@ function describeCenterConditionFromProfile(
       : CATALOG_CENTER_CONDITION_TR,
     details: [
       ...(verified ? [] : [CATALOG_CENTER_CONDITION_TR]),
-      ...(profile.rawFunctionCode
+      ...(profile.rawFunctionCode &&
+      !isVickersSpoolFunctionToken(profile.rawFunctionCode)
         ? (() => {
             const parts = parseFunctionTokenParts(profile.rawFunctionCode);
             return parts.centerType ? [rawCodeLabel(parts.centerType)!] : [];
@@ -561,7 +569,11 @@ export function buildHydraulicValveBehaviorDescriptionsFromProfile(
   if (spoolSymbol) {
     descriptions.push(spoolSymbol);
   }
-  descriptions.push(describeCenteringFromProfile(profile, map));
+
+  const vickersSpoolSpring = describeVickersSpoolSpringFromAttributes(profile, map);
+  if (!vickersSpoolSpring) {
+    descriptions.push(describeCenteringFromProfile(profile, map));
+  }
   descriptions.push(describeCenterConditionFromProfile(profile));
 
   const voltage = describeCoilVoltage(profile);
@@ -579,7 +591,6 @@ export function buildHydraulicValveBehaviorDescriptionsFromProfile(
     descriptions.push(manual);
   }
 
-  const vickersSpoolSpring = describeVickersSpoolSpringFromAttributes(profile, map);
   if (vickersSpoolSpring) {
     descriptions.push(vickersSpoolSpring);
   }

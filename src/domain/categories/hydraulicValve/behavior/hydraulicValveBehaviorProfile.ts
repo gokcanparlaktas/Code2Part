@@ -85,7 +85,7 @@ export const POSITIONS_LABEL_TR: Record<Exclude<HydraulicValvePositions, 'unknow
 };
 
 /** Coil codes that must not be treated as confirmed voltage. */
-export const UNRESOLVED_VOLTAGE_CODES = new Set(['H7']);
+export const UNRESOLVED_VOLTAGE_CODES = new Set(['H7', 'H6', 'H5', 'H']);
 
 export function isSameManufacturerSeries(
   a: HydraulicValveBehaviorProfile,

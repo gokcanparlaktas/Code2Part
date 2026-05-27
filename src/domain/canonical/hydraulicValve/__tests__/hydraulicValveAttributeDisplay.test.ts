@@ -47,13 +47,9 @@ describe('hydraulicValveAttributeDisplay', () => {
     expect(ways?.value).toMatch(/3 konumlu|4 yollu, 3 konumlu/);
     expect(centering?.value).toContain('Yay merkezlemeli');
     expect(allText).not.toContain('Sürgü tipi 2');
-    expect(allText).toContain('Kod kanıtı: 3');
-    expect(allText).toContain('Kod kanıtı: C');
-    expect(allText).toContain('Kod kanıtı: 2');
+    expect(allText).not.toContain('Kod kanıtı:');
     expect(voltage?.value).toContain('24V DC');
-    expect(voltage?.value).toContain('Kod kanıtı: D24');
     expect(connector?.value).toContain('Fişli konnektör, gösterge ışıklı');
-    expect(connector?.value).toContain('Kod kanıtı: N1');
   });
 
   it('Atos DHI-0711-X 24DC uses catalog behavior wording, not symbol family label', () => {
@@ -71,7 +67,7 @@ describe('hydraulicValveAttributeDisplay', () => {
     const rows = buildProductDetailRows(id);
     const allText = rows.map((r) => r.value).join('\n');
     expect(allText).not.toContain('Atos sembol ailesi 0711');
-    expect(allText).toContain('Kod kanıtı: 0711');
+    expect(allText).not.toContain('Kod kanıtı:');
   });
 
   it('Vickers DG4V-3-2A-M-U-H7-60 displays catalog check behavior and coil code', () => {
@@ -83,15 +79,12 @@ describe('hydraulicValveAttributeDisplay', () => {
     const allText = rows.map((r) => r.value).join('\n');
 
     expect(allText).not.toContain('Sürgü tipi 2, yay düzeni A');
-    expect(allText).toContain('Kod kanıtı: 2A');
+    expect(allText).not.toContain('Kod kanıtı:');
     expect(allText).toContain('24V DC');
     expect(allText).toContain('Voltaj değeri katalogdan doğrulanmalıdır.');
-    expect(allText).toContain('Kod kanıtı: H');
     expect(allText).toContain('207 bar');
-    expect(allText).toContain('Kod kanıtı: 7');
     expect(allText).toContain('Basic design');
-    expect(allText).toContain('Kod kanıtı: 60');
-    expect(allText).toContain('Kod kanıtı: U');
+    expect(allText).toContain('Yay ofsetli, uçtan uca');
   });
 
   it('G24 and D24 compare as same 24V DC without raw token mismatch', () => {
@@ -156,11 +149,11 @@ describe('hydraulicValveAttributeDisplay', () => {
     expect(display?.displayValue).not.toContain('Sürgü tipi 2');
   });
 
-  it('H maps to 24V DC but requires catalog check', () => {
+  it('H maps to 24V DC with internal token label and informational note', () => {
     const display = normalizeHydraulicVoltageDisplay({ rawToken: 'H' });
     expect(display?.displayValue).toBe('24V DC');
     expect(display?.rawTokenLabel).toBe('Kod kanıtı: H');
-    expect(display?.requiresCatalogCheck).toBe(true);
+    expect(display?.requiresCatalogCheck).toBe(false);
     expect(display?.note).toContain('Voltaj değeri katalogdan doğrulanmalıdır.');
   });
 });

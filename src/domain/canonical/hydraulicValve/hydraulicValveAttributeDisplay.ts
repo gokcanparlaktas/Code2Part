@@ -263,7 +263,7 @@ export function normalizeHydraulicVoltageDisplay(options: {
       rawToken: extractedToken,
       rawTokenLabel: rawTokenLabel(extractedToken),
       canonicalValue: display,
-      requiresCatalogCheck: extractedToken === 'H',
+      requiresCatalogCheck: false,
       note: extractedToken === 'H' ? VICKERS_VOLTAGE_NOTE_TR : undefined,
     };
   }

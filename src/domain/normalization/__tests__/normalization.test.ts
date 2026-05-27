@@ -127,7 +127,7 @@ describe('normalization integration', () => {
     const rows = buildProductDetailRows(id);
     const cushioning = rows.find((row) => row.label === 'Sönümleme tipi');
     expect(cushioning?.value).toContain('Ayarlanabilir pnömatik sönümleme');
-    expect(cushioning?.value).toContain('Kod kanıtı: PPVA');
+    expect(cushioning?.value).not.toContain('Kod kanıtı:');
     expect(cushioning?.value).not.toContain('\nPPVA\n');
   });
 

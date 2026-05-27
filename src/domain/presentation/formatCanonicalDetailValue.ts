@@ -1,17 +1,9 @@
-import {
-  formatRawTokenEvidenceLabel,
-  getCanonicalDisplayValueForUi,
-} from '@/domain/canonical/resolveCanonicalAttribute';
+import { getCanonicalDisplayValueForUi } from '@/domain/canonical/resolveCanonicalAttribute';
 import type { CanonicalResolvedField } from '@/types/canonicalAttribute';
 
-/** Primary = displayValue; raw token only as Kod kanıtı line (never primary). */
+/** Primary translated meaning only (raw tokens stay in data, not main UI). */
 export function formatCanonicalDetailValue(resolved: CanonicalResolvedField): string {
-  const primary = getCanonicalDisplayValueForUi(resolved);
-  const evidence = resolved.rawTokenLabel ?? formatRawTokenEvidenceLabel(resolved.rawToken);
-  if (!evidence || evidence === primary) {
-    return primary;
-  }
-  return `${primary}\n${evidence}`;
+  return getCanonicalDisplayValueForUi(resolved);
 }
 
 export type CanonicalDetailLines = {

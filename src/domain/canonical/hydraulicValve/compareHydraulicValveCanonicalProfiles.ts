@@ -15,6 +15,8 @@ import {
 } from '@/domain/categories/hydraulicValve/hydraulicValveCheckItems';
 import { buildCategoryComparison } from '@/domain/categories/hydraulicValve/behavior/behaviorComparisonToCompatibility';
 
+import { isCatalogCheckDisplayText } from '@/domain/canonical/catalogCheckDisplay';
+
 import { FIELD_LABELS } from './hydraulicValveCanonicalDictionary';
 import { normalizeHydraulicVoltageDisplay } from './hydraulicValveAttributeDisplay';
 import {
@@ -82,6 +84,20 @@ function compareCanonicalEnumField<T extends string>(options: {
   }
 
   if (options.sourceValue === options.targetValue) {
+    if (
+      isCatalogCheckDisplayText(sourceDisplay) ||
+      isCatalogCheckDisplayText(targetDisplay)
+    ) {
+      return {
+        comparison: {
+          label,
+          sourceDisplay,
+          targetDisplay,
+          status: 'unknownOrCheck',
+        },
+        sentence: options.unknownMessage,
+      };
+    }
     if (options.treatSameAsCheckWhenCrossBrand && options.crossBrand) {
       return {
         comparison: {
@@ -319,13 +335,6 @@ export function compareHydraulicValveCanonicalProfiles(
     treatSameAsCheckWhenCrossBrand: centerRequiresCheck,
   });
   pushResult(result, center.comparison, center.sentence, 'critical');
-  if (
-    center.comparison.status === 'compatible' &&
-    centerRequiresCheck
-  ) {
-    result.warnings.push('Merkez tipi katalog sembolünden doğrulanmalıdır.');
-    result.unknownOrCheck.push('Merkez tipi katalog sembolünden doğrulanmalıdır.');
-  }
 
   const centering = compareCanonicalEnumField({
     sourceField: source.centering,

@@ -35,11 +35,7 @@ describe('hydraulicValveBehaviorDescriptions', () => {
     expect(primaries.some((value) => value.includes('Yay merkezlemeli'))).toBe(true);
 
     const allText = rows.map((r) => r.value).join('\n');
-    expect(allText).toContain('Kod kanıtı: 3');
-    expect(allText).toContain('Kod kanıtı: C');
-    expect(allText).toContain('Kod kanıtı: 2');
-    expect(allText).toContain('Kod kanıtı: D24');
-    expect(allText).toContain('Kod kanıtı: N1');
+    expect(allText).not.toContain('Kod kanıtı:');
   });
 
   it('DG4V-3-2A-M-U-H7-60 shows catalog check wording and splits H7 into H + 7', () => {
@@ -53,20 +49,19 @@ describe('hydraulicValveBehaviorDescriptions', () => {
 
     const voltage = rows.find((r) => r.label === 'Bobin voltajı');
     expect(voltage?.value).toContain('24V DC');
-    expect(voltage?.value).toContain('Voltaj değeri katalogdan doğrulanmalıdır.');
-    expect(voltage?.value).toContain('Kod kanıtı: H');
+    expect(voltage?.requiresCheck).toBe(false);
 
     const connector = rows.find((r) => r.label === 'Konnektör tipi');
     expect(connector?.value).toContain('ISO 4400 / DIN 43650');
-    expect(connector?.value).toContain('Kod kanıtı: U');
+    expect(connector?.requiresCheck).toBe(false);
 
     const tank = rows.find((r) => r.label === 'Tank hattı basınç sınıfı');
     expect(tank?.value).toContain('207 bar');
-    expect(tank?.value).toContain('Kod kanıtı: 7');
 
     const design = rows.find((r) => r.label === 'Tasarım serisi');
     expect(design?.value).toContain('Basic design');
-    expect(design?.value).toContain('Kod kanıtı: 60');
+    expect(rows.map((r) => r.value).join('\n')).not.toContain('Kod kanıtı:');
+    expect(rows.some((r) => r.label.toLowerCase().includes('tasarım serisi kodu'))).toBe(false);
   });
 
   it('4WE6E-7X/HG24N9K4 does not show G from G24 as spool function and shows 24V DC', () => {
@@ -94,10 +89,10 @@ describe('hydraulicValveBehaviorDescriptions', () => {
 
     const rows = buildProductDetailRows(identify(code));
     const allText = rows.map((r) => r.value).join('\n');
-    expect(allText).toContain('Kod kanıtı: 0711');
+    expect(allText).not.toContain('Kod kanıtı:');
   });
 
-  it('formatBehaviorDescriptionForUi keeps raw codes in details not primary', () => {
+  it('formatBehaviorDescriptionForUi omits Kod kanıtı lines from visible text', () => {
     const id = identify('DSG-01-3C2-D24-N1-70');
     const descriptions = buildHydraulicValveBehaviorDescriptions({
       identification: id,
@@ -105,7 +100,8 @@ describe('hydraulicValveBehaviorDescriptions', () => {
     });
     const connector = descriptions.find((d) => d.title === 'Konnektör tipi');
     expect(connector?.primaryDescription).toContain('Fişli konnektör');
-    expect(formatBehaviorDescriptionForUi(connector!)).toContain('Kod kanıtı: N1');
+    expect(formatBehaviorDescriptionForUi(connector!)).not.toContain('Kod kanıtı:');
+    expect(connector?.details?.some((line) => line.includes('Kod kanıtı: N1'))).toBe(true);
   });
 
   it('Yuken parser still exposes function_code in attributes', () => {

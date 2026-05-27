@@ -198,7 +198,22 @@ function compareVoltage(
     };
   }
 
+  const sourceUnresolved =
+    Boolean(sourceCode && UNRESOLVED_VOLTAGE_CODES.has(sourceCode)) ||
+    Boolean(sourceNorm.requiresCatalogCheck);
+  const targetUnresolved =
+    Boolean(targetCode && UNRESOLVED_VOLTAGE_CODES.has(targetCode)) ||
+    Boolean(targetNorm.requiresCatalogCheck);
+
   if (sourceNorm.canonicalValue === targetNorm.canonicalValue) {
+    if (sourceUnresolved || targetUnresolved) {
+      return {
+        label: 'Bobin voltajı',
+        sourceDisplay,
+        targetDisplay,
+        status: 'unknownOrCheck',
+      };
+    }
     return {
       label: 'Bobin voltajı',
       sourceDisplay,

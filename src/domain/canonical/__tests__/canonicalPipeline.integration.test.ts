@@ -100,20 +100,17 @@ describe('canonical pipeline integration', () => {
     expect(cushioning?.status).toBe('compatible');
   });
 
-  it('DSBC detail rows show ISO 15552 primary and N3 as Kod kanıtı only', () => {
+  it('DSBC detail rows show translated primary values without Kod kanıtı in UI', () => {
     const id = identifyProduct('DSBC-50-100-PPVA-N3', normalizeCode('DSBC-50-100-PPVA-N3'));
     const rows = buildProductDetailRows(id);
     const standard = rows.find((r) => r.label === 'Standart ailesi');
     const cushioning = rows.find((r) => r.label === 'Sönümleme tipi');
+    const allText = rows.map((r) => r.value).join('\n');
 
     expect(standard?.value).toContain('ISO 15552');
-    expect(standard?.value).toContain('Kod kanıtı: N3');
-    expect(standard?.value).not.toMatch(/^N3$/m);
-
     expect(cushioning?.value).toContain('Ayarlanabilir pnömatik sönümleme');
-    expect(cushioning?.value).toContain('Kod kanıtı: PPVA');
-    const primaryLine = cushioning?.value.split('\n')[0];
-    expect(primaryLine).not.toBe('PPVA');
+    expect(allText).not.toContain('Kod kanıtı:');
+    expect(cushioning?.value.split('\n')[0]).not.toBe('PPVA');
   });
 
   it('Vickers H7 coil shows 24V DC with catalog check in compareProducts', () => {

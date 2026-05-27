@@ -5,6 +5,8 @@ import type {
 } from '@/types/compatibility';
 import { UNKNOWN_CANONICAL_KEY } from '@/types/canonicalAttribute';
 
+import { isCatalogCheckDisplayText } from '@/domain/canonical/catalogCheckDisplay';
+
 import type { ProductCompatibilityProfile } from './compatibilityProfile';
 
 export type CompatibilityProfileSections = {
@@ -62,6 +64,26 @@ function isUnresolvedCanonicalAttribute(
   return attribute.canonicalKey === UNKNOWN_CANONICAL_KEY;
 }
 
+function attributeRequiresVerification(
+  attribute: ProductCompatibilityProfile['attributes'][string]
+): boolean {
+  if (isUnresolvedCanonicalAttribute(attribute)) {
+    return true;
+  }
+  const display = displayValue(attribute);
+  if (isCatalogCheckDisplayText(display)) {
+    return true;
+  }
+  if (
+    attribute.requiresCatalogCheck &&
+    attribute.canonicalValue == null &&
+    isCatalogCheckDisplayText(String(attribute.value ?? ''))
+  ) {
+    return true;
+  }
+  return false;
+}
+
 function severityFromImportance(
   importance: ProductCompatibilityProfile['attributes'][string]['importance']
 ): CheckItem['severity'] {
@@ -100,6 +122,8 @@ function compareSingleAttribute(options: {
 
   const sourceUnresolved = isUnresolvedCanonicalAttribute(source);
   const targetUnresolved = isUnresolvedCanonicalAttribute(target);
+  const sourceNeedsVerification = attributeRequiresVerification(source);
+  const targetNeedsVerification = attributeRequiresVerification(target);
 
   const requiresCatalogCheck =
     Boolean(source.requiresCatalogCheck) || Boolean(target.requiresCatalogCheck);
@@ -107,30 +131,58 @@ function compareSingleAttribute(options: {
   const bothPresent = sourceComparable !== null && targetComparable !== null;
   const same = bothPresent && String(sourceComparable) === String(targetComparable);
 
-  if (sourceUnresolved && targetUnresolved) {
+  if (sourceNeedsVerification || targetNeedsVerification) {
+    if (sourceUnresolved && targetUnresolved) {
+      const comparison: AttributeComparison = {
+        label,
+        sourceDisplay,
+        targetDisplay,
+        status: 'unknownOrCheck',
+      };
+      return {
+        comparison,
+        checkItem: {
+          field: label,
+          sourceValue: sourceDisplay,
+          targetValue: targetDisplay,
+          reasonTr: `${label} katalogdan doğrulanmalıdır.`,
+          severity: severityFromImportance(source.importance),
+        },
+        sentence: `${label} kontrol edilmeli: ${sourceDisplay} / ${targetDisplay}`,
+      };
+    }
+
     const comparison: AttributeComparison = {
       label,
       sourceDisplay,
       targetDisplay,
       status: 'unknownOrCheck',
     };
+    const sentence = same
+      ? `${label} kontrol edilmeli: ${sourceDisplay} / ${targetDisplay}`
+      : `${label} kontrol edilmeli: ${sourceDisplay} / ${targetDisplay}`;
     return {
       comparison,
       checkItem: {
         field: label,
         sourceValue: sourceDisplay,
         targetValue: targetDisplay,
-        reasonTr: `${label} katalogdan doğrulanmalıdır.`,
+        reasonTr: requiresCatalogCheck
+          ? `${label} seriye göre değişebilir. Katalogdan doğrulanmalıdır.`
+          : `${label} için yeterli kesin bilgi yok. Katalog veya teknik çizim ile doğrulanmalıdır.`,
         severity: severityFromImportance(source.importance),
       },
-      sentence: `${label} kontrol edilmeli: ${sourceDisplay} / ${targetDisplay}`,
+      sentence,
     };
   }
+
   const canonicalMatch =
     same && hasCanonicalMapping(source) && hasCanonicalMapping(target);
 
   const highConfidenceSame =
     same &&
+    !sourceNeedsVerification &&
+    !targetNeedsVerification &&
     (canonicalMatch ||
       (source.confidence === 'high' &&
         target.confidence === 'high' &&

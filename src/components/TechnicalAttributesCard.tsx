@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { formatCanonicalDetailLines } from "@/domain/presentation/formatCanonicalDetailValue";
 import { buildProductDetailRows } from "@/domain/presentation/buildProductDetailRows";
 import type { ProductIdentification } from "@/types/product";
 
@@ -10,16 +9,24 @@ interface TechnicalAttributesCardProps {
 }
 
 function DetailValueBlock({ value }: { value: string }) {
-  const { primary, evidenceLines } = formatCanonicalDetailLines(value);
+  const primary = value.split("\n")[0]?.trim() || value;
 
   return (
     <View style={styles.valueBlock}>
       <Text style={styles.fieldValue}>{primary}</Text>
-      {evidenceLines.map((line) => (
-        <Text key={line} style={styles.codeEvidence}>
-          {line}
-        </Text>
-      ))}
+      {value.includes("\n") ? (
+        value
+          .split("\n")
+          .slice(1)
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .filter((line) => !line.startsWith("Kod kanıtı:"))
+          .map((line) => (
+            <Text key={line} style={styles.secondaryValue}>
+              {line}
+            </Text>
+          ))
+      ) : null}
     </View>
   );
 }
@@ -120,11 +127,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "800",
   },
-  codeEvidence: {
+  secondaryValue: {
     color: "#475569",
-    fontSize: 13,
-    fontWeight: "600",
-    lineHeight: 18,
+    fontSize: 14,
+    fontWeight: "500",
+    lineHeight: 20,
   },
   meta: {
     color: "#64748B",

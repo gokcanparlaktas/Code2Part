@@ -103,16 +103,16 @@ describe('canonicalAttributeDisplay integration', () => {
     const rows = buildProductDetailRows(id);
     const connector = rows.find((r) => r.label === 'Konnektör tipi');
     expect(connector?.value).toContain('DIN EN 175301-803');
-    expect(connector?.value).toContain('Kod kanıtı: K4');
+    expect(connector?.value).not.toContain('Kod kanıtı:');
   });
 
-  it('product detail shows behavior descriptions and keeps E as evidence for 4WE6E-7X/HG24N9K4', () => {
+  it('product detail shows behavior descriptions without raw token lines for 4WE6E-7X/HG24N9K4', () => {
     const id = identifyProduct('4WE6E-7X/HG24N9K4', normalizeCode('4WE6E-7X/HG24N9K4'));
     const rows = buildProductDetailRows(id);
     const allText = rows.map((r) => r.value).join('\n');
     expect(allText).not.toMatch(/Sürgü sembolü:?\s*E/i);
     expect(allText).not.toMatch(/^G$/m);
-    expect(allText).toContain('Kod kanıtı: E');
+    expect(allText).not.toContain('Kod kanıtı:');
     expect(allText).toContain('24V DC');
   });
 });

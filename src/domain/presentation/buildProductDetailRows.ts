@@ -105,17 +105,9 @@ function profileAttributeToDetailRow(
   attr: ReturnType<typeof buildPneumaticCushioningAttribute>,
   evidenceFallback: string,
 ): ProductDetailRow {
-  let display =
+  const display =
     attr.displayValue ??
     (attr.value === null || attr.value === undefined ? 'Bilinmiyor — kontrol gerekli' : String(attr.value));
-
-  if (
-    attr.rawTokenLabel &&
-    !display.includes('Kod kanıtı:') &&
-    !display.includes(attr.rawTokenLabel)
-  ) {
-    display = `${display}\n${attr.rawTokenLabel}`;
-  }
 
   return {
     label,
@@ -145,22 +137,25 @@ export function buildProductDetailRows(
       attributes,
     });
 
+    const hasDesignSeriesDescription = behaviorDescriptions.some(
+      (d) => d.title === 'Tasarım serisi',
+    );
+
     for (const description of behaviorDescriptions) {
       rows.push({
         label: description.title,
         value: formatBehaviorDescriptionForUi(description),
         evidence: behaviorEvidenceLabel(description),
-        requiresCheck:
-          description.requiresCatalogCheck ||
-          description.confidence === 'low' ||
-          description.confidence === 'unknown',
+        requiresCheck: Boolean(description.requiresCatalogCheck),
       });
     }
 
-    const revision =
-      pickAttribute(attributes, 'design_series') ?? pickAttribute(attributes, 'revision');
-    if (revision) {
-      rows.push(rowFromParsedTechnicalAttribute(revision));
+    if (!hasDesignSeriesDescription) {
+      const revision =
+        pickAttribute(attributes, 'design_series') ?? pickAttribute(attributes, 'revision');
+      if (revision) {
+        rows.push(rowFromParsedTechnicalAttribute(revision));
+      }
     }
 
     return rows;
