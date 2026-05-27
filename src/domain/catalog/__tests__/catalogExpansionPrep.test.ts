@@ -90,7 +90,7 @@ describe('catalog expansion prep', () => {
   });
 
   describe('H7 and exact identification regression', () => {
-    it('H7 in DG4V code stays unresolved (not 24V DC)', () => {
+    it('H7 in DG4V code splits to H=24V DC (catalog check)', () => {
       const code = 'DG4V-3-2A-M-U-H7-60';
       const id = identifyProduct(code, normalizeCode(code));
       const voltage = extractHydraulicAttributes({
@@ -98,9 +98,9 @@ describe('catalog expansion prep', () => {
         seriesId: id.seriesId,
       }).find((a) => a.key === 'voltage');
 
-      expect(voltage?.value).toBeNull();
-      expect(voltage?.evidence).toBe('unknown');
-      expect(voltage?.sourceToken).toBe('H7');
+      expect(voltage?.value).toBe('24V DC');
+      expect(voltage?.evidence).toBe('code');
+      expect(voltage?.sourceToken).toBe('H');
     });
 
     it('exact hydraulic example identifies with full outcome', () => {

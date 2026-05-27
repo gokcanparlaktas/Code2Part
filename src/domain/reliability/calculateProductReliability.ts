@@ -32,7 +32,7 @@ export function calculateProductReliability(
     warningTitleTr: identification.matched
       ? 'Bu sonuç sınırlı bilgiyle üretildi.'
       : 'Ürün tipi netleştirilemedi.',
-    warningMessageTr: 'Kod parçaları ve katalog bilgileri kontrol edilmelidir.',
+    warningMessageTr: 'Katalog bilgileri kontrol edilmelidir.',
   };
 }
 

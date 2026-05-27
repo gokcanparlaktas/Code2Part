@@ -7,7 +7,8 @@ type ProfileAttribute = ProductCompatibilityProfile['attributes'][string];
 export function applyCanonicalDisplayToProfileAttribute(
   attributeKey: string,
   attribute: ProfileAttribute,
-  brand?: string
+  brand?: string,
+  series?: string
 ): ProfileAttribute {
   const rawToken =
     attribute.rawToken ??
@@ -20,6 +21,7 @@ export function applyCanonicalDisplayToProfileAttribute(
     rawToken,
     behaviorNoteTr: attribute.notes?.[0],
     sourceManufacturer: brand,
+    sourceSeries: series,
   });
 
   if (!display) {

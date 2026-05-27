@@ -13,11 +13,11 @@ describe('buildProductDetailRows', () => {
     expect(labels).not.toContain('Strok');
   });
 
-  it('hydraulic_valve rows include CETOP 03 / NG6 when known', () => {
+  it('hydraulic_valve rows include Montaj standardı when known', () => {
     const code = '4WE6E-6X/EG24N9K4';
     const id = identifyProduct(code, normalizeCode(code));
     const rows = buildProductDetailRows(id);
-    const row = rows.find((r) => r.label === 'CETOP / NG ölçüsü');
+    const row = rows.find((r) => r.label === 'Montaj standardı');
     expect(row?.value).toContain('NG6');
     expect(row?.value).toContain('CETOP 03');
   });

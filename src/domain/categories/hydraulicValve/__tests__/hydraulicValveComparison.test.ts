@@ -48,7 +48,7 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     const result = compareProducts(source, candidate);
     expect(result.compatible.some((c) => c.label === 'Konnektör tipi')).toBe(true);
     expect(result.compatible.find((c) => c.label === 'Konnektör tipi')?.sourceDisplay).toBe(
-      'DIN 43650 Form A / EN 175301-803'
+      'DIN EN 175301-803 konnektör'
     );
   });
 
@@ -68,9 +68,12 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     };
 
     const result = compareProducts(source, candidate);
-    expect(result.compatible.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(true);
-    expect(result.compatible.find((c) => c.label === 'Sürgü / fonksiyon kodu')?.sourceDisplay).toBe(
-      'E'
+    expect(result.compatible.some((c) => c.label === 'Sürgü davranışı')).toBe(true);
+    expect(result.compatible.find((c) => c.label === 'Sürgü davranışı')?.sourceDisplay).toMatch(
+      /4 yollu, 3 konumlu|3 konumlu/
+    );
+    expect(result.compatible.find((c) => c.label === 'Sürgü davranışı')?.sourceDisplay).not.toContain(
+      'Sürgü sembolü E'
     );
   });
 
@@ -90,8 +93,8 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     };
 
     const result = compareProducts(source, candidate);
-    expect(result.compatible.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(false);
-    expect(result.different.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(false);
+    expect(result.compatible.some((c) => c.label === 'Sürgü davranışı')).toBe(false);
+    expect(result.different.some((c) => c.label === 'Sürgü davranışı')).toBe(false);
     const spoolCheck = result.checkItems.find((c) => c.field === 'Sürgü sembolü / fonksiyon');
     expect(spoolCheck?.reasonTr).toContain('benzer olabilir');
     expect(spoolCheck?.reasonTr).toContain('Katalog sembolüyle doğrulanmalıdır');
@@ -114,7 +117,7 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     };
 
     const result = compareProducts(source, candidate);
-    expect(result.compatible.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(false);
+    expect(result.compatible.some((c) => c.label === 'Sürgü davranışı')).toBe(false);
     const spoolCheck = result.checkItems.find((c) => c.field === 'Sürgü sembolü / fonksiyon');
     expect(spoolCheck?.reasonTr).toContain('katalogdan kontrol edilmelidir');
   });
@@ -135,8 +138,8 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     };
 
     const result = compareProducts(source, candidate);
-    expect(result.compatible.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(false);
-    expect(result.different.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(false);
+    expect(result.compatible.some((c) => c.label === 'Sürgü davranışı')).toBe(false);
+    expect(result.different.some((c) => c.label === 'Sürgü davranışı')).toBe(false);
     const spoolCheck = result.checkItems.find((c) => c.field === 'Sürgü sembolü / fonksiyon');
     expect(spoolCheck?.reasonTr).toContain('katalogdan kontrol edilmelidir');
     expect([...result.warnings, spoolCheck?.reasonTr ?? ''].join(' ')).not.toMatch(/aynıdır/i);
@@ -159,7 +162,7 @@ describe('hydraulicValveComparison (attribute-based)', () => {
 
     const result = compareProducts(source, candidate);
     expect(result.different.some((c) => c.label === 'Merkez tipi')).toBe(true);
-    expect(result.compatible.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(false);
+    expect(result.compatible.some((c) => c.label === 'Sürgü davranışı')).toBe(false);
   });
 
   it('unknown function token leads to unknown/check', () => {
@@ -178,8 +181,8 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     };
 
     const result = compareProducts(source, candidate);
-    expect(result.compatible.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(false);
-    expect(result.different.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(true);
+    expect(result.compatible.some((c) => c.label === 'Sürgü davranışı')).toBe(false);
+    expect(result.different.some((c) => c.label === 'Sürgü davranışı')).toBe(true);
   });
 
   it('puts voltage in unknownOrCheck when missing on one side', () => {
@@ -258,9 +261,9 @@ describe('hydraulicValveComparison (attribute-based)', () => {
 
     const result = compareProducts(source, candidate);
     expect(result.different.some((c) => c.label === 'Montaj standardı')).toBe(true);
-    expect(result.compatible.some((c) => c.label === 'Sürgü / fonksiyon kodu')).toBe(false);
+    expect(result.compatible.some((c) => c.label === 'Sürgü davranışı')).toBe(false);
     expect(
-      result.checkItems.some((c) => c.field === 'Sürgü / fonksiyon kodu') ||
+      result.checkItems.some((c) => c.field === 'Sürgü davranışı') ||
         result.checkItems.some((c) => c.field === 'Sürgü sembolü / fonksiyon')
     ).toBe(true);
   });

@@ -37,6 +37,7 @@ describe('parseRexrothWE6 (RE 23164)', () => {
     expect(map.get('solenoid_type')?.value).toBe('H');
     expect(map.get('voltage')?.value).toBe('24V DC');
     expect(map.get('voltage')?.confidence).toBe('high');
+    expect(map.get('coil_voltage_code')?.value).toBe('G24');
     expect(map.get('manual_override')?.value).toBe('Gizli/korumalı manuel kumanda');
     expect(map.get('connector_token')?.value).toBe('K4');
     expect(map.get('connector')?.value).toBe('DIN EN 175301-803');

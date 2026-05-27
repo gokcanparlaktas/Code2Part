@@ -5,6 +5,11 @@ import type { TechnicalAttribute } from '@/types/technicalAttribute';
 
 import { FIELD_LABELS, SEAL_MATERIAL_DICTIONARY } from './hydraulicValveCanonicalDictionary';
 import {
+  normalizeHydraulicConnectorDisplay,
+  normalizeHydraulicManualOverrideDisplay,
+  normalizeHydraulicVoltageDisplay,
+} from './hydraulicValveAttributeDisplay';
+import {
   buildCanonicalField,
   getCenterConditionDisplay,
   getCenteringDisplay,
@@ -23,6 +28,7 @@ import {
   normalizeWaysPositions,
   UNRESOLVED_VOLTAGE_CODES,
 } from './normalizeHydraulicValveAttribute';
+import { applyBehaviorDisplayToCanonicalProfile } from './hydraulicValveBehaviorDescriptions';
 import type {
   CanonicalConfidence,
   CanonicalField,
@@ -470,6 +476,45 @@ export function buildHydraulicValveCanonicalProfile(
   }
 
   profile.notes = [...new Set(profile.notes)];
+
+  const voltageDisplay = normalizeHydraulicVoltageDisplay({
+    rawValue: readDisplayString(map, 'voltage'),
+    rawToken: rawVoltageCode,
+    manufacturer: brand,
+  });
+  if (voltageDisplay) {
+    profile.coilVoltage.displayValue = voltageDisplay.displayValue;
+    if (voltageDisplay.requiresCatalogCheck) {
+      profile.coilVoltage.requiresCatalogCheck = true;
+    }
+  }
+
+  const connectorDisplay = normalizeHydraulicConnectorDisplay({
+    rawValue: readDisplayString(map, 'connector') ?? readDisplayString(map, 'connector_option'),
+    rawToken: rawConnectorCode,
+    manufacturer: brand,
+    series,
+  });
+  if (connectorDisplay) {
+    profile.connectorType.displayValue = connectorDisplay.displayValue;
+    if (connectorDisplay.requiresCatalogCheck) {
+      profile.connectorType.requiresCatalogCheck = true;
+    }
+  }
+
+  const manualDisplay = normalizeHydraulicManualOverrideDisplay({
+    rawValue: readDisplayString(map, 'manual_override'),
+    rawToken: manualOverrideAttr?.sourceToken,
+  });
+  if (manualDisplay) {
+    profile.manualOverride.displayValue = manualDisplay.displayValue;
+    if (manualDisplay.requiresCatalogCheck) {
+      profile.manualOverride.requiresCatalogCheck = true;
+    }
+  }
+
+  applyBehaviorDisplayToCanonicalProfile(profile, attributes);
+
   return profile;
 }
 

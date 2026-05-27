@@ -24,9 +24,10 @@ const CONFIRMED_VOLTAGE_BY_TOKEN: Record<string, string> = {
   D12: '12V DC',
   D24: '24V DC',
   D48: '48V DC',
+  H: '24V DC',
 };
 
-const UNRESOLVED_VOLTAGE_CODES = new Set(['H7']);
+const UNRESOLVED_VOLTAGE_CODES = new Set<string>([]);
 
 const CETOP_BY_SERIES: Record<'3' | '5', string> = {
   '3': 'CETOP 03 / NG6',
@@ -48,7 +49,8 @@ export interface VickersDG4VParsedCode {
   spoolFunctionCode: string;
   electricalOption: string;
   connectorOption: string;
-  voltageCode: string;
+  coilRatingCode: string;
+  tankPressureRatingCode: string | null;
   designNumber: string | null;
 }
 
@@ -59,14 +61,14 @@ export function isVickersDG4VCode(normalized: string): boolean {
 
 function matchDG4VSegments(normalized: string): RegExpMatchArray | null {
   const dashed = normalized.match(
-    /^DG4V-?(3|5)-(\d)([ABCD])-([A-Z])-([A-Z])-(H7|D12|D24|D48)(?:-(\d{2,3}))?$/
+    /^DG4V-?(3|5)-(\d)([ABCD])-([A-Z])-([A-Z])-((?:H[4-7])|D12|D24|D48)(?:-(\d{2,3}))?$/
   );
   if (dashed) {
     return dashed;
   }
 
   return normalized.match(
-    /^DG4V-?(3|5)(\d)([ABCD])([A-Z])([A-Z])(H7|D12|D24|D48)(\d{2,3})?$/
+    /^DG4V-?(3|5)(\d)([ABCD])([A-Z])([A-Z])((?:H[4-7])|D12|D24|D48)(\d{2,3})?$/
   );
 }
 
@@ -81,6 +83,11 @@ export function parseVickersDG4VProductCode(normalized: string): VickersDG4VPars
   const springCode = match[3];
   const spoolFunctionCode = `${spoolType}${springCode}`;
 
+  const ratingSegment = match[6].toUpperCase();
+  const hMatch = ratingSegment.match(/^H([4-7])$/);
+  const coilRatingCode = hMatch ? 'H' : ratingSegment;
+  const tankPressureRatingCode = hMatch ? hMatch[1] : null;
+
   return {
     valveSize,
     series: SERIES_BY_SIZE[valveSize],
@@ -89,7 +96,8 @@ export function parseVickersDG4VProductCode(normalized: string): VickersDG4VPars
     spoolFunctionCode,
     electricalOption: match[4],
     connectorOption: match[5],
-    voltageCode: match[6],
+    coilRatingCode,
+    tankPressureRatingCode,
     designNumber: match[7] ?? null,
   };
 }
@@ -171,18 +179,18 @@ function appendVoltageAttributes(
   results: TechnicalAttributeResult[],
   parsed: VickersDG4VParsedCode
 ): void {
-  const confirmed = CONFIRMED_VOLTAGE_BY_TOKEN[parsed.voltageCode];
-  const isUnresolved = UNRESOLVED_VOLTAGE_CODES.has(parsed.voltageCode);
+  const confirmed = CONFIRMED_VOLTAGE_BY_TOKEN[parsed.coilRatingCode];
+  const isUnresolved = UNRESOLVED_VOLTAGE_CODES.has(parsed.coilRatingCode);
 
   results.push(
     buildAttributeResult({
       key: 'coil_voltage_code',
       label: 'Bobin kodu',
-      value: parsed.voltageCode,
+      value: parsed.coilRatingCode,
       evidence: 'code',
       confidence: isUnresolved ? 'low' : 'medium',
       requiresCatalogCheck: true,
-      sourceToken: parsed.voltageCode,
+      sourceToken: parsed.coilRatingCode,
       category: HYDRAULIC_VALVE_CATEGORY,
       note: isUnresolved ? VICKERS_DG4V_VOLTAGE_NOTE_TR : undefined,
     })
@@ -214,10 +222,10 @@ function appendVoltageAttributes(
       evidence: 'code',
       confidence: confirmed ? 'medium' : 'low',
       requiresCatalogCheck: true,
-      sourceToken: parsed.voltageCode,
+      sourceToken: parsed.coilRatingCode,
       category: HYDRAULIC_VALVE_CATEGORY,
       note: confirmed
-        ? `${parsed.voltageCode} koddan okundu; katalogdan doğrulanmalıdır.`
+        ? `${parsed.coilRatingCode} koddan okundu; katalogdan doğrulanmalıdır.`
         : VICKERS_DG4V_VOLTAGE_NOTE_TR,
     })
   );
@@ -352,6 +360,22 @@ export function parseVickersDG4V(inputCode: string): TechnicalAttributeResult[] 
 
   appendVoltageAttributes(results, parsed);
   appendSpoolBehaviorAttributes(results, parsed);
+
+  if (parsed.tankPressureRatingCode) {
+    results.push(
+      buildAttributeResult({
+        key: 'tank_pressure_rating_code',
+        label: 'Tank hattı basınç sınıfı (kod)',
+        value: parsed.tankPressureRatingCode,
+        evidence: 'code',
+        confidence: 'medium',
+        requiresCatalogCheck: true,
+        sourceToken: parsed.tankPressureRatingCode,
+        category: HYDRAULIC_VALVE_CATEGORY,
+        note: 'Tank hattı basınç sınıfı katalogdan doğrulanmalıdır.',
+      })
+    );
+  }
 
   if (parsed.designNumber) {
     results.push(

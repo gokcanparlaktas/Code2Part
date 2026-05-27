@@ -40,7 +40,7 @@ export function normalizeCompatibilityProfile(
       if (!keys.has(key)) {
         return [key, attribute];
       }
-      return [key, applyCanonicalDisplayToProfileAttribute(key, attribute, profile.brand)];
+      return [key, applyCanonicalDisplayToProfileAttribute(key, attribute, profile.brand, profile.series)];
     })
   );
 

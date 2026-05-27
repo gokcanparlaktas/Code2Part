@@ -1,9 +1,9 @@
 export type AttributeEvidenceSource =
-  | 'code'
-  | 'series_table'
-  | 'standard'
-  | 'inferred'
-  | 'unknown';
+  | "code"
+  | "series_table"
+  | "standard"
+  | "inferred"
+  | "unknown";
 
 export type TechnicalAttribute = {
   key: string;
@@ -11,7 +11,6 @@ export type TechnicalAttribute = {
   value: string | number | boolean | null;
   unit?: string;
   evidence: AttributeEvidenceSource;
-  confidence: 'high' | 'medium' | 'low' | 'unknown';
+  confidence: "high" | "medium" | "low" | "unknown";
   note?: string;
 };
-

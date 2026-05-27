@@ -1,56 +1,55 @@
-import { buildSuggestedEquivalentCode } from '../buildSuggestedEquivalentCode';
-import { compareProducts, resolveResolverCategory } from '../compareProducts';
-import { findEquivalents } from '../findEquivalents';
-import { identifyProduct } from '../identifyProduct';
-import { normalizeCode } from '../normalizeCode';
-import { suggestProducts } from '../suggestProducts';
-import { getProductSeriesById } from '../identifyProduct';
+import { buildSuggestedEquivalentCode } from "../buildSuggestedEquivalentCode";
+import { compareProducts, resolveResolverCategory } from "../compareProducts";
+import { findEquivalents } from "../findEquivalents";
+import { getProductSeriesById, identifyProduct } from "../identifyProduct";
+import { normalizeCode } from "../normalizeCode";
+import { suggestProducts } from "../suggestProducts";
 
 function identify(input: string) {
   const normalized = normalizeCode(input);
   return identifyProduct(input, normalized);
 }
 
-describe('hydraulic_valve category', () => {
-  it('identifies DG4V-3-2A-M-U-H7-60 as full hydraulic_valve (exact catalog example)', () => {
-    const result = identify('DG4V-3-2A-M-U-H7-60');
-    expect(result.resolverCategoryKey).toBe('hydraulic_valve');
-    expect(result.outcome).toBe('full');
-    expect(result.brand.value).toBe('Vickers');
-    expect(result.series.value).toBe('DG4V-3');
-    expect(result.confidence).toBe('high');
+describe("hydraulic_valve category", () => {
+  it("identifies DG4V-3-2A-M-U-H7-60 as full hydraulic_valve (exact catalog example)", () => {
+    const result = identify("DG4V-3-2A-M-U-H7-60");
+    expect(result.resolverCategoryKey).toBe("hydraulic_valve");
+    expect(result.outcome).toBe("full");
+    expect(result.brand.value).toBe("Vickers");
+    expect(result.series.value).toBe("DG4V-3");
+    expect(result.confidence).toBe("high");
   });
 
-  it('identifies spaced compact DG4V example as the same product', () => {
-    const result = identify('dg4v 3 2a m u h7 60');
-    expect(result.outcome).toBe('full');
-    expect(result.series.value).toBe('DG4V-3');
-    expect(result.resolverCategoryKey).toBe('hydraulic_valve');
+  it("identifies spaced compact DG4V example as the same product", () => {
+    const result = identify("dg4v 3 2a m u h7 60");
+    expect(result.outcome).toBe("full");
+    expect(result.series.value).toBe("DG4V-3");
+    expect(result.resolverCategoryKey).toBe("hydraulic_valve");
   });
 
-  it('identifies 4WE6 as hydraulic_valve', () => {
-    const result = identify('4WE6E-6X/EG24N9K4');
-    expect(result.resolverCategoryKey).toBe('hydraulic_valve');
-    expect(result.brand.value).toBe('Rexroth');
-    expect(result.series.value).toBe('4WE6');
-    expect(result.cetopNgSize?.value).toContain('NG6');
-    expect(result.valveCoilVoltage?.evidence).toBe('code');
-    expect(result.confidence).toBe('high');
+  it("identifies 4WE6 as hydraulic_valve", () => {
+    const result = identify("4WE6E-6X/EG24N9K4");
+    expect(result.resolverCategoryKey).toBe("hydraulic_valve");
+    expect(result.brand.value).toBe("Rexroth");
+    expect(result.series.value).toBe("4WE6");
+    expect(result.cetopNgSize?.value).toContain("NG6");
+    expect(result.valveCoilVoltage?.evidence).toBe("code");
+    expect(result.confidence).toBe("high");
   });
 
-  it('identifies DSG-01 as hydraulic_valve', () => {
-    const result = identify('DSG-01-3C2-D24-N1-50');
-    expect(result.resolverCategoryKey).toBe('hydraulic_valve');
-    expect(result.brand.value).toBe('Yuken');
-    expect(result.series.value).toBe('DSG-01');
-    expect(result.cetopNgSize?.value).toContain('NG6');
+  it("identifies DSG-01 as hydraulic_valve", () => {
+    const result = identify("DSG-01-3C2-D24-N1-50");
+    expect(result.resolverCategoryKey).toBe("hydraulic_valve");
+    expect(result.brand.value).toBe("Yuken");
+    expect(result.series.value).toBe("DSG-01");
+    expect(result.cetopNgSize?.value).toContain("NG6");
   });
 
-  it('routes hydraulic_valve to hydraulic comparison', () => {
-    const source = identify('4WE6E-6X/EG24N9K4');
-    expect(resolveResolverCategory(source)).toBe('hydraulic_valve');
+  it("routes hydraulic_valve to hydraulic comparison", () => {
+    const source = identify("4WE6E-6X/EG24N9K4");
+    expect(resolveResolverCategory(source)).toBe("hydraulic_valve");
 
-    const targetSeries = getProductSeriesById('yuken_dsg01');
+    const targetSeries = getProductSeriesById("yuken_dsg01");
     expect(targetSeries).toBeDefined();
 
     const candidate = {
@@ -60,10 +59,15 @@ describe('hydraulic_valve category', () => {
       productType: targetSeries!.productType,
       productCategory: targetSeries!.productCategory,
       standardFamily: targetSeries!.standardFamily,
-      suggestedCode: buildSuggestedEquivalentCode(source, targetSeries!) ?? null,
+      suggestedCode:
+        buildSuggestedEquivalentCode(source, targetSeries!) ?? null,
       targetIdentification: identify(
-        buildSuggestedEquivalentCode(source, targetSeries!) ?? 'DSG-01-3C2-D24-N1-50',
-        normalizeCode(buildSuggestedEquivalentCode(source, targetSeries!) ?? 'DSG-01-3C2-D24-N1-50')
+        buildSuggestedEquivalentCode(source, targetSeries!) ??
+          "DSG-01-3C2-D24-N1-50",
+        normalizeCode(
+          buildSuggestedEquivalentCode(source, targetSeries!) ??
+            "DSG-01-3C2-D24-N1-50",
+        ),
       ),
     };
 
@@ -72,36 +76,40 @@ describe('hydraulic_valve category', () => {
     const compatibleLabels = result.compatible.map((c) => c.label);
     const differentLabels = result.different.map((c) => c.label);
 
-    expect(checkFields).toContain('Basınç değeri');
-    expect(checkFields).toContain('Debi değeri');
+    expect(checkFields).toContain("Basınç değeri");
+    expect(checkFields).toContain("Debi değeri");
 
     // Known-equal attributes should be compatible (not "kontrol gerekli")
-    expect(compatibleLabels).toContain('Montaj standardı');
-    expect(compatibleLabels).toContain('Bobin voltajı');
+    expect(compatibleLabels).toContain("Montaj standardı");
+    expect(compatibleLabels).toContain("Bobin voltajı");
 
     // Generic plug-in vs specific DIN connector requires catalog check, not a hard mismatch
-    expect(checkFields).toContain('Konnektör tipi');
+    expect(checkFields).toContain("Konnektör tipi");
     // Cross-manufacturer function tokens require catalog check, not full compatibility
-    expect(compatibleLabels).not.toContain('Sürgü / fonksiyon kodu');
-    expect(checkFields).toContain('Sürgü sembolü / fonksiyon');
-    const spoolCheck = result.checkItems.find((c) => c.field === 'Sürgü sembolü / fonksiyon');
-    expect(spoolCheck?.reasonTr).toContain('benzer olabilir');
-    expect(spoolCheck?.reasonTr).toContain('Katalog sembolüyle doğrulanmalıdır');
+    expect(compatibleLabels).not.toContain("Sürgü / fonksiyon kodu");
+    expect(checkFields).toContain("Sürgü sembolü / fonksiyon");
+    const spoolCheck = result.checkItems.find(
+      (c) => c.field === "Sürgü sembolü / fonksiyon",
+    );
+    expect(spoolCheck?.reasonTr).toContain("benzer olabilir");
+    expect(spoolCheck?.reasonTr).toContain(
+      "Katalog sembolüyle doğrulanmalıdır",
+    );
   });
 
-  it('NG6 equivalents do not include NG10 series', () => {
-    const source = identify('4WE6E-6X/EG24N9K4');
+  it("NG6 equivalents do not include NG10 series", () => {
+    const source = identify("4WE6E-6X/EG24N9K4");
     const equivalents = findEquivalents(source);
     const ng10Series = equivalents.filter((e) =>
-      ['4WE10', 'DSG-03', 'DG4V-5', 'DHU', 'D3W'].includes(e.series)
+      ["4WE10", "DSG-03", "DG4V-5", "DHU", "D3W"].includes(e.series),
     );
     expect(ng10Series).toHaveLength(0);
   });
 
-  it('marks different CETOP size as different in comparison', () => {
-    const ng6 = identify('4WE6E-6X/EG24N9K4');
-    const ng10Series = getProductSeriesById('rexroth_4we10')!;
-    const ng10Code = '4WE10E-3X/CG24N9K4';
+  it("marks different CETOP size as different in comparison", () => {
+    const ng6 = identify("4WE6E-6X/EG24N9K4");
+    const ng10Series = getProductSeriesById("rexroth_4we10")!;
+    const ng10Code = "4WE10E-3X/CG24N9K4";
     const candidate = {
       seriesId: ng10Series.id,
       brand: ng10Series.brand,
@@ -114,75 +122,83 @@ describe('hydraulic_valve category', () => {
     };
 
     const result = compareProducts(ng6, candidate);
-    expect(result.different.some((d) => d.label === 'Montaj standardı')).toBe(true);
+    expect(result.different.some((d) => d.label === "Montaj standardı")).toBe(
+      true,
+    );
   });
 
-  describe('suggestions', () => {
+  describe("suggestions", () => {
     it('suggests 4WE6 example for "4WE6"', () => {
-      const suggestions = suggestProducts('4WE6');
+      const suggestions = suggestProducts("4WE6");
       expect(
-        suggestions.some((s) => s.exampleCodeFormat.startsWith('4WE6'))
+        suggestions.some((s) => s.exampleCodeFormat.startsWith("4WE6")),
       ).toBe(true);
     });
 
     it('suggests DSG-01 example for "DSG 01"', () => {
-      const suggestions = suggestProducts('DSG 01');
+      const suggestions = suggestProducts("DSG 01");
       expect(
-        suggestions.some((s) => s.exampleCodeFormat.includes('DSG-01'))
+        suggestions.some((s) => s.exampleCodeFormat.includes("DSG-01")),
       ).toBe(true);
     });
 
     it('suggests DSG example containing D24 and N1 for "D24 N1"', () => {
-      const suggestions = suggestProducts('D24 N1');
-      const match = suggestions.find((s) => s.exampleCodeFormat.includes('DSG'));
+      const suggestions = suggestProducts("D24 N1");
+      const match = suggestions.find((s) =>
+        s.exampleCodeFormat.includes("DSG"),
+      );
       expect(match).toBeDefined();
       expect(match!.exampleCodeFormat).toMatch(/D24/);
       expect(match!.exampleCodeFormat).toMatch(/N1/);
     });
 
-    it('requires all tokens for multi-token hydraulic search', () => {
-      const suggestions = suggestProducts('D24 N1');
+    it("requires all tokens for multi-token hydraulic search", () => {
+      const suggestions = suggestProducts("D24 N1");
       expect(
         suggestions.every((s) => {
-          const compact = s.exampleCodeFormat.replace(/[^A-Z0-9]/gi, '').toUpperCase();
-          return compact.includes('D24') && compact.includes('N1');
-        })
+          const compact = s.exampleCodeFormat
+            .replace(/[^A-Z0-9]/gi, "")
+            .toUpperCase();
+          return compact.includes("D24") && compact.includes("N1");
+        }),
       ).toBe(true);
       expect(
-        suggestions.some((s) => s.exampleCodeFormat === 'DSBC-32-25-PPSA-N3')
+        suggestions.some((s) => s.exampleCodeFormat === "DSBC-32-25-PPSA-N3"),
       ).toBe(false);
     });
 
     it('suggests DG4V-3 example for "DG4V 3"', () => {
-      const suggestions = suggestProducts('DG4V 3');
+      const suggestions = suggestProducts("DG4V 3");
       expect(
-        suggestions.some((s) => s.exampleCodeFormat.includes('DG4V-3'))
+        suggestions.some((s) => s.exampleCodeFormat.includes("DG4V-3")),
       ).toBe(true);
     });
 
     it('suggests Atos 24DC example for "24DC"', () => {
-      const suggestions = suggestProducts('24DC');
+      const suggestions = suggestProducts("24DC");
       expect(
         suggestions.some(
           (s) =>
-            s.exampleCodeFormat.includes('24DC') &&
-            (s.series === 'DHI' || s.series === 'DHU')
-        )
+            s.exampleCodeFormat.includes("24DC") &&
+            (s.series === "DHI" || s.series === "DHU"),
+        ),
       ).toBe(true);
     });
 
-    it('hydraulic suggestion missing labels exclude pneumatic fields', () => {
-      const suggestions = suggestProducts('DG4V 3');
-      const hydraulic = suggestions.find((s) => s.exampleCodeFormat.includes('DG4V-3'));
+    it("hydraulic suggestion missing labels exclude pneumatic fields", () => {
+      const suggestions = suggestProducts("DG4V 3");
+      const hydraulic = suggestions.find((s) =>
+        s.exampleCodeFormat.includes("DG4V-3"),
+      );
       expect(hydraulic).toBeDefined();
 
-      const missingText = hydraulic!.missingFields.join(',');
-      expect(missingText).not.toContain('stroke');
-      expect(missingText).not.toContain('bore');
-      expect(missingText).not.toContain('options');
-      expect(hydraulic!.missingFields).not.toContain('stroke');
-      expect(hydraulic!.missingFields).not.toContain('bore');
-      expect(hydraulic!.missingFields).not.toContain('options');
+      const missingText = hydraulic!.missingFields.join(",");
+      expect(missingText).not.toContain("stroke");
+      expect(missingText).not.toContain("bore");
+      expect(missingText).not.toContain("options");
+      expect(hydraulic!.missingFields).not.toContain("stroke");
+      expect(hydraulic!.missingFields).not.toContain("bore");
+      expect(hydraulic!.missingFields).not.toContain("options");
     });
   });
 });

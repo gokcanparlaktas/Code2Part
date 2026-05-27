@@ -40,6 +40,19 @@ export function parseHydraulicCoilVoltage(
     return attributeFromCode('24 V DC');
   }
 
+  // Vickers DG4V catalog rating segment can encode coil rating + tank pressure class (e.g. H7).
+  // We treat H as 24V DC, but still require catalog check.
+  if (series.series.startsWith('DG4V')) {
+    const match = normalizedCode.match(/-(H)([4-7])(?:-|$)/i);
+    if (match) {
+      return {
+        value: '24 V DC',
+        evidence: 'code',
+        requiresCheck: true,
+      };
+    }
+  }
+
   if (series.defaultCoilVoltageTr) {
     return {
       value: series.defaultCoilVoltageTr,

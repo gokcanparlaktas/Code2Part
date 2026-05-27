@@ -203,7 +203,7 @@ function compareVoltage(
       label: 'Bobin voltajı',
       sourceDisplay,
       targetDisplay,
-      status: 'compatible',
+      status: sourceNorm.requiresCatalogCheck || targetNorm.requiresCatalogCheck ? 'unknownOrCheck' : 'compatible',
     };
   }
 

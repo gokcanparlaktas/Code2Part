@@ -63,17 +63,42 @@ function parseRe23164CoilSection(section: string): {
   manualOverrideToken: string | null;
   connectorToken: string | null;
 } | null {
-  const match = section.match(/^(?:OF)?(H)?(G12|G24)(N9)?(K4|C4Z)?$/);
+  const combined = section.match(/^(?:OF)?(HG24|EG24|CG24|G12|G24)(N9)?(K4|C4Z)?$/);
+  if (combined) {
+    const voltageToken = combined[1];
+    const solenoidType =
+      voltageToken === 'HG24' ? 'H' : voltageToken.startsWith('H') ? 'H' : null;
+    return {
+      detentPrefix: section.startsWith('OF'),
+      solenoidType,
+      voltageToken,
+      manualOverrideToken: combined[2] ?? null,
+      connectorToken: combined[3] ?? null,
+    };
+  }
+
+  const splitAc = section.match(/^(?:OF)?(H)(G12|G24)(N9)?(K4|C4Z)?$/);
+  if (splitAc) {
+    return {
+      detentPrefix: section.startsWith('OF'),
+      solenoidType: splitAc[1],
+      voltageToken: splitAc[2],
+      manualOverrideToken: splitAc[3] ?? null,
+      connectorToken: splitAc[4] ?? null,
+    };
+  }
+
+  const match = section.match(/^(?:OF)?(G12|G24)(N9)?(K4|C4Z)?$/);
   if (!match) {
     return null;
   }
 
   return {
     detentPrefix: section.startsWith('OF'),
-    solenoidType: match[1] ?? null,
-    voltageToken: match[2] ?? null,
-    manualOverrideToken: match[3] ?? null,
-    connectorToken: match[4] ?? null,
+    solenoidType: null,
+    voltageToken: match[1],
+    manualOverrideToken: match[2] ?? null,
+    connectorToken: match[3] ?? null,
   };
 }
 
@@ -109,23 +134,25 @@ function voltageFromToken(token: string | null, format: RexrothWE6CodeFormat): {
     return { value: null, sourceToken: null, confidence: 'unknown', requiresCatalogCheck: true };
   }
 
-  if (token === 'G12' || token === 'G24') {
+  if (token === 'G12') {
     return {
-      value: VOLTAGE_BY_TOKEN[token],
-      sourceToken: token,
+      value: VOLTAGE_BY_TOKEN.G12,
+      sourceToken: 'G12',
       confidence: 'high',
       requiresCatalogCheck: false,
-      note: `Katalog (${CATALOG_SOURCE}): ${token} bobin voltajı.`,
+      note: `Katalog (${CATALOG_SOURCE}): G12 bobin voltajı.`,
     };
   }
 
-  if (format === 'legacy_6x' && (token === 'EG24' || token === 'CG24')) {
+  if (token === 'G24' || token === 'HG24' || token === 'EG24' || token === 'CG24') {
+    const sourceToken = token === 'HG24' ? 'G24' : token;
     return {
       value: '24V DC',
-      sourceToken: token,
-      confidence: 'medium',
-      requiresCatalogCheck: true,
-      note: 'Eski/mock kod formatı (6X/EG24); RE 23164 7X/HG24 formatı tercih edilir.',
+      sourceToken,
+      confidence:
+        (token === 'G24' || token === 'HG24') && format === 're23164_7x' ? 'high' : 'medium',
+      requiresCatalogCheck: token !== 'G24' || format === 'legacy_6x',
+      note: `Katalog (${CATALOG_SOURCE}): ${token} bobin voltajı.`,
     };
   }
 
@@ -426,6 +453,17 @@ export function parseRexrothWE6(inputCode: string): TechnicalAttributeResult[] |
       label: 'Bobin voltajı',
       value: voltage.value,
       normalizedValue: voltage.value,
+      evidence: 'code',
+      confidence: voltage.confidence,
+      requiresCatalogCheck: voltage.requiresCatalogCheck,
+      sourceToken: voltage.sourceToken ?? undefined,
+      category: HYDRAULIC_VALVE_CATEGORY,
+      note: voltage.note,
+    }),
+    buildAttributeResult({
+      key: 'coil_voltage_code',
+      label: 'Bobin kodu',
+      value: voltage.sourceToken,
       evidence: 'code',
       confidence: voltage.confidence,
       requiresCatalogCheck: voltage.requiresCatalogCheck,

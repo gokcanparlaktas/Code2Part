@@ -16,7 +16,12 @@ import {
 import { buildCategoryComparison } from '@/domain/categories/hydraulicValve/behavior/behaviorComparisonToCompatibility';
 
 import { FIELD_LABELS } from './hydraulicValveCanonicalDictionary';
+import { normalizeHydraulicVoltageDisplay } from './hydraulicValveAttributeDisplay';
+import {
+  summarizeSpoolBehaviorForComparison,
+} from './hydraulicValveBehaviorDescriptions';
 import type { CanonicalField, HydraulicValveCanonicalProfile } from './hydraulicValveCanonicalTypes';
+import { UNRESOLVED_VOLTAGE_CODES } from './normalizeHydraulicValveAttribute';
 
 export interface HydraulicValveCanonicalComparisonResult {
   compatible: string[];
@@ -346,7 +351,20 @@ export function compareHydraulicValveCanonicalProfiles(
     unknownMessage: 'Bobin voltajı katalogdan doğrulanmalıdır.',
     crossBrand,
   });
-  pushResult(result, voltage.comparison, voltage.sentence, 'critical');
+  if (source.coilVoltage.requiresCatalogCheck || target.coilVoltage.requiresCatalogCheck) {
+    voltage.comparison.status = 'unknownOrCheck';
+    pushResult(result, voltage.comparison, 'Bobin voltajı katalogdan doğrulanmalıdır.', 'critical');
+  } else {
+    pushResult(result, voltage.comparison, voltage.sentence, 'critical');
+  }
+  if (
+    voltage.comparison.status === 'unknownOrCheck' &&
+    (source.coilVoltage.rawToken === 'H' || target.coilVoltage.rawToken === 'H')
+  ) {
+    result.unknownOrCheck.push(
+      'Bobin kodu H bulundu, voltaj değeri katalogdan doğrulanmalıdır.'
+    );
+  }
 
   const connector = compareConnectorFields(source, target);
   pushResult(result, connector.comparison, connector.sentence, 'important');
@@ -409,7 +427,15 @@ export function compareHydraulicValveCanonicalProfiles(
     },
   });
 
-  let spoolComparison = functionMatch.comparison;
+  const sourceSpoolDisplay = summarizeSpoolBehaviorForComparison(source);
+  const targetSpoolDisplay = summarizeSpoolBehaviorForComparison(target);
+
+  let spoolComparison = {
+    ...functionMatch.comparison,
+    label: FIELD_LABELS.spoolFunctionCode,
+    sourceDisplay: sourceSpoolDisplay,
+    targetDisplay: targetSpoolDisplay,
+  };
   const sameBrandSeries = isSameBrandSeries(source, target);
   const sourceToken = source.rawFunctionCode?.trim().toUpperCase();
   const targetToken = target.rawFunctionCode?.trim().toUpperCase();
@@ -425,22 +451,51 @@ export function compareHydraulicValveCanonicalProfiles(
     sourceToken !== targetToken
   ) {
     spoolComparison = {
-      label: FIELD_LABELS.spoolFunctionCode,
-      sourceDisplay: sourceToken,
-      targetDisplay: targetToken,
+      ...spoolComparison,
       status: 'different',
     };
-  } else if (
-    mountingMismatch &&
-    spoolComparison.status === 'compatible'
-  ) {
+  }
+
+  if (mountingMismatch && spoolComparison.status === 'compatible') {
     spoolComparison = {
       ...spoolComparison,
       status: 'unknownOrCheck',
     };
   }
 
-  pushResult(result, spoolComparison, null, 'optional');
+  const spoolRequiresCatalogCheck =
+    source.centerCondition.requiresCatalogCheck ||
+    target.centerCondition.requiresCatalogCheck ||
+    source.centering.requiresCatalogCheck ||
+    target.centering.requiresCatalogCheck ||
+    source.waysPositions.requiresCatalogCheck ||
+    target.waysPositions.requiresCatalogCheck ||
+    functionMatch.requiresCatalogCheck;
+
+  let spoolSentence: string | null = null;
+  if (spoolComparison.status === 'compatible') {
+    if (spoolRequiresCatalogCheck) {
+      spoolSentence =
+        'Sürgü davranışı aynı görünebilir, fakat katalog sembolüyle doğrulanmalıdır.';
+    } else {
+      spoolSentence = `Sürgü davranışı aynı: ${sourceSpoolDisplay}`;
+    }
+  } else if (spoolComparison.status === 'different') {
+    if (
+      spoolRequiresCatalogCheck ||
+      sourceSpoolDisplay.includes('doğrulanmalı') ||
+      targetSpoolDisplay.includes('doğrulanmalı')
+    ) {
+      spoolSentence =
+        'Merkez tipi iki üründe de doğrulanamadı. Katalog sembolleri kontrol edilmelidir.';
+    } else {
+      spoolSentence = `Sürgü davranışı farklı: ${sourceSpoolDisplay} / ${targetSpoolDisplay}`;
+    }
+  } else {
+    spoolSentence = 'Sürgü merkez tipi katalog sembolünden doğrulanmalıdır.';
+  }
+
+  pushResult(result, spoolComparison, spoolSentence, 'optional');
 
   if (crossBrand) {
     const sameCenter =

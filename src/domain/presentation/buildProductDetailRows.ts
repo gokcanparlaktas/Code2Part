@@ -1,9 +1,8 @@
 import { getTechnicalAttributes } from '@/domain/attributes/getTechnicalAttributes';
 import {
-  normalizeConnectorDisplay,
-  normalizeManualOverrideDisplay,
-  normalizeVoltageDisplay,
-} from '@/domain/normalization/canonicalAttributeDisplay';
+  buildHydraulicValveBehaviorDescriptions,
+  formatBehaviorDescriptionForUi,
+} from '@/domain/canonical/hydraulicValve/hydraulicValveBehaviorDescriptions';
 import {
   normalizeCushioningAttribute,
   normalizeStandardFamilyAttribute,
@@ -44,7 +43,6 @@ function rowFromParsedTechnicalAttribute(attribute: TechnicalAttribute): Product
     attribute.confidence === 'low' ||
     attribute.confidence === 'unknown';
 
-  // Map new evidence labels onto existing “formatEvidence” wording without touching UI.
   const evidenceLabel =
     attribute.evidence === 'code'
       ? 'Ürün kodundan'
@@ -71,6 +69,22 @@ function pickAttribute(
   return attributes.find((a) => a.key === key && a.value !== null);
 }
 
+function behaviorEvidenceLabel(description: {
+  confidence: string;
+  requiresCatalogCheck: boolean;
+}): string {
+  if (description.requiresCatalogCheck) {
+    return 'Katalogdan doğrulanmalı';
+  }
+  if (description.confidence === 'high') {
+    return 'Ürün kodundan';
+  }
+  if (description.confidence === 'medium' || description.confidence === 'low') {
+    return 'Seri tablosundan';
+  }
+  return 'Bilinmiyor';
+}
+
 export function buildProductDetailRows(
   identification: ProductIdentification
 ): ProductDetailRow[] {
@@ -84,94 +98,23 @@ export function buildProductDetailRows(
   ];
 
   if (identification.resolverCategoryKey === HYDRAULIC_VALVE_CATEGORY) {
-    const cetopRow = identification.cetopNgSize
-      ? rowFromIdentificationAttribute('CETOP / NG ölçüsü', identification.cetopNgSize)
-      : rowFromIdentificationAttribute('Standart ailesi', identification.standardFamily);
+    const rows: ProductDetailRow[] = [...baseRows];
 
-    const rows: ProductDetailRow[] = [
-      ...baseRows,
-      cetopRow,
-    ];
+    const behaviorDescriptions = buildHydraulicValveBehaviorDescriptions({
+      identification,
+      attributes,
+    });
 
-    const functionAttr = pickAttribute(attributes, 'function_token');
-    if (functionAttr) {
-      rows.push(
-        rowFromParsedTechnicalAttribute({ ...functionAttr, label: 'Sürgü / fonksiyon kodu' })
-      );
-    } else if (identification.valveSpoolFunction) {
-      rows.push(
-        rowFromIdentificationAttribute('Sürgü / fonksiyon kodu', identification.valveSpoolFunction)
-      );
-    }
-    const voltageAttr = pickAttribute(attributes, 'voltage');
-    if (voltageAttr || identification.valveCoilVoltage) {
-      const normalized = normalizeVoltageDisplay({
-        rawValue: voltageAttr?.value ? String(voltageAttr.value) : identification.valveCoilVoltage?.value,
-        rawToken: (voltageAttr as { sourceToken?: string })?.sourceToken,
-        sourceManufacturer: identification.brand.value ?? undefined,
+    for (const description of behaviorDescriptions) {
+      rows.push({
+        label: description.title,
+        value: formatBehaviorDescriptionForUi(description),
+        evidence: behaviorEvidenceLabel(description),
+        requiresCheck:
+          description.requiresCatalogCheck ||
+          description.confidence === 'low' ||
+          description.confidence === 'unknown',
       });
-      if (normalized) {
-        rows.push({
-          label: 'Bobin voltajı',
-          value: formatNormalizedAttributeForDisplay({
-            value: normalized.displayValue,
-            canonicalValue: normalized.canonicalValue,
-            rawToken: normalized.rawToken,
-            rawTokenLabel: normalized.rawTokenLabel,
-          }),
-          evidence: voltageAttr?.evidence === 'code' ? 'Ürün kodundan' : 'Seri tablosundan',
-          requiresCheck: normalized.requiresCatalogCheck ?? false,
-        });
-      } else if (identification.valveCoilVoltage) {
-        rows.push(rowFromIdentificationAttribute('Bobin voltajı', identification.valveCoilVoltage));
-      }
-    }
-
-    const connector = pickAttribute(attributes, 'connector_token');
-    const connectorType = pickAttribute(attributes, 'connector');
-    if (connector || connectorType) {
-      const normalized = normalizeConnectorDisplay({
-        rawValue: connectorType?.value ? String(connectorType.value) : null,
-        rawToken: connector?.value ? String(connector.value) : undefined,
-        sourceManufacturer: identification.brand.value ?? undefined,
-      });
-      if (normalized) {
-        rows.push({
-          label: 'Konnektör',
-          value: formatNormalizedAttributeForDisplay({
-            value: normalized.displayValue,
-            canonicalValue: normalized.canonicalValue,
-            rawToken: normalized.rawToken,
-            rawTokenLabel: normalized.rawTokenLabel,
-          }),
-          evidence: 'Ürün kodundan',
-          requiresCheck: normalized.requiresCatalogCheck ?? false,
-        });
-      } else if (connector) {
-        rows.push(rowFromParsedTechnicalAttribute({ ...connector, label: 'Konnektör kodu' }));
-      }
-    }
-
-    const manualOverride = pickAttribute(attributes, 'manual_override');
-    if (manualOverride) {
-      const normalized = normalizeManualOverrideDisplay({
-        rawValue: manualOverride.value ? String(manualOverride.value) : null,
-        rawToken: (manualOverride as { sourceToken?: string })?.sourceToken,
-        sourceManufacturer: identification.brand.value ?? undefined,
-      });
-      if (normalized) {
-        rows.push({
-          label: 'Manuel kumanda',
-          value: formatNormalizedAttributeForDisplay({
-            value: normalized.displayValue,
-            canonicalValue: normalized.canonicalValue,
-            rawToken: normalized.rawToken,
-            rawTokenLabel: normalized.rawTokenLabel,
-          }),
-          evidence: 'Ürün kodundan',
-          requiresCheck: normalized.requiresCatalogCheck ?? false,
-        });
-      }
     }
 
     const revision = pickAttribute(attributes, 'revision');
@@ -231,7 +174,5 @@ export function buildProductDetailRows(
     return rows;
   }
 
-  // Generic fallback: keep it safe and minimal.
   return [...baseRows, rowFromIdentificationAttribute('Standart ailesi', identification.standardFamily)];
 }
-

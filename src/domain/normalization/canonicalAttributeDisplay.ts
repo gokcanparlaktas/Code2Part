@@ -1,4 +1,11 @@
 import {
+  normalizeHydraulicConnectorDisplay,
+  normalizeHydraulicFunctionDisplay,
+  normalizeHydraulicManualOverrideDisplay,
+  normalizeHydraulicVoltageDisplay,
+} from '@/domain/canonical/hydraulicValve/hydraulicValveAttributeDisplay';
+
+import {
   getCanonicalCushioningDisplay,
   getCanonicalStandardFamilyDisplay,
   normalizeCushioningToken,
@@ -8,6 +15,8 @@ import {
 } from './canonicalTechnicalMeanings';
 
 import { getRexrothWE6SpoolSemantics, isRexrothWE6BaseSpoolSymbol } from '@/domain/categories/hydraulicValve/manufacturers/rexroth/rexrothWE6SpoolSemantics';
+
+const UNRESOLVED_COIL_VOLTAGE_CODES = new Set(['H7', 'H6', 'H5']);
 
 export type CanonicalDisplayConfidence = 'high' | 'medium' | 'low' | 'unknown';
 
@@ -97,72 +106,23 @@ export function normalizeVoltageDisplay(options: {
   rawToken?: string | null;
   sourceManufacturer?: string;
 }): NormalizedAttributeDisplay | null {
-  const candidate = options.rawToken ?? options.rawValue;
-  if (!candidate) {
+  const display = normalizeHydraulicVoltageDisplay({
+    rawValue: options.rawValue,
+    rawToken: options.rawToken,
+    manufacturer: options.sourceManufacturer,
+  });
+  if (!display) {
     return null;
-  }
-
-  const compact = compactToken(candidate);
-
-  for (const token of VOLTAGE_TOKEN_PRIORITY) {
-    if (compact === token || compact.includes(token)) {
-      const display = VOLTAGE_TOKEN_MAP[token];
-      return buildDisplay({
-        canonicalKey: 'voltage',
-        canonicalValue: display,
-        displayValue: display,
-        rawToken: token,
-        sourceManufacturer: options.sourceManufacturer,
-        confidence: 'high',
-        requiresCatalogCheck: false,
-      });
-    }
-  }
-
-  if (/24\s*V\s*DC/i.test(candidate)) {
-    return buildDisplay({
-      canonicalKey: 'voltage',
-      canonicalValue: '24V DC',
-      displayValue: '24V DC',
-      rawToken: compact !== '24VDC' ? candidate : undefined,
-      sourceManufacturer: options.sourceManufacturer,
-      confidence: 'high',
-      requiresCatalogCheck: false,
-    });
-  }
-
-  if (/12\s*V\s*DC/i.test(candidate)) {
-    return buildDisplay({
-      canonicalKey: 'voltage',
-      canonicalValue: '12V DC',
-      displayValue: '12V DC',
-      rawToken: compact !== '12VDC' ? candidate : undefined,
-      sourceManufacturer: options.sourceManufacturer,
-      confidence: 'high',
-      requiresCatalogCheck: false,
-    });
-  }
-
-  if (/110\s*V/i.test(candidate)) {
-    return buildDisplay({
-      canonicalKey: 'voltage',
-      canonicalValue: '110V DC',
-      displayValue: '110V DC',
-      rawToken: candidate,
-      sourceManufacturer: options.sourceManufacturer,
-      confidence: 'medium',
-      requiresCatalogCheck: true,
-    });
   }
 
   return buildDisplay({
     canonicalKey: 'voltage',
-    canonicalValue: candidate,
-    displayValue: candidate,
-    rawToken: candidate,
+    canonicalValue: display.canonicalValue ?? display.displayValue,
+    displayValue: display.displayValue,
+    rawToken: display.rawToken,
     sourceManufacturer: options.sourceManufacturer,
-    confidence: 'low',
-    requiresCatalogCheck: true,
+    confidence: display.requiresCatalogCheck ? 'low' : 'high',
+    requiresCatalogCheck: display.requiresCatalogCheck,
   });
 }
 
@@ -171,45 +131,23 @@ export function normalizeConnectorDisplay(options: {
   rawToken?: string | null;
   sourceManufacturer?: string;
 }): NormalizedAttributeDisplay | null {
-  const candidate = options.rawToken ?? options.rawValue;
-  if (!candidate) {
+  const display = normalizeHydraulicConnectorDisplay({
+    rawValue: options.rawValue,
+    rawToken: options.rawToken,
+    manufacturer: options.sourceManufacturer,
+  });
+  if (!display) {
     return null;
-  }
-
-  const token = compactToken(candidate);
-  const mapped = CONNECTOR_TOKEN_MAP[token];
-  if (mapped) {
-    return buildDisplay({
-      canonicalKey: 'connector',
-      canonicalValue: mapped,
-      displayValue: mapped,
-      rawToken: token,
-      sourceManufacturer: options.sourceManufacturer,
-      confidence: 'high',
-      requiresCatalogCheck: false,
-    });
-  }
-
-  if (candidate.includes('175301') || candidate.includes('DIN EN')) {
-    return buildDisplay({
-      canonicalKey: 'connector',
-      canonicalValue: 'DIN EN 175301-803',
-      displayValue: 'DIN EN 175301-803',
-      rawToken: token !== 'DINEN175301803' ? candidate : undefined,
-      sourceManufacturer: options.sourceManufacturer,
-      confidence: 'high',
-      requiresCatalogCheck: false,
-    });
   }
 
   return buildDisplay({
     canonicalKey: 'connector',
-    canonicalValue: candidate,
-    displayValue: candidate,
-    rawToken: token,
+    canonicalValue: display.canonicalValue ?? display.displayValue,
+    displayValue: display.displayValue,
+    rawToken: display.rawToken,
     sourceManufacturer: options.sourceManufacturer,
-    confidence: 'medium',
-    requiresCatalogCheck: true,
+    confidence: display.requiresCatalogCheck ? 'medium' : 'high',
+    requiresCatalogCheck: display.requiresCatalogCheck,
   });
 }
 
@@ -218,38 +156,23 @@ export function normalizeManualOverrideDisplay(options: {
   rawToken?: string | null;
   sourceManufacturer?: string;
 }): NormalizedAttributeDisplay | null {
-  const candidate = options.rawToken ?? options.rawValue;
-  if (!candidate) {
+  const display = normalizeHydraulicManualOverrideDisplay({
+    rawValue: options.rawValue,
+    rawToken: options.rawToken,
+  });
+  if (!display) {
     return null;
   }
 
-  const token = compactToken(candidate);
-  const mapped = MANUAL_OVERRIDE_TOKEN_MAP[token];
-  if (mapped) {
-    return buildDisplay({
-      canonicalKey: 'manual_override',
-      canonicalValue: mapped,
-      displayValue: mapped,
-      rawToken: token,
-      sourceManufacturer: options.sourceManufacturer,
-      confidence: 'high',
-      requiresCatalogCheck: false,
-    });
-  }
-
-  if (candidate.toLowerCase().includes('manuel')) {
-    return buildDisplay({
-      canonicalKey: 'manual_override',
-      canonicalValue: candidate,
-      displayValue: candidate,
-      rawToken: token.length <= 4 ? token : undefined,
-      sourceManufacturer: options.sourceManufacturer,
-      confidence: 'medium',
-      requiresCatalogCheck: false,
-    });
-  }
-
-  return null;
+  return buildDisplay({
+    canonicalKey: 'manual_override',
+    canonicalValue: display.displayValue,
+    displayValue: display.displayValue,
+    rawToken: display.rawToken,
+    sourceManufacturer: options.sourceManufacturer,
+    confidence: 'high',
+    requiresCatalogCheck: display.requiresCatalogCheck,
+  });
 }
 
 export function normalizeCetopNgDisplay(options: {
@@ -353,37 +276,26 @@ export function normalizeSpoolSymbolDisplay(options: {
   rawToken?: string | null;
   behaviorNoteTr?: string | null;
   sourceManufacturer?: string;
+  sourceSeries?: string;
 }): NormalizedAttributeDisplay | null {
-  if (!options.rawToken) {
+  const display = normalizeHydraulicFunctionDisplay({
+    rawToken: options.rawToken,
+    manufacturer: options.sourceManufacturer,
+    series: options.sourceSeries,
+    behaviorNoteTr: options.behaviorNoteTr,
+  });
+  if (!display) {
     return null;
   }
 
-  const token = options.rawToken.trim().toUpperCase();
-  const base = token.length === 1 ? token : token.charAt(0);
-
-  if (isRexrothWE6BaseSpoolSymbol(base)) {
-    const semantics = getRexrothWE6SpoolSemantics(base as Parameters<typeof getRexrothWE6SpoolSemantics>[0]);
-    const behaviorHint = semantics.behaviorNoteTr.split('.')[0];
-    return buildDisplay({
-      canonicalKey: 'spool_symbol',
-      canonicalValue: base,
-      displayValue: `Sürgü sembolü ${base} — ${behaviorHint}`,
-      rawToken: token,
-      sourceManufacturer: options.sourceManufacturer,
-      confidence: 'medium',
-      requiresCatalogCheck: true,
-    });
-  }
-
-  const note = options.behaviorNoteTr ?? 'Temel davranış: katalog sembolüyle doğrulanmalı';
   return buildDisplay({
     canonicalKey: 'spool_symbol',
-    canonicalValue: token,
-    displayValue: `Sürgü sembolü: ${token} — ${note}`,
-    rawToken: token,
+    canonicalValue: display.rawToken ?? display.displayValue,
+    displayValue: display.displayValue,
+    rawToken: display.rawToken,
     sourceManufacturer: options.sourceManufacturer,
-    confidence: 'low',
-    requiresCatalogCheck: true,
+    confidence: display.requiresCatalogCheck ? 'medium' : 'high',
+    requiresCatalogCheck: display.requiresCatalogCheck,
   });
 }
 
@@ -393,6 +305,7 @@ export function normalizeCanonicalAttributeDisplay(options: {
   rawToken?: string | null;
   behaviorNoteTr?: string | null;
   sourceManufacturer?: string;
+  sourceSeries?: string;
 }): NormalizedAttributeDisplay | null {
   const rawString =
     options.rawValue === null || options.rawValue === undefined
@@ -442,6 +355,7 @@ export function normalizeCanonicalAttributeDisplay(options: {
         rawToken: options.rawToken ?? rawString,
         behaviorNoteTr: options.behaviorNoteTr,
         sourceManufacturer: options.sourceManufacturer,
+        sourceSeries: options.sourceSeries,
       });
     default:
       return null;

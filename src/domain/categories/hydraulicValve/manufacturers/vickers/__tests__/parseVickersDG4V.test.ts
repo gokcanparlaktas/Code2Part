@@ -34,8 +34,9 @@ describe('parseVickersDG4V', () => {
     expect(map.get('spring_arrangement_code')?.value).toBe('A');
     expect(normAttr(map, 'spring_arrangement')).toBe('spring_centered');
     expect(map.get('function_token')?.value).toBe('2A');
-    expect(map.get('coil_voltage_code')?.value).toBe('H7');
-    expect(map.get('voltage')?.value).toBeNull();
+    expect(map.get('coil_voltage_code')?.value).toBe('H');
+    expect(map.get('tank_pressure_rating_code')?.value).toBe('7');
+    expect(map.get('voltage')?.value).toBe('24V DC');
     expect(map.get('electrical_option')?.value).toBe('M');
     expect(map.get('connector_option')?.value).toBe('U');
     expect(map.get('design_number')?.value).toBe('60');
@@ -47,16 +48,16 @@ describe('parseVickersDG4V', () => {
     expect(map.get('cetop_ng')?.value).toBe('CETOP 05 / NG10');
   });
 
-  it('H7 is NOT mapped to 24V DC', () => {
+  it('H7 splits to H=24V DC and tank rating code', () => {
     const id = identifyProduct('DG4V-3-2A-M-U-H7-60', normalizeCode('DG4V-3-2A-M-U-H7-60'));
     const voltage = extractHydraulicAttributes({
       inputCode: 'DG4V-3-2A-M-U-H7-60',
       seriesId: id.seriesId,
     }).find((a) => a.key === 'voltage');
 
-    expect(voltage?.value).toBeNull();
-    expect(voltage?.evidence).toBe('unknown');
-    expect(voltage?.sourceToken).toBe('H7');
+    expect(voltage?.value).toBe('24V DC');
+    expect(voltage?.evidence).toBe('code');
+    expect(voltage?.sourceToken).toBe('H');
     expect(voltage?.requiresCatalogCheck).toBe(true);
   });
 
@@ -78,7 +79,8 @@ describe('parseVickersDG4V', () => {
     const parsed = parseVickersDG4VProductCode('DG4V32AMUH760');
     expect(parsed?.series).toBe('DG4V-3');
     expect(parsed?.spoolFunctionCode).toBe('2A');
-    expect(parsed?.voltageCode).toBe('H7');
+    expect(parsed?.coilRatingCode).toBe('H');
+    expect(parsed?.tankPressureRatingCode).toBe('7');
     expect(parsed?.designNumber).toBe('60');
   });
 
@@ -95,7 +97,7 @@ describe('parseVickersDG4V', () => {
 
   it('exact same DG4V spool code is compatible', () => {
     const result = compareValveFunctionBehavior({
-      label: 'Sürgü / fonksiyon kodu',
+      label: 'Sürgü davranışı',
       source: { manufacturer: 'Vickers', series: 'DG4V-3', token: '2A' },
       target: { manufacturer: 'Vickers', series: 'DG4V-3', token: '2A' },
     });

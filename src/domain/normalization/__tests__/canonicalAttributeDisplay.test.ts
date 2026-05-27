@@ -30,7 +30,7 @@ describe('canonicalAttributeDisplay', () => {
 
   it('maps K4 to DIN EN 175301-803 display', () => {
     const k4 = normalizeConnectorDisplay({ rawToken: 'K4' });
-    expect(k4?.displayValue).toBe('DIN EN 175301-803');
+    expect(k4?.displayValue).toBe('DIN EN 175301-803 konnektör');
     expect(k4?.displayValue).not.toBe('K4');
     expect(k4?.rawTokenLabel).toBe('Kod: K4');
   });
@@ -101,8 +101,18 @@ describe('canonicalAttributeDisplay integration', () => {
   it('product detail shows canonical connector meaning for Rexroth K4', () => {
     const id = identifyProduct('4WE6E-6X/EG24N9K4', normalizeCode('4WE6E-6X/EG24N9K4'));
     const rows = buildProductDetailRows(id);
-    const connector = rows.find((r) => r.label === 'Konnektör');
+    const connector = rows.find((r) => r.label === 'Konnektör tipi');
     expect(connector?.value).toContain('DIN EN 175301-803');
-    expect(connector?.value).toContain('Kod: K4');
+    expect(connector?.value).toContain('Kod kanıtı: K4');
+  });
+
+  it('product detail shows behavior descriptions and keeps E as evidence for 4WE6E-7X/HG24N9K4', () => {
+    const id = identifyProduct('4WE6E-7X/HG24N9K4', normalizeCode('4WE6E-7X/HG24N9K4'));
+    const rows = buildProductDetailRows(id);
+    const allText = rows.map((r) => r.value).join('\n');
+    expect(allText).not.toMatch(/Sürgü sembolü:?\s*E/i);
+    expect(allText).not.toMatch(/^G$/m);
+    expect(allText).toContain('Kod kanıtı: E');
+    expect(allText).toContain('24V DC');
   });
 });
