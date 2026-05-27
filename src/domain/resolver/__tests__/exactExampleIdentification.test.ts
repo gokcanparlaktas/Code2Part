@@ -85,7 +85,7 @@ describe('exact example identification (catalog v2)', () => {
       const id = identify('cp96 50 100');
       expect(id.outcome).toBe('full');
       expect(id.series.value).toBe('CP96');
-      expect(suggestProducts('cp96 50 100')).toHaveLength(0);
+      expect(suggestProducts('cp96 50 100')[0]?.matchedBy).toBe('exact_match');
     });
 
     it('exact pneumatic code yields 100% match score', () => {

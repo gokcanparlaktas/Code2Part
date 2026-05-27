@@ -1,6 +1,7 @@
 export type SuggestionConfidence = 'high' | 'medium' | 'low';
 
 export type SuggestionMatchedBy =
+  | 'exact_match'
   | 'series_prefix'
   | 'brand_alias'
   | 'partial_regex'

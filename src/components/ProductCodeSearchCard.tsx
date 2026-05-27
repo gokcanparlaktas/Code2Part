@@ -12,7 +12,10 @@ import {
 
 import { DemoDisclaimerNote } from '@/components/DemoDisclaimerNote';
 
-import { suggestProducts } from '@/domain/resolver/suggestProducts';
+import {
+  DEFAULT_SUGGESTION_LIMIT,
+  suggestProductsDetailed,
+} from '@/domain/resolver/suggestProducts';
 import type { SuggestedProduct } from '@/types/suggestion';
 
 import { PartialSuggestionsPanel } from './PartialSuggestionsPanel';
@@ -31,13 +34,15 @@ export function ProductCodeSearchCard() {
   const [strokeHint, setStrokeHint] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
-  const suggestions = useMemo(() => {
+  const suggestionResult = useMemo(() => {
     const trimmed = code.trim();
     if (trimmed.length < 2) {
-      return [];
+      return { suggestions: [], hasMoreResults: false };
     }
-    return suggestProducts(trimmed);
+    return suggestProductsDetailed(trimmed, DEFAULT_SUGGESTION_LIMIT);
   }, [code]);
+
+  const { suggestions, hasMoreResults } = suggestionResult;
 
   const handleSelectSuggestion = (suggestion: SuggestedProduct) => {
     const hasBoreOnly =
@@ -46,13 +51,22 @@ export function ProductCodeSearchCard() {
 
     if (hasBoreOnly) {
       setStrokeHint(true);
+      if (suggestion.exampleCodeFormat) {
+        setCode(suggestion.exampleCodeFormat);
+      }
       return;
     }
 
     setStrokeHint(false);
-    if (suggestion.exampleCodeFormat) {
-      setCode(suggestion.exampleCodeFormat);
+    const targetCode = suggestion.exampleCodeFormat?.trim();
+    if (!targetCode) {
+      return;
     }
+    setCode(targetCode);
+    router.push({
+      pathname: '/result',
+      params: { code: targetCode },
+    });
   };
 
   const handleSearch = () => {
@@ -97,6 +111,7 @@ export function ProductCodeSearchCard() {
           title="Bunlar olabilir"
           query={code}
           suggestions={suggestions}
+          hasMoreResults={hasMoreResults}
           onSelectSuggestion={handleSelectSuggestion}
         />
       ) : null}

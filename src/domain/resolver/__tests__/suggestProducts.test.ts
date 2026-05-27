@@ -175,9 +175,11 @@ describe('suggestProducts', () => {
     ).toBe(true);
   });
 
-  it('does not suggest when "cp96 50 100" is an exact catalog example (identified instead)', () => {
+  it('shows exact match suggestion when "cp96 50 100" is a full catalog example', () => {
     const suggestions = suggestProducts('cp96 50 100');
-    expect(suggestions).toHaveLength(0);
+    expect(suggestions.length).toBeGreaterThan(0);
+    expect(suggestions[0]?.matchedBy).toBe('exact_match');
+    expect(suggestions[0]?.exampleCodeFormat).toBe('CP96-50-100');
 
     const identification = identifyProduct(
       'cp96 50 100',

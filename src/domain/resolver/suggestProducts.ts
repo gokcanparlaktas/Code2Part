@@ -10,14 +10,26 @@ import {
 } from '@/domain/categories/pneumaticCylinder/pneumaticCylinderSuggestions';
 import { isEligibleTokenQuery, tokenizeForMatching } from '@/domain/categories/pneumaticCylinder/pneumaticCylinderTokenMatch';
 import { HYDRAULIC_VALVE_CATEGORY, PNEUMATIC_CYLINDER_CATEGORY } from '@/types/category';
+import { computeHydraulicValveMissingFields } from '@/domain/categories/hydraulicValve/computeHydraulicValveMissingFields';
 import { identifyProduct } from './identifyProduct';
 import { normalizeCode } from './normalizeCode';
-import type { ProductSeriesRecord } from '@/types/product';
+import type { ProductIdentification, ProductSeriesRecord } from '@/types/product';
 import type {
   SuggestionConfidence,
   SuggestionMatchedBy,
   SuggestedProduct,
+  SuggestionMissingField,
 } from '@/types/suggestion';
+
+export const DEFAULT_SUGGESTION_LIMIT = 10;
+export const MAX_SUGGESTION_LIMIT = 20;
+
+export interface SuggestProductsResult {
+  suggestions: SuggestedProduct[];
+  /** True when more matches existed than returned (list is capped, not empty). */
+  hasMoreResults: boolean;
+  totalMatchedCount: number;
+}
 
 const productSeries = getLegacyProductSeries();
 
@@ -185,6 +197,7 @@ function toSuggestedProduct(candidate: MatchCandidate, normalized: string): Sugg
 function suggestionSortScore(suggestion: SuggestedProduct): number {
   const confidenceWeight = { high: 300, medium: 200, low: 100 };
   const matchedByWeight: Record<SuggestedProduct['matchedBy'], number> = {
+    exact_match: 500,
     example_code_contains: 90,
     token_match: 85,
     series_prefix: 80,
@@ -196,18 +209,70 @@ function suggestionSortScore(suggestion: SuggestedProduct): number {
   return confidenceWeight[suggestion.confidence] + (matchedByWeight[suggestion.matchedBy] ?? 0);
 }
 
-export function suggestProducts(rawInput: string, limit = 5): SuggestedProduct[] {
+function buildExactIdentificationSuggestion(
+  identification: ProductIdentification
+): SuggestedProduct | null {
+  if (identification.outcome !== 'full' || !identification.seriesId) {
+    return null;
+  }
+
+  const series = productSeries.find((s) => s.id === identification.seriesId);
+  if (!series) {
+    return null;
+  }
+
+  let missingFields: SuggestionMissingField[] = [];
+  if (series.resolverCategory === PNEUMATIC_CYLINDER_CATEGORY) {
+    missingFields = computePneumaticCylinderMissingFields(
+      identification.normalizedCode,
+      identification.bore.value ?? undefined,
+      identification.stroke.value ?? undefined
+    );
+  } else if (series.resolverCategory === HYDRAULIC_VALVE_CATEGORY) {
+    missingFields = computeHydraulicValveMissingFields(identification);
+  }
+
+  return {
+    seriesId: series.id,
+    brand: series.brand,
+    series: series.series,
+    productTypeTr: series.productType,
+    standardFamily: series.standardFamily,
+    equivalenceGroup: series.equivalenceGroup ?? series.equivalenceGroupId ?? '',
+    confidence: 'high',
+    matchedBy: 'exact_match',
+    detectedAttributes: {
+      ...(identification.bore.value != null ? { boreMm: Number(identification.bore.value) } : {}),
+      ...(identification.stroke.value != null ? { strokeMm: Number(identification.stroke.value) } : {}),
+    },
+    missingFields,
+    exampleCodeFormat: identification.normalizedCode,
+    suggestionTextTr: `Tam kod eşleşmesi: ${series.brand} ${series.series}`,
+  };
+}
+
+export function suggestProductsDetailed(
+  rawInput: string,
+  limit = DEFAULT_SUGGESTION_LIMIT
+): SuggestProductsResult {
+  const cappedLimit = Math.min(Math.max(limit, 1), MAX_SUGGESTION_LIMIT);
   const normalized = normalizeCode(rawInput);
   const queryTokens = tokenizeForMatching(rawInput);
   const tokenEligible = isEligibleTokenQuery(queryTokens);
 
   if (normalized.length < 2 && !tokenEligible) {
-    return [];
+    return { suggestions: [], hasMoreResults: false, totalMatchedCount: 0 };
   }
 
   const identification = identifyProduct(rawInput, normalized);
-  if (identification.outcome === 'full') {
-    return [];
+
+  const exactSuggestion = buildExactIdentificationSuggestion(identification);
+  if (exactSuggestion) {
+    return {
+      suggestions: [exactSuggestion],
+      hasMoreResults: false,
+      totalMatchedCount: 1,
+    };
   }
 
   const bestBySeries = new Map<string, MatchCandidate>();
@@ -234,19 +299,19 @@ export function suggestProducts(rawInput: string, limit = 5): SuggestedProduct[]
   const seriesLessSuggestions = suggestSeriesLessPneumaticCylinders(
     normalized,
     productSeries,
-    limit
+    cappedLimit
   );
 
   const tokenSuggestions = suggestTokenMatchedPneumaticCylinders(
     rawInput,
     productSeries,
-    Math.max(limit, 8)
+    Math.max(cappedLimit, 8)
   );
 
   const hydraulicSuggestions = suggestHydraulicValveProducts(
     rawInput,
     productSeries,
-    Math.max(limit, 8)
+    Math.max(cappedLimit, 8)
   );
 
   const merged = new Map<string, SuggestedProduct>();
@@ -264,7 +329,20 @@ export function suggestProducts(rawInput: string, limit = 5): SuggestedProduct[]
     }
   }
 
-  return [...merged.values()]
-    .sort((a, b) => suggestionSortScore(b) - suggestionSortScore(a))
-    .slice(0, limit);
+  const sorted = [...merged.values()].sort(
+    (a, b) => suggestionSortScore(b) - suggestionSortScore(a)
+  );
+
+  return {
+    suggestions: sorted.slice(0, cappedLimit),
+    hasMoreResults: sorted.length > cappedLimit,
+    totalMatchedCount: sorted.length,
+  };
+}
+
+export function suggestProducts(
+  rawInput: string,
+  limit = DEFAULT_SUGGESTION_LIMIT
+): SuggestedProduct[] {
+  return suggestProductsDetailed(rawInput, limit).suggestions;
 }

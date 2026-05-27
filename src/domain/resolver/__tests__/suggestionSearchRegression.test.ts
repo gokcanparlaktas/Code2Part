@@ -61,10 +61,12 @@ describe('suggestion/search regression (catalog v2)', () => {
     expect(match.percentage).toBeLessThan(100);
   });
 
-  it('compact exact example returns 100% and no suggestions list', () => {
+  it('compact exact example returns 100% and shows exact match in suggestions', () => {
     const query = 'cp96 50 100';
     expect(calculateSuggestionMatchPercentage(query, 'CP96-50-100').percentage).toBe(100);
-    expect(suggestProducts(query)).toHaveLength(0);
+    const suggestions = suggestProducts(query);
+    expect(suggestions.length).toBeGreaterThan(0);
+    expect(suggestions[0]?.matchedBy).toBe('exact_match');
     expect(identifyProduct(query, normalizeCode(query)).outcome).toBe('full');
   });
 
