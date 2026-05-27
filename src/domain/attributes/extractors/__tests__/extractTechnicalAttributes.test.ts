@@ -1,8 +1,7 @@
 import {
-    extractHydraulicAttributes,
-    extractPneumaticAttributes,
-    extractTechnicalAttributeResults,
-    normalizeVoltage,
+  extractHydraulicAttributes,
+  extractPneumaticAttributes,
+  extractTechnicalAttributeResults,
 } from "@/domain/attributes/extractors";
 import { getTechnicalAttributes } from "@/domain/attributes/getTechnicalAttributes";
 import { getCatalogVoltageCodes } from "@/domain/catalog/adapters/catalogV2Adapter";
@@ -17,34 +16,34 @@ function resultMap(
 }
 
 describe("extractTechnicalAttributes (catalog v2 driven)", () => {
-  describe("hydraulic voltage", () => {
+  describe("hydraulic coil_rating (raw parser output)", () => {
     it.each([
-      ["4WE6E-7X/HG24N9K4", "G24", "24V DC"],
-      ["4WE10E-3X/CG24N9K4", "CG24", "24V DC"],
-      ["DSG-01-3C2-D24-N1-50", "D24", "24V DC"],
-      ["DHI-0711-X 24DC", "24DC", "24V DC"],
-    ])("maps %s voltage token to %s", (code, token, expectedValue) => {
+      ["4WE6E-7X/HG24N9K4", "HG24", "medium"],
+      ["4WE10E-3X/CG24N9K4", "CG24", "high"],
+      ["DSG-01-3C2-D24-N1-50", "D24", "high"],
+      ["DHI-0711-X 24DC", "24DC", "high"],
+    ])("extracts raw coil_rating token from %s", (code, token, confidence) => {
       const id = identifyProduct(code, normalizeCode(code));
       const map = resultMap(
         extractHydraulicAttributes({ inputCode: code, seriesId: id.seriesId }),
       );
-      expect(map.get("voltage")?.value).toBe(expectedValue);
-      expect(map.get("voltage")?.sourceToken).toBe(token);
-      expect(map.get("voltage")?.confidence).toBe("high");
+      expect(map.get("coil_rating")?.value).toBe(token);
+      expect(map.get("coil_rating")?.sourceToken).toBe(token);
+      expect(map.get("coil_rating")?.confidence).toBe(confidence);
     });
 
-    it("H7 in DG4V code splits to H=24V DC (catalog check)", () => {
+    it("H7 in DG4V code splits to coil_rating H (catalog check)", () => {
       const code = "DG4V-3-2A-M-U-H7-60";
       const id = identifyProduct(code, normalizeCode(code));
-      const voltage = extractHydraulicAttributes({
+      const coilRating = extractHydraulicAttributes({
         inputCode: code,
         seriesId: id.seriesId,
-      }).find((a) => a.key === "voltage");
+      }).find((a) => a.key === "coil_rating");
 
-      expect(voltage?.value).toBe("24V DC");
-      expect(voltage?.evidence).toBe("code");
-      expect(voltage?.sourceToken).toBe("H");
-      expect(voltage?.requiresCatalogCheck).toBe(true);
+      expect(coilRating?.value).toBe("H");
+      expect(coilRating?.evidence).toBe("code");
+      expect(coilRating?.sourceToken).toBe("H");
+      expect(coilRating?.requiresCatalogCheck).toBe(true);
     });
 
     it("catalog H7 entry is not high-confidence 24V DC", () => {
@@ -53,7 +52,6 @@ describe("extractTechnicalAttributes (catalog v2 driven)", () => {
       );
       expect(h7?.labelTr).toBeUndefined();
       expect(h7?.confidence).not.toBe("high");
-      expect(normalizeVoltage(h7?.labelTr)).toBeNull();
     });
   });
 
@@ -85,7 +83,7 @@ describe("extractTechnicalAttributes (catalog v2 driven)", () => {
       const connector = extractHydraulicAttributes({
         inputCode: code,
         seriesId: id.seriesId,
-      }).find((a) => a.key === "connector_token");
+      }).find((a) => a.key === "connector_type");
 
       expect(connector?.value).toBe("K4");
       expect(connector?.confidence).toBe("high");
@@ -98,7 +96,7 @@ describe("extractTechnicalAttributes (catalog v2 driven)", () => {
       const connector = extractHydraulicAttributes({
         inputCode: code,
         seriesId: id.seriesId,
-      }).find((a) => a.key === "connector_token");
+      }).find((a) => a.key === "connector_type");
 
       expect(connector?.value).toBe("N1");
       expect(connector?.confidence).toBe("high");
@@ -118,10 +116,11 @@ describe("extractTechnicalAttributes (catalog v2 driven)", () => {
       expect(map.get("bore")?.evidence).toBe("code");
       expect(map.get("stroke")?.value).toBe(100);
       expect(map.get("stroke")?.evidence).toBe("code");
-      expect(map.get("cushioning_token")?.value).toBe("PPVA");
-      expect(map.get("cushioning_token")?.requiresCatalogCheck).toBe(true);
-      expect(map.get("options")?.value).toContain("N3");
-      expect(map.get("options")?.confidence).not.toBe("high");
+      expect(map.get("cushioning_type")?.value).toBe("PPVA");
+      expect(map.get("cushioning_type")?.requiresCatalogCheck).toBe(true);
+      expect(
+        [...map.values()].filter((a) => a.key === "variant_code" && a.value === "N3"),
+      ).toHaveLength(1);
     });
 
     it("CQ2B32-50D compact form still parses bore/stroke", () => {
@@ -159,10 +158,8 @@ describe("extractTechnicalAttributes (catalog v2 driven)", () => {
         seriesId: id.seriesId,
       });
 
-      expect(fromFacade.find((a) => a.key === "function_token")?.value).toBe(
-        "E",
-      );
-      expect(fromExtractor.find((a) => a.key === "function_token")?.value).toBe(
+      expect(fromFacade.find((a) => a.key === "function_code")?.value).toBe("E");
+      expect(fromExtractor.find((a) => a.key === "function_code")?.value).toBe(
         "E",
       );
     });

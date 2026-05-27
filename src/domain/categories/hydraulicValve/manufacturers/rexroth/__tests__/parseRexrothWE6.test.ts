@@ -8,66 +8,52 @@ import {
 import { identifyProduct } from '@/domain/resolver/identifyProduct';
 import { normalizeCode } from '@/domain/resolver/normalizeCode';
 
+function parserMap(inputCode: string) {
+  const results = parseRexrothWE6(inputCode);
+  expect(results).not.toBeNull();
+  return new Map(results!.map((a) => [a.key, a]));
+}
+
 function attrMap(inputCode: string, seriesId = 'rexroth_4we6') {
   const id = identifyProduct(inputCode, normalizeCode(inputCode));
   const attrs = getTechnicalAttributes({ ...id, seriesId: id.seriesId ?? seriesId });
   return new Map(attrs.map((a) => [a.key, a]));
 }
 
-function normAttr(map: Map<string, { normalizedValue?: unknown; value: unknown }>, key: string) {
-  return map.get(key)?.normalizedValue ?? map.get(key)?.value;
-}
-
 describe('parseRexrothWE6 (RE 23164)', () => {
-  it('4WE6E-7X/HG24N9K4 extracts catalog-backed attributes and spool semantics', () => {
-    const results = parseRexrothWE6('4WE6E-7X/HG24N9K4');
-    expect(results).not.toBeNull();
-    const map = new Map(results!.map((a) => [a.key, a]));
+  it('4WE6E-7X/HG24N9K4 extracts raw parser fields', () => {
+    const map = parserMap('4WE6E-7X/HG24N9K4');
 
     expect(map.get('series')?.value).toBe('4WE6');
-    expect(map.get('cetop_ng')?.value).toBe('CETOP 03 / NG6');
+    expect(map.get('mounting_standard')?.value).toBe('WE6');
     expect(map.get('spool_symbol')?.value).toBe('E');
-    expect(map.get('function_token')?.value).toBe('E');
-    expect(normAttr(map, 'number_of_positions')).toBe(3);
-    expect(normAttr(map, 'centering')).toBe('spring_centered');
-    expect(map.get('centering')?.value).toBe('Yay merkezlemeli');
-    expect(normAttr(map, 'center_condition')).toBe('closed_center');
-    expect(map.get('component_series')?.value).toBe('7X');
-    expect(map.get('component_series')?.confidence).toBe('high');
+    expect(map.get('function_code')?.value).toBe('E');
+    expect(map.get('number_of_positions')?.value).toBe(3);
+    expect(map.get('design_series')?.value).toBe('7X');
+    expect(map.get('design_series')?.confidence).toBe('high');
     expect(map.get('solenoid_type')?.value).toBe('H');
-    expect(map.get('voltage')?.value).toBe('24V DC');
-    expect(map.get('voltage')?.confidence).toBe('high');
-    expect(map.get('coil_voltage_code')?.value).toBe('G24');
-    expect(map.get('manual_override')?.value).toBe('Gizli/korumalı manuel kumanda');
-    expect(map.get('connector_token')?.value).toBe('K4');
-    expect(map.get('connector')?.value).toBe('DIN EN 175301-803');
-    expect(map.get('max_pressure_abp')?.value).toBe('315 bar');
-    expect(map.get('max_pressure_port_t')?.value).toBe('160 bar');
-    expect(map.get('max_flow')?.value).toBe(60);
-    expect(map.get('max_flow')?.unit).toBe('l/min');
-    expect(map.get('porting_pattern')?.value).toBe('DIN 24340 form A');
+    expect(map.get('coil_rating')?.value).toBe('HG24');
+    expect(map.get('coil_rating')?.confidence).toBe('medium');
+    expect(map.get('manual_override')?.value).toBe('N9');
+    expect(map.get('connector_type')?.value).toBe('K4');
     expect(map.get('number_of_positions')?.requiresCatalogCheck).toBe(true);
-    expect(map.get('spool_behavior_note')?.requiresCatalogCheck).toBe(true);
   });
 
-  it('4WE6C-7X/HG24N9K4 extracts closed_center', () => {
-    const map = new Map(parseRexrothWE6('4WE6C-7X/HG24N9K4')!.map((a) => [a.key, a]));
-    expect(normAttr(map, 'center_condition')).toBe('closed_center');
-    expect(normAttr(map, 'number_of_positions')).toBe(3);
+  it('4WE6C-7X/HG24N9K4 extracts function code C', () => {
+    const map = parserMap('4WE6C-7X/HG24N9K4');
+    expect(map.get('function_code')?.value).toBe('C');
+    expect(map.get('number_of_positions')?.value).toBe(3);
   });
 
-  it('4WE6H-7X/HG24N9K4 extracts tandem_center with catalog check', () => {
-    const map = new Map(parseRexrothWE6('4WE6H-7X/HG24N9K4')!.map((a) => [a.key, a]));
-    expect(normAttr(map, 'center_condition')).toBe('tandem_center');
-    expect(map.get('center_condition')?.value).toContain('Tandem');
-    expect(map.get('center_condition')?.requiresCatalogCheck).toBe(true);
+  it('4WE6H-7X/HG24N9K4 extracts function code H', () => {
+    const map = parserMap('4WE6H-7X/HG24N9K4');
+    expect(map.get('function_code')?.value).toBe('H');
   });
 
   it('4WE6J-7X/HG24N9K4 extracts spoolSymbol J', () => {
-    const map = new Map(parseRexrothWE6('4WE6J-7X/HG24N9K4')!.map((a) => [a.key, a]));
+    const map = parserMap('4WE6J-7X/HG24N9K4');
     expect(map.get('spool_symbol')?.value).toBe('J');
-    expect(map.get('function_token')?.value).toBe('J');
-    expect(normAttr(map, 'center_condition')).toBe('partially_open');
+    expect(map.get('function_code')?.value).toBe('J');
   });
 
   it('4WE6EA-7X/HG24N9K4 parses base E and switching position a', () => {
@@ -76,11 +62,10 @@ describe('parseRexrothWE6 (RE 23164)', () => {
     expect(parsed?.functionToken).toBe('EA');
     expect(parsed?.switchingPositionVariant).toBe('a');
 
-    const map = new Map(parseRexrothWE6('4WE6EA-7X/HG24N9K4')!.map((a) => [a.key, a]));
+    const map = parserMap('4WE6EA-7X/HG24N9K4');
     expect(map.get('spool_symbol')?.value).toBe('E');
-    expect(map.get('function_token')?.value).toBe('EA');
+    expect(map.get('function_code')?.value).toBe('EA');
     expect(map.get('switching_position_variant')?.value).toBe('a');
-    expect(map.get('spool_behavior_note')?.value).toContain('a pozisyonlu');
   });
 
   it('4WE6EB-7X/HG24N9K4 parses base E and switching position b', () => {
@@ -90,14 +75,12 @@ describe('parseRexrothWE6 (RE 23164)', () => {
     expect(parsed?.switchingPositionVariant).toBe('b');
   });
 
-  it('4WE6D-7X/OFHG24N9K4 detects OF detent on D', () => {
+  it('4WE6D-7X/OFHG24N9K4 detects OF detent on D in product code model', () => {
     const parsed = parseRexrothWE6ProductCode('4WE6D-7X/OFHG24N9K4');
     expect(parsed?.spoolSymbol).toBe('D');
     expect(parsed?.detentOption).toBe(true);
 
-    const map = new Map(parseRexrothWE6('4WE6D-7X/OFHG24N9K4')!.map((a) => [a.key, a]));
-    expect(normAttr(map, 'centering')).toBe('detented');
-    expect(map.get('centering')?.value).toBe('Kilitlemeli');
+    expect(parsed?.detentOption).toBe(true);
   });
 
   it('4WE6DOF-7X/HG24N9K4 compact DOF header detects detent', () => {
@@ -106,20 +89,19 @@ describe('parseRexrothWE6 (RE 23164)', () => {
     expect(parsed?.detentOption).toBe(true);
   });
 
-  it('OF with non-D symbol adds catalog warning', () => {
+  it('OF with non-D symbol adds parse warning', () => {
     const parsed = parseRexrothWE6ProductCode('4WE6E-7X/OFHG24N9K4');
     expect(parsed?.invalidOfWithNonD).toBe(true);
     expect(parsed?.parseWarnings.join(' ')).toContain('OF seçeneği');
 
-    const map = new Map(parseRexrothWE6('4WE6E-7X/OFHG24N9K4')!.map((a) => [a.key, a]));
-    expect(map.get('spool_behavior_note')?.value).toContain('OF seçeneği');
+    const map = parserMap('4WE6E-7X/OFHG24N9K4');
+    expect(map.get('parse_warning')?.value).toContain('OF seçeneği');
   });
 
-  it('4WE6E-7X/HG12N9C4Z extracts 12V DC and AMP connector', () => {
-    const map = new Map(parseRexrothWE6('4WE6E-7X/HG12N9C4Z')!.map((a) => [a.key, a]));
-    expect(map.get('voltage')?.value).toBe('12V DC');
-    expect(map.get('connector_token')?.value).toBe('C4Z');
-    expect(map.get('connector')?.value).toBe('AMP Junior-Timer');
+  it('4WE6E-7X/HG12N9C4Z extracts raw coil_rating G12 and connector C4Z', () => {
+    const map = parserMap('4WE6E-7X/HG12N9C4Z');
+    expect(map.get('coil_rating')?.value).toBe('G12');
+    expect(map.get('connector_type')?.value).toBe('C4Z');
   });
 
   it('4WE6E7X/HG24N9K4 compact form parses as RE 23164 7X', () => {
@@ -130,22 +112,22 @@ describe('parseRexrothWE6 (RE 23164)', () => {
     expect(parsed?.componentSeries).toBe('7X');
   });
 
-  it('4WE6D-7X/HG24N9K4 extracts spool D without detent', () => {
-    const map = new Map(parseRexrothWE6('4WE6D-7X/HG24N9K4')!.map((a) => [a.key, a]));
+  it('4WE6D-7X/HG24N9K4 extracts spool D without detent flag', () => {
+    const map = parserMap('4WE6D-7X/HG24N9K4');
     expect(map.get('spool_symbol')?.value).toBe('D');
-    expect(normAttr(map, 'centering')).toBe('spring_centered');
+    const parsed = parseRexrothWE6ProductCode('4WE6D-7X/HG24N9K4');
+    expect(parsed?.detentOption).toBe(false);
   });
 
-  it('4WE6E-6X/EG24N9K4 legacy format still parses with lower confidence on component series', () => {
-    const raw = new Map(parseRexrothWE6('4WE6E-6X/EG24N9K4')!.map((a) => [a.key, a]));
-    expect(raw.get('component_series')?.requiresCatalogCheck).toBe(true);
+  it('4WE6E-6X/EG24N9K4 legacy format still parses with catalog check on design series', () => {
+    const raw = parserMap('4WE6E-6X/EG24N9K4');
+    expect(raw.get('design_series')?.requiresCatalogCheck).toBe(true);
 
     const map = attrMap('4WE6E-6X/EG24N9K4');
     expect(map.get('spool_symbol')?.value).toBe('E');
-    expect(map.get('voltage')?.value).toBe('24V DC');
-    expect(map.get('component_series')?.value).toBe('6X');
-    expect(map.get('component_series')?.confidence).toBe('medium');
-    expect(map.get('connector_token')?.value).toBe('K4');
+    expect(map.get('coil_rating')?.value).toBe('EG24');
+    expect(map.get('design_series')?.value).toBe('6X');
+    expect(map.get('connector_type')?.value).toBe('K4');
   });
 
   it('7X catalog format takes precedence when both patterns could apply', () => {

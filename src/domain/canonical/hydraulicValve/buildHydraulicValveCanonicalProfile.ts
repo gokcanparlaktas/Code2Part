@@ -1,4 +1,14 @@
+import {
+  isUnknownCanonical,
+  resolveCanonicalAttribute,
+} from '@/domain/canonical/resolveCanonicalAttribute';
+import {
+  readFirstParserAttr,
+  readFirstParserDisplay,
+  readFirstParserToken,
+} from '@/domain/canonical/readParserAttribute';
 import { resolveHydraulicFunctionBehavior } from '@/domain/categories/hydraulicValve/functionMappings/hydraulicFunctionBehavior';
+import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
 import type { EquivalentCandidate } from '@/types/compatibility';
 import type { ProductIdentification } from '@/types/product';
 import type { TechnicalAttribute } from '@/types/technicalAttribute';
@@ -30,6 +40,7 @@ import {
 } from './normalizeHydraulicValveAttribute';
 import { applyBehaviorDisplayToCanonicalProfile } from './hydraulicValveBehaviorDescriptions';
 import type {
+  CanonicalCoilVoltage,
   CanonicalConfidence,
   CanonicalField,
   HydraulicValveCanonicalProfile,
@@ -269,15 +280,14 @@ export function buildHydraulicValveCanonicalProfile(
   let centering = normalizeCentering(readNormalizedString(map, 'centering'));
 
   const rawFunctionCode =
-    readDisplayString(map, 'function_token') ??
-    readDisplayString(map, 'spool_function_code') ??
+    readFirstParserDisplay(map, ['function_code', 'function_token', 'spool_function_code']) ??
     readDisplayString(map, 'spool_symbol');
   const rawSpoolSymbol = readDisplayString(map, 'spool_symbol');
 
-  const voltageAttr = readAttr(map, 'voltage');
+  const coilRatingAttr = readFirstParserAttr(map, ['coil_rating', 'voltage']);
   const rawVoltageCode =
-    readDisplayString(map, 'coil_voltage_code') ??
-    voltageAttr?.sourceToken ??
+    readFirstParserToken(map, ['coil_rating', 'coil_voltage_code']) ??
+    coilRatingAttr?.sourceToken ??
     undefined;
 
   if (rawVoltageCode && UNRESOLVED_VOLTAGE_CODES.has(rawVoltageCode)) {
@@ -285,15 +295,31 @@ export function buildHydraulicValveCanonicalProfile(
     notes.push('Bobin/voltaj kodu katalogdan doğrulanmalıdır.');
   }
 
-  const coilVoltage = normalizeCoilVoltage({
-    rawValue: readDisplayString(map, 'voltage'),
-    rawToken: rawVoltageCode,
-  });
+  const resolvedCoil = rawVoltageCode
+    ? resolveCanonicalAttribute({
+        category: HYDRAULIC_VALVE_CATEGORY,
+        manufacturer: brand,
+        series,
+        attributeKey: 'coil_rating',
+        rawToken: rawVoltageCode,
+      })
+    : null;
 
-  const connectorAttr = readAttr(map, 'connector') ?? readAttr(map, 'connector_token');
+  const coilVoltage: CanonicalCoilVoltage =
+    resolvedCoil && !isUnknownCanonical(resolvedCoil) && typeof resolvedCoil.canonicalValue === 'string'
+      ? (resolvedCoil.canonicalValue as CanonicalCoilVoltage)
+      : normalizeCoilVoltage({
+          rawValue: readDisplayString(map, 'voltage'),
+          rawToken: rawVoltageCode,
+        });
+
+  const connectorAttr = readFirstParserAttr(map, [
+    'connector_type',
+    'connector',
+    'connector_token',
+  ]);
   const rawConnectorCode =
-    readDisplayString(map, 'connector_token') ??
-    readDisplayString(map, 'connector_option') ??
+    readFirstParserToken(map, ['connector_type', 'connector_token', 'connector_option']) ??
     connectorAttr?.sourceToken;
 
   const connectorType = normalizeConnectorType({
@@ -363,14 +389,17 @@ export function buildHydraulicValveCanonicalProfile(
       label: FIELD_LABELS.coilVoltage,
       value: coilVoltage,
       displayFormatter: getCoilVoltageDisplay,
-      rawValue: readDisplayString(map, 'voltage'),
+      rawValue: resolvedCoil?.displayValue ?? readDisplayString(map, 'voltage'),
       rawToken: rawVoltageCode,
-      evidence: attrEvidence(voltageAttr),
+      evidence: attrEvidence(coilRatingAttr),
       confidence:
-        rawVoltageCode && UNRESOLVED_VOLTAGE_CODES.has(rawVoltageCode) ? 'unknown' : attrConfidence(voltageAttr),
+        rawVoltageCode && UNRESOLVED_VOLTAGE_CODES.has(rawVoltageCode)
+          ? 'unknown'
+          : attrConfidence(coilRatingAttr),
       requiresCatalogCheck:
         Boolean(rawVoltageCode && UNRESOLVED_VOLTAGE_CODES.has(rawVoltageCode)) ||
-        voltageAttr?.requiresCatalogCheck,
+        resolvedCoil?.requiresCatalogCheck ||
+        coilRatingAttr?.requiresCatalogCheck,
       importance: 'critical',
     }),
     connectorType: buildCanonicalField({
@@ -478,7 +507,7 @@ export function buildHydraulicValveCanonicalProfile(
   profile.notes = [...new Set(profile.notes)];
 
   const voltageDisplay = normalizeHydraulicVoltageDisplay({
-    rawValue: readDisplayString(map, 'voltage'),
+    rawValue: resolvedCoil?.displayValue ?? readDisplayString(map, 'voltage'),
     rawToken: rawVoltageCode,
     manufacturer: brand,
   });

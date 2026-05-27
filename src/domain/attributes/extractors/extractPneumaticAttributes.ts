@@ -12,8 +12,8 @@ import {
   attributeDefLabel,
   buildAttributeResult,
   catalogConfidenceToAttribute,
-  knownTokenNote,
 } from './attributeEvidence';
+import { PARSER_KEYS } from './parserFieldKeys';
 import { extractBoreStrokeFromPatterns } from './catalogPatternMatching';
 import {
   extractBoreStrokeFallback,
@@ -149,35 +149,31 @@ export function extractPneumaticAttributes(
   if (cushioning) {
     results.push(
       buildAttributeResult({
-        key: 'cushioning_token',
-        label: 'Sönümleme',
+        key: PARSER_KEYS.cushioning_type,
+        label: 'Sönümleme kodu',
         value: cushioning.token,
         evidence: 'code',
         confidence: catalogConfidenceToAttribute(cushioning.confidence),
         requiresCatalogCheck: cushioning.requiresCatalogCheck,
         sourceToken: cushioning.token,
         category: PNEUMATIC_CYLINDER_CATEGORY,
-        note: knownTokenNote(cushioning),
       })
     );
   }
 
-  const optionTokens = knownMatched
-    .filter((k) => k.role === 'options' || k.role === 'sensor')
-    .map((k) => k.token);
-
-  if (optionTokens.length > 0) {
+  for (const known of knownMatched.filter(
+    (k) => k.role === 'options' || k.role === 'sensor'
+  )) {
     results.push(
       buildAttributeResult({
-        key: 'options',
-        label: 'Varyant / opsiyonlar',
-        value: optionTokens.join(', '),
+        key: PARSER_KEYS.variant_code,
+        label: 'Varyant kodu',
+        value: known.token,
         evidence: 'code',
-        confidence: 'low',
-        requiresCatalogCheck: true,
-        sourceToken: optionTokens.join(','),
+        confidence: catalogConfidenceToAttribute(known.confidence),
+        requiresCatalogCheck: known.requiresCatalogCheck,
+        sourceToken: known.token,
         category: PNEUMATIC_CYLINDER_CATEGORY,
-        note: 'Bu bilgiler koddan algılandı. Teknik anlamları seriye göre değişebilir.',
       })
     );
   }

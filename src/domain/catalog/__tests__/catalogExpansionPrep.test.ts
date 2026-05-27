@@ -27,7 +27,7 @@ describe('catalog expansion prep', () => {
       const connector = extractHydraulicAttributes({
         inputCode: code,
         seriesId: id.seriesId,
-      }).find((a) => a.key === 'connector_token');
+      }).find((a) => a.key === 'connector_type');
 
       expect(connector?.value).toBe('N1');
       expect(connector?.confidence).toBe('high');
@@ -93,14 +93,14 @@ describe('catalog expansion prep', () => {
     it('H7 in DG4V code splits to H=24V DC (catalog check)', () => {
       const code = 'DG4V-3-2A-M-U-H7-60';
       const id = identifyProduct(code, normalizeCode(code));
-      const voltage = extractHydraulicAttributes({
+      const coilRating = extractHydraulicAttributes({
         inputCode: code,
         seriesId: id.seriesId,
-      }).find((a) => a.key === 'voltage');
+      }).find((a) => a.key === 'coil_rating');
 
-      expect(voltage?.value).toBe('24V DC');
-      expect(voltage?.evidence).toBe('code');
-      expect(voltage?.sourceToken).toBe('H');
+      expect(coilRating?.value).toBe('H');
+      expect(coilRating?.evidence).toBe('code');
+      expect(coilRating?.sourceToken).toBe('H');
     });
 
     it('exact hydraulic example identifies with full outcome', () => {

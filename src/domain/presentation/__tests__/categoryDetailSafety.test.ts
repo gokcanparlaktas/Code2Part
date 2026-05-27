@@ -8,7 +8,7 @@ const HYDRAULIC_CODE = "4WE6E-6X/EG24N9K4";
 const PNEUMATIC_CODE = "DSBC-50-100-PPVA-N3";
 
 const PNEUMATIC_ONLY_LABELS = ["Çap", "Strok", "Sönümleme"];
-const PNEUMATIC_ONLY_KEYS = ["bore", "stroke", "cushioning_token"];
+const PNEUMATIC_ONLY_KEYS = ["bore", "stroke", "cushioning_type"];
 
 const HYDRAULIC_ONLY_LABELS = [
   "CETOP / NG ölçüsü",
@@ -17,10 +17,10 @@ const HYDRAULIC_ONLY_LABELS = [
   "Konnektör kodu",
 ];
 const HYDRAULIC_ONLY_KEYS = [
-  "function_token",
-  "connector_token",
-  "voltage",
-  "cetop_ng",
+  "function_code",
+  "connector_type",
+  "coil_rating",
+  "mounting_standard",
 ];
 
 describe("category-specific detail safety", () => {

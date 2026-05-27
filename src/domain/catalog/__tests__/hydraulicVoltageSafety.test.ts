@@ -32,10 +32,11 @@ describe("hydraulic voltage safety (catalog v2)", () => {
     expect(parsed.requiresCheck).toBe(true);
 
     const id = identifyProduct(code, normalizeCode(code));
-    const voltageAttr = getTechnicalAttributes(id).find(
-      (a) => a.key === "voltage",
+    const coilRatingAttr = getTechnicalAttributes(id).find(
+      (a) => a.key === "coil_rating",
     );
-    expect(voltageAttr?.value).toBe("24V DC");
+    expect(coilRatingAttr?.value).toBe("H");
+    expect(coilRatingAttr?.note).toMatch(/doğrulanmalı/i);
   });
 
   it("EG24/D24/24DC mappings may be high confidence 24V DC", () => {

@@ -19,8 +19,8 @@ describe("getTechnicalAttributes", () => {
     expect(map.get("stroke")?.unit).toBe("mm");
     expect(map.get("stroke")?.evidence).toBe("code");
 
-    expect(map.get("cushioning_token")?.value).toBe("PPVA");
-    expect(map.get("cushioning_token")?.evidence).toBe("code");
+    expect(map.get("cushioning_type")?.value).toBe("PPVA");
+    expect(map.get("cushioning_type")?.evidence).toBe("code");
   });
 
   it("CP96SDB50-100 extracts bore 50 and stroke 100", () => {
@@ -37,31 +37,26 @@ describe("getTechnicalAttributes", () => {
     expect(map.get("stroke")?.value).toBe(100);
   });
 
-  it("4WE6E-6X/EG24N9K4 extracts CETOP/NG, voltage, spool token, connector token", () => {
+  it("4WE6E-6X/EG24N9K4 extracts raw coil_rating, function_code, connector_type", () => {
     const id = identifyProduct("4WE6E-6X/EG24N9K4", "4WE6E-6X/EG24N9K4");
     const map = attrMap(getTechnicalAttributes(id));
 
-    expect(map.get("cetop_ng")?.value).toBe("CETOP 03 / NG6");
-    expect(map.get("cetop_ng")?.evidence).toBe("standard");
-
-    expect(map.get("voltage")?.value).toBe("24V DC");
-    expect(map.get("voltage")?.evidence).toBe("code");
-    expect(map.get("voltage")?.confidence).toBe("medium");
+    expect(map.get("coil_rating")?.value).toBe("EG24");
+    expect(map.get("coil_rating")?.evidence).toBe("code");
 
     expect(map.get("spool_symbol")?.value).toBe("E");
-    expect(map.get("function_token")?.value).toBe("E");
+    expect(map.get("function_code")?.value).toBe("E");
 
-    expect(map.get("connector_token")?.value).toBe("K4");
+    expect(map.get("connector_type")?.value).toBe("K4");
   });
 
-  it("DSG-01-3C2-D24-N1-50 extracts CETOP/NG, voltage, function token, connector token", () => {
+  it("DSG-01-3C2-D24-N1-50 extracts raw coil_rating, function_code, connector_type", () => {
     const id = identifyProduct("DSG-01-3C2-D24-N1-50", "DSG-01-3C2-D24-N1-50");
     const map = attrMap(getTechnicalAttributes(id));
 
-    expect(map.get("cetop_ng")?.value).toBe("CETOP 03 / NG6");
-    expect(map.get("voltage")?.value).toBe("24V DC");
-    expect(map.get("function_token")?.value).toBe("3C2");
-    expect(map.get("connector_token")?.value).toBe("N1");
+    expect(map.get("coil_rating")?.value).toBe("D24");
+    expect(map.get("function_code")?.value).toBe("3C2");
+    expect(map.get("connector_type")?.value).toBe("N1");
   });
 
   it("4WE10E-3X/CG24N9K4 extracts CETOP 05 / NG10", () => {

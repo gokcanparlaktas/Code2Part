@@ -209,7 +209,7 @@ describe('hydraulicValveComparison (attribute-based)', () => {
   it('puts voltage in different when both are known but differ', () => {
     const source = identify('4WE6E-6X/EG24N9K4');
     const targetSeries = getProductSeriesById('yuken_dsg01')!;
-    const targetCode = 'DSG-01-3C2-D110-N1-50';
+    const targetCode = 'DSG-01-3C2-D12-N1-50';
     const candidate = {
       seriesId: targetSeries.id,
       brand: targetSeries.brand,

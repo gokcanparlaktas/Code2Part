@@ -26,14 +26,13 @@ describe('hydraulicValveAttributeDisplay', () => {
     expect(display).toBeNull();
   });
 
-  it('Rexroth 4WE6E-7X/HG24N9K4 parses spool E and voltage G24', () => {
+  it('Rexroth 4WE6E-7X/HG24N9K4 parses spool E and raw coil_rating HG24', () => {
     const map = new Map(parseRexrothWE6('4WE6E-7X/HG24N9K4')!.map((a) => [a.key, a]));
     expect(map.get('spool_symbol')?.value).toBe('E');
-    expect(map.get('function_token')?.value).toBe('E');
-    expect(map.get('coil_voltage_code')?.value).toBe('G24');
-    expect(map.get('voltage')?.value).toBe('24V DC');
-    expect(map.get('connector')?.value).toBe('DIN EN 175301-803');
-    expect(map.get('manual_override')?.value).toBe('Gizli/korumalı manuel kumanda');
+    expect(map.get('function_code')?.value).toBe('E');
+    expect(map.get('coil_rating')?.value).toBe('HG24');
+    expect(map.get('connector_type')?.value).toBe('K4');
+    expect(map.get('manual_override')?.value).toBe('N9');
   });
 
   it('Yuken DSG-01-3C2-D24-N1-70 displays behavior descriptions instead of raw function code', () => {
@@ -77,7 +76,7 @@ describe('hydraulicValveAttributeDisplay', () => {
 
   it('Vickers DG4V-3-2A-M-U-H7-60 displays catalog check behavior and coil code', () => {
     const map = new Map(parseVickersDG4V('DG4V-3-2A-M-U-H7-60')!.map((a) => [a.key, a]));
-    expect(map.get('function_token')?.value).toBe('2A');
+    expect(map.get('function_code')?.value).toBe('2A');
 
     const id = identify('DG4V-3-2A-M-U-H7-60');
     const rows = buildProductDetailRows(id);
@@ -91,6 +90,7 @@ describe('hydraulicValveAttributeDisplay', () => {
     expect(allText).toContain('207 bar');
     expect(allText).toContain('Kod kanıtı: 7');
     expect(allText).toContain('Basic design');
+    expect(allText).toContain('Kod kanıtı: 60');
     expect(allText).toContain('Kod kanıtı: U');
   });
 
@@ -144,7 +144,7 @@ describe('hydraulicValveAttributeDisplay', () => {
 
   it('Yuken function display path avoids raw spool type label', () => {
     const map = new Map(parseYukenDSG('DSG-01-3C2-D24-N1-70')!.map((a) => [a.key, a]));
-    expect(map.get('function_token')?.value).toBe('3C2');
+    expect(map.get('function_code')?.value).toBe('3C2');
     const display = normalizeHydraulicFunctionDisplay({
       rawToken: '3C2',
       manufacturer: 'Yuken',

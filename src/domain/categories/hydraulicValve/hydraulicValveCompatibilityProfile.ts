@@ -4,6 +4,10 @@ import type { ProductIdentification } from "@/types/product";
 import type { TechnicalAttribute } from "@/types/technicalAttribute";
 
 import { getTechnicalAttributes } from "@/domain/attributes/getTechnicalAttributes";
+import {
+  isUnknownCanonical,
+  resolveCanonicalAttribute,
+} from "@/domain/canonical/resolveCanonicalAttribute";
 import type { ProductCompatibilityProfile } from "@/domain/compatibilityProfiles/compatibilityProfile";
 import { normalizeCompatibilityProfile } from "@/domain/normalization/normalizeCompatibilityProfile";
 
@@ -20,6 +24,48 @@ function pickAttr(
   | null {
   const match = attrs.find((a) => a.key === key) as any;
   return match ?? null;
+}
+
+function pickFirstAttr(
+  attrs: TechnicalAttribute[],
+  keys: string[],
+): ReturnType<typeof pickAttr> {
+  for (const key of keys) {
+    const hit = pickAttr(attrs, key);
+    if (hit) {
+      return hit;
+    }
+  }
+  return null;
+}
+
+function resolvedCoilVoltageAttr(
+  attrs: TechnicalAttribute[],
+  identification: ProductIdentification | null,
+): ReturnType<typeof pickAttr> {
+  const coilRating = pickFirstAttr(attrs, ["coil_rating", "coil_voltage_code"]);
+  const legacyVoltage = pickAttr(attrs, "voltage");
+  if (!coilRating?.value) {
+    return legacyVoltage;
+  }
+  const rawToken = String(coilRating.value);
+  const resolved = resolveCanonicalAttribute({
+    category: HYDRAULIC_VALVE_CATEGORY,
+    manufacturer: identification?.brand.value ?? undefined,
+    series: identification?.series.value ?? undefined,
+    attributeKey: "coil_rating",
+    rawToken,
+  });
+  if (isUnknownCanonical(resolved)) {
+    return legacyVoltage;
+  }
+  return {
+    ...coilRating,
+    key: "voltage",
+    value: resolved.displayValue,
+    normalizedValue: resolved.canonicalValue,
+    requiresCatalogCheck: resolved.requiresCatalogCheck,
+  };
 }
 
 function attrValueString(
@@ -88,16 +134,21 @@ export function buildHydraulicValveCompatibilityProfile(options: {
 
   const cetop = pickAttr(attrs, "cetop_ng") ?? null;
 
-  const voltage = pickAttr(attrs, "voltage");
-  const functionToken = pickAttr(attrs, "function_token");
+  const voltage = resolvedCoilVoltageAttr(attrs, options.identification);
+  const functionToken = pickFirstAttr(attrs, ["function_code", "function_token"]);
   const spoolSymbol = pickAttr(attrs, "spool_symbol");
   const connector = pickAttr(attrs, "connector");
-  const connectorCode = pickAttr(attrs, "connector_token");
+  const connectorCode = pickFirstAttr(attrs, [
+    "connector_type",
+    "connector_token",
+    "connector_option",
+  ]);
   const manualOverride = pickAttr(attrs, "manual_override");
   const maxPressure = pickAttr(attrs, "max_pressure_abp");
   const maxFlow = pickAttr(attrs, "max_flow");
   const designSeries =
-    pickAttr(attrs, "component_series") ?? pickAttr(attrs, "revision");
+    pickFirstAttr(attrs, ["design_series", "component_series", "revision"]) ??
+    null;
 
   const positions = pickAttr(attrs, "number_of_positions");
   const centering = pickAttr(attrs, "centering");
@@ -107,7 +158,7 @@ export function buildHydraulicValveCompatibilityProfile(options: {
   const valveWays = pickAttr(attrs, "valve_ways");
   const sealMaterial = pickAttr(attrs, "seal_material");
 
-  const voltageCode = pickAttr(attrs, "coil_voltage_code");
+  const voltageCode = pickFirstAttr(attrs, ["coil_rating", "coil_voltage_code"]);
 
   const productCategoryValue =
     options.candidate?.productCategory ??

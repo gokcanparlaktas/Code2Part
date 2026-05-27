@@ -151,12 +151,25 @@ function pickParsedAttribute(
   return { value: attr.value, evidence };
 }
 
+function pickFirstParsedAttribute(
+  attributes: ReturnType<typeof getTechnicalAttributes>,
+  keys: string[],
+): { value: string | number | null; evidence: EvidenceLevel } | null {
+  for (const key of keys) {
+    const hit = pickParsedAttribute(attributes, key);
+    if (hit) {
+      return hit;
+    }
+  }
+  return null;
+}
+
 function formatFunctionValue(identification: ProductIdentification): string {
-  const parsed = pickParsedAttribute(
+  const parsed = pickFirstParsedAttribute(
     getTechnicalAttributes(identification),
-    'function_token'
+    ['function_code', 'function_token', 'spool_function_code'],
   );
-  if (parsed?.value !== null && parsed.value !== undefined) {
+  if (parsed != null && parsed.value != null) {
     return String(parsed.value);
   }
 
@@ -207,9 +220,9 @@ function buildHydraulicEvidenceDetailRows(
     );
   }
 
-  const connector = pickParsedAttribute(
+  const connector = pickFirstParsedAttribute(
     getTechnicalAttributes(identification),
-    'connector_token'
+    ['connector_type', 'connector_token', 'connector_option'],
   );
   if (connector) {
     rows.push({
@@ -220,9 +233,9 @@ function buildHydraulicEvidenceDetailRows(
     });
   }
 
-  const revision = pickParsedAttribute(
+  const revision = pickFirstParsedAttribute(
     getTechnicalAttributes(identification),
-    'revision'
+    ['design_series', 'revision'],
   );
   if (revision) {
     rows.push({

@@ -1,43 +1,28 @@
 /**
  * Rexroth WE6 (4WE6…) parsing backed by catalog RE 23164.
- * Spool behavior tags are practical hints; always require catalog verification.
+ * Emits structured raw fields only; canonical meanings come from resolveCanonicalAttribute.
  */
 
 import { buildAttributeResult } from '@/domain/attributes/extractors/attributeEvidence';
+import { PARSER_KEYS } from '@/domain/attributes/extractors/parserFieldKeys';
 import { normalizeProductCode } from '@/domain/attributes/extractors/attributeNormalization';
 import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
 import type { TechnicalAttributeResult } from '@/types/technicalAttributeResult';
 
 import {
-  formatSwitchingVariantNoteTr,
   getRexrothWE6SpoolSemantics,
   isRexrothWE6BaseSpoolSymbol,
-  REXROTH_WE6_CENTER_CONDITION_LABEL_TR,
-  REXROTH_WE6_CENTERING_LABEL_TR,
   REXROTH_WE6_INVALID_OF_WARNING_TR,
-  REXROTH_WE6_NORMALLY_STATE_LABEL_TR,
   type RexrothWE6BaseSpoolSymbol,
   type RexrothWE6SwitchingPositionVariant,
 } from './rexrothWE6SpoolSemantics';
 
 const CATALOG_SOURCE = 'Rexroth RE 23164';
 
-const VOLTAGE_BY_TOKEN: Record<string, string> = {
-  G12: '12V DC',
-  G24: '24V DC',
-};
-
-const CONNECTOR_BY_TOKEN: Record<string, string> = {
-  K4: 'DIN EN 175301-803',
-  C4Z: 'AMP Junior-Timer',
-};
-
 export type RexrothWE6CodeFormat = 're23164_7x' | 'legacy_6x' | null;
 
 export interface RexrothWE6ParsedCode {
-  /** Base spool symbol letter (E for EA/EB). */
   spoolSymbol: RexrothWE6BaseSpoolSymbol;
-  /** Full ordering function token (E, EA, EB, D, …). */
   functionToken: string;
   switchingPositionVariant: RexrothWE6SwitchingPositionVariant | null;
   detentOption: boolean;
@@ -121,42 +106,6 @@ function parseLegacyCoilSection(section: string): {
     manualOverrideToken: match[2] ?? null,
     connectorToken: match[3] ?? null,
   };
-}
-
-function voltageFromToken(token: string | null, format: RexrothWE6CodeFormat): {
-  value: string | null;
-  sourceToken: string | null;
-  confidence: TechnicalAttributeResult['confidence'];
-  requiresCatalogCheck: boolean;
-  note?: string;
-} {
-  if (!token) {
-    return { value: null, sourceToken: null, confidence: 'unknown', requiresCatalogCheck: true };
-  }
-
-  if (token === 'G12') {
-    return {
-      value: VOLTAGE_BY_TOKEN.G12,
-      sourceToken: 'G12',
-      confidence: 'high',
-      requiresCatalogCheck: false,
-      note: `Katalog (${CATALOG_SOURCE}): G12 bobin voltajı.`,
-    };
-  }
-
-  if (token === 'G24' || token === 'HG24' || token === 'EG24' || token === 'CG24') {
-    const sourceToken = token === 'HG24' ? 'G24' : token;
-    return {
-      value: '24V DC',
-      sourceToken,
-      confidence:
-        (token === 'G24' || token === 'HG24') && format === 're23164_7x' ? 'high' : 'medium',
-      requiresCatalogCheck: token !== 'G24' || format === 'legacy_6x',
-      note: `Katalog (${CATALOG_SOURCE}): ${token} bobin voltajı.`,
-    };
-  }
-
-  return { value: null, sourceToken: token, confidence: 'low', requiresCatalogCheck: true };
 }
 
 type HeaderMatch = {
@@ -253,7 +202,7 @@ export function parseRexrothWE6ProductCode(
   };
 }
 
-function appendSpoolBehaviorAttributes(
+function appendSpoolRawFields(
   results: TechnicalAttributeResult[],
   parsed: RexrothWE6ParsedCode
 ): void {
@@ -261,87 +210,58 @@ function appendSpoolBehaviorAttributes(
     detentOption: parsed.detentOption,
   });
 
-  const notes: string[] = [semantics.behaviorNoteTr];
-  if (parsed.switchingPositionVariant) {
-    notes.unshift(
-      formatSwitchingVariantNoteTr(parsed.spoolSymbol, parsed.switchingPositionVariant)
-    );
-  }
-  if (parsed.invalidOfWithNonD) {
-    notes.unshift(REXROTH_WE6_INVALID_OF_WARNING_TR);
-  }
-  for (const warning of parsed.parseWarnings) {
-    if (!notes.includes(warning)) {
-      notes.unshift(warning);
-    }
-  }
-
-  const behaviorNote = notes.join(' ');
-
   results.push(
     buildAttributeResult({
-      key: 'number_of_positions',
-      label: 'Konum sayısı',
-      value: semantics.numberOfPositions,
-      evidence: 'series_table',
+      key: PARSER_KEYS.spool_symbol,
+      label: 'Sürgü sembolü',
+      value: parsed.spoolSymbol,
+      evidence: 'code',
+      confidence: 'medium',
+      requiresCatalogCheck: true,
+      sourceToken: parsed.spoolSymbol,
+      category: HYDRAULIC_VALVE_CATEGORY,
+    }),
+    buildAttributeResult({
+      key: PARSER_KEYS.function_code,
+      label: 'Fonksiyon kodu',
+      value: parsed.functionToken,
+      evidence: 'code',
       confidence: 'medium',
       requiresCatalogCheck: true,
       sourceToken: parsed.functionToken,
       category: HYDRAULIC_VALVE_CATEGORY,
-      note: behaviorNote,
     }),
     buildAttributeResult({
-      key: 'centering',
-      label: 'Merkezleme',
-      value: REXROTH_WE6_CENTERING_LABEL_TR[semantics.centering],
-      normalizedValue: semantics.centering,
-      evidence: 'series_table',
-      confidence: 'medium',
-      requiresCatalogCheck: true,
-      sourceToken: parsed.functionToken,
-      category: HYDRAULIC_VALVE_CATEGORY,
-      note: behaviorNote,
-    }),
-    buildAttributeResult({
-      key: 'center_condition',
-      label: 'Merkez durumu',
-      value: REXROTH_WE6_CENTER_CONDITION_LABEL_TR[semantics.centerCondition],
-      normalizedValue: semantics.centerCondition,
-      evidence: 'series_table',
-      confidence: 'medium',
-      requiresCatalogCheck: true,
-      sourceToken: parsed.functionToken,
-      category: HYDRAULIC_VALVE_CATEGORY,
-      note: behaviorNote,
-    }),
-    buildAttributeResult({
-      key: 'normally_state',
-      label: 'Normal durum',
-      value: REXROTH_WE6_NORMALLY_STATE_LABEL_TR[semantics.normallyState],
-      normalizedValue: semantics.normallyState,
-      evidence: 'series_table',
-      confidence: semantics.normallyState === 'unknown' ? 'low' : 'medium',
-      requiresCatalogCheck: true,
-      sourceToken: parsed.functionToken,
-      category: HYDRAULIC_VALVE_CATEGORY,
-      note: behaviorNote,
-    }),
-    buildAttributeResult({
-      key: 'spool_behavior_note',
-      label: 'Sürgü davranışı',
-      value: behaviorNote,
-      evidence: 'series_table',
-      confidence: 'medium',
-      requiresCatalogCheck: true,
-      sourceToken: parsed.functionToken,
+      key: PARSER_KEYS.design_series,
+      label: 'Komponent serisi',
+      value: parsed.componentSeries,
+      evidence: 'code',
+      confidence: parsed.format === 're23164_7x' ? 'high' : 'medium',
+      requiresCatalogCheck: parsed.format !== 're23164_7x',
+      sourceToken: parsed.componentSeries,
       category: HYDRAULIC_VALVE_CATEGORY,
     })
   );
 
+  if (semantics) {
+    results.push(
+      buildAttributeResult({
+        key: 'number_of_positions',
+        label: 'Konum sayısı',
+        value: semantics.numberOfPositions,
+        evidence: 'code',
+        confidence: 'medium',
+        requiresCatalogCheck: true,
+        sourceToken: parsed.functionToken,
+        category: HYDRAULIC_VALVE_CATEGORY,
+      })
+    );
+  }
+
   if (parsed.switchingPositionVariant) {
     results.push(
       buildAttributeResult({
-        key: 'switching_position_variant',
+        key: PARSER_KEYS.switching_position_variant,
         label: 'Anahtarlama pozisyonu',
         value: parsed.switchingPositionVariant,
         evidence: 'code',
@@ -349,7 +269,20 @@ function appendSpoolBehaviorAttributes(
         requiresCatalogCheck: false,
         sourceToken: parsed.functionToken,
         category: HYDRAULIC_VALVE_CATEGORY,
-        note: formatSwitchingVariantNoteTr(parsed.spoolSymbol, parsed.switchingPositionVariant),
+      })
+    );
+  }
+
+  if (parsed.invalidOfWithNonD) {
+    results.push(
+      buildAttributeResult({
+        key: 'parse_warning',
+        label: 'Ayrıştırma uyarısı',
+        value: REXROTH_WE6_INVALID_OF_WARNING_TR,
+        evidence: 'inferred',
+        confidence: 'low',
+        requiresCatalogCheck: true,
+        category: HYDRAULIC_VALVE_CATEGORY,
       })
     );
   }
@@ -367,7 +300,7 @@ export function parseRexrothWE6(inputCode: string): TechnicalAttributeResult[] |
   }
 
   const isCatalogFormat = parsed.format === 're23164_7x';
-  const voltage = voltageFromToken(parsed.voltageToken, parsed.format);
+  const coilToken = parsed.voltageToken;
 
   const results: TechnicalAttributeResult[] = [
     buildAttributeResult({
@@ -388,174 +321,73 @@ export function parseRexrothWE6(inputCode: string): TechnicalAttributeResult[] |
       category: HYDRAULIC_VALVE_CATEGORY,
     }),
     buildAttributeResult({
-      key: 'product_type',
-      label: 'Ürün tipi',
-      value: 'Hidrolik yön kontrol valfi',
-      evidence: 'series_table',
-      confidence: 'high',
-      category: HYDRAULIC_VALVE_CATEGORY,
-      note: 'RE 23164: WE tipi solenoid tahrikli yön kontrol sürgü valfi.',
-    }),
-    buildAttributeResult({
-      key: 'cetop_ng',
-      label: 'CETOP / NG',
-      value: 'CETOP 03 / NG6',
+      key: PARSER_KEYS.mounting_standard,
+      label: 'Montaj standardı kodu',
+      value: 'WE6',
       evidence: 'standard',
       confidence: 'high',
+      requiresCatalogCheck: false,
+      sourceToken: 'WE6',
       category: HYDRAULIC_VALVE_CATEGORY,
-      note: 'WE6 = NG6 (RE 23164).',
-    }),
-    buildAttributeResult({
-      key: 'porting_pattern',
-      label: 'Port deseni',
-      value: 'DIN 24340 form A',
-      evidence: 'series_table',
-      confidence: 'high',
-      category: HYDRAULIC_VALVE_CATEGORY,
-    }),
-    buildAttributeResult({
-      key: 'spool_symbol',
-      label: 'Sürgü sembolü',
-      value: parsed.spoolSymbol,
-      evidence: 'code',
-      confidence: 'medium',
-      requiresCatalogCheck: true,
-      sourceToken: parsed.spoolSymbol,
-      category: HYDRAULIC_VALVE_CATEGORY,
-      note: 'Temel sürgü sembolü; sipariş kodu varyantları ayrıca işlenir.',
-    }),
-    buildAttributeResult({
-      key: 'function_token',
-      label: 'Fonksiyon / spool',
-      value: parsed.functionToken,
-      evidence: 'code',
-      confidence: 'medium',
-      requiresCatalogCheck: true,
-      sourceToken: parsed.functionToken,
-      category: HYDRAULIC_VALVE_CATEGORY,
-      note: 'Sürgü sembolünün hidrolik davranışı katalog sembol tablosundan doğrulanmalıdır.',
-    }),
-    buildAttributeResult({
-      key: 'component_series',
-      label: 'Komponent serisi',
-      value: parsed.componentSeries,
-      evidence: 'code',
-      confidence: isCatalogFormat ? 'high' : 'medium',
-      requiresCatalogCheck: !isCatalogFormat,
-      sourceToken: parsed.componentSeries,
-      category: HYDRAULIC_VALVE_CATEGORY,
-      note: isCatalogFormat
-        ? 'RE 23164: komponent serisi 7X.'
-        : 'Eski örnek kod formatı (6X); RE 23164 için 7X beklenir.',
-    }),
-    buildAttributeResult({
-      key: 'voltage',
-      label: 'Bobin voltajı',
-      value: voltage.value,
-      normalizedValue: voltage.value,
-      evidence: 'code',
-      confidence: voltage.confidence,
-      requiresCatalogCheck: voltage.requiresCatalogCheck,
-      sourceToken: voltage.sourceToken ?? undefined,
-      category: HYDRAULIC_VALVE_CATEGORY,
-      note: voltage.note,
-    }),
-    buildAttributeResult({
-      key: 'coil_voltage_code',
-      label: 'Bobin kodu',
-      value: voltage.sourceToken,
-      evidence: 'code',
-      confidence: voltage.confidence,
-      requiresCatalogCheck: voltage.requiresCatalogCheck,
-      sourceToken: voltage.sourceToken ?? undefined,
-      category: HYDRAULIC_VALVE_CATEGORY,
-      note: voltage.note,
-    }),
-    buildAttributeResult({
-      key: 'max_pressure_abp',
-      label: 'Maks. çalışma basıncı (A/B/P)',
-      value: '315 bar',
-      evidence: 'series_table',
-      confidence: 'high',
-      category: HYDRAULIC_VALVE_CATEGORY,
-      note: CATALOG_SOURCE,
-    }),
-    buildAttributeResult({
-      key: 'max_pressure_port_t',
-      label: 'Maks. basınç (T portu)',
-      value: '160 bar',
-      evidence: 'series_table',
-      confidence: 'high',
-      category: HYDRAULIC_VALVE_CATEGORY,
-      note: CATALOG_SOURCE,
-    }),
-    buildAttributeResult({
-      key: 'max_flow',
-      label: 'Maks. debi',
-      value: 60,
-      unit: 'l/min',
-      evidence: 'series_table',
-      confidence: 'high',
-      category: HYDRAULIC_VALVE_CATEGORY,
-      note: CATALOG_SOURCE,
     }),
   ];
 
-  appendSpoolBehaviorAttributes(results, parsed);
+  appendSpoolRawFields(results, parsed);
+
+  if (coilToken) {
+    results.push(
+      buildAttributeResult({
+        key: PARSER_KEYS.coil_rating,
+        label: 'Bobin kodu',
+        value: coilToken,
+        evidence: 'code',
+        confidence: coilToken === 'G24' && isCatalogFormat ? 'high' : 'medium',
+        requiresCatalogCheck: coilToken !== 'G24' || !isCatalogFormat,
+        sourceToken: coilToken,
+        category: HYDRAULIC_VALVE_CATEGORY,
+      })
+    );
+  }
 
   if (parsed.solenoidType) {
     results.push(
       buildAttributeResult({
         key: 'solenoid_type',
-        label: 'Bobin tipi',
+        label: 'Bobin tipi kodu',
         value: parsed.solenoidType,
         evidence: 'code',
         confidence: isCatalogFormat ? 'high' : 'medium',
         requiresCatalogCheck: false,
         sourceToken: parsed.solenoidType,
         category: HYDRAULIC_VALVE_CATEGORY,
-        note: 'RE 23164: H = AC bobin (katalog sembolü).',
       })
     );
   }
 
-  if (parsed.manualOverrideToken === 'N9') {
+  if (parsed.manualOverrideToken) {
     results.push(
       buildAttributeResult({
-        key: 'manual_override',
-        label: 'Manuel kumanda',
-        value: 'Gizli/korumalı manuel kumanda',
+        key: PARSER_KEYS.manual_override,
+        label: 'Manuel kumanda kodu',
+        value: parsed.manualOverrideToken,
         evidence: 'code',
         confidence: isCatalogFormat ? 'high' : 'medium',
         requiresCatalogCheck: !isCatalogFormat,
-        sourceToken: 'N9',
+        sourceToken: parsed.manualOverrideToken,
         category: HYDRAULIC_VALVE_CATEGORY,
-        note: 'RE 23164: N9 gizli/korumalı manuel kumanda.',
       })
     );
   }
 
   if (parsed.connectorToken) {
-    const connectorLabel = CONNECTOR_BY_TOKEN[parsed.connectorToken];
     results.push(
       buildAttributeResult({
-        key: 'connector_token',
-        label: 'Konnektör',
+        key: PARSER_KEYS.connector_type,
+        label: 'Konnektör kodu',
         value: parsed.connectorToken,
         evidence: 'code',
         confidence: isCatalogFormat ? 'high' : 'medium',
         requiresCatalogCheck: !isCatalogFormat,
-        sourceToken: parsed.connectorToken,
-        category: HYDRAULIC_VALVE_CATEGORY,
-        note: connectorLabel ? `${connectorLabel} (${parsed.connectorToken})` : undefined,
-      }),
-      buildAttributeResult({
-        key: 'connector',
-        label: 'Konnektör tipi',
-        value: connectorLabel ?? parsed.connectorToken,
-        evidence: isCatalogFormat ? 'series_table' : 'code',
-        confidence: isCatalogFormat ? 'high' : 'medium',
-        requiresCatalogCheck: !isCatalogFormat || !connectorLabel,
         sourceToken: parsed.connectorToken,
         category: HYDRAULIC_VALVE_CATEGORY,
       })

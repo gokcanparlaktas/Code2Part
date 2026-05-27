@@ -27,6 +27,7 @@ import {
   catalogConfidenceToAttribute,
   knownTokenNote,
 } from './attributeEvidence';
+import { PARSER_KEYS } from './parserFieldKeys';
 import {
   extractFunctionTokenFromPatterns,
   extractInferredVoltageFromPatterns,
@@ -36,7 +37,6 @@ import {
   escapeRegex,
   normalizeFunctionToken,
   normalizeProductCode,
-  normalizeVoltage,
 } from './attributeNormalization';
 import { voltageCodeAppearsInProductCode } from './defaultVoltageMatch';
 
@@ -50,7 +50,7 @@ function extractVoltageFromCatalog(
   series: CatalogSeries
 ): TechnicalAttributeResult {
   const defs = series.attributes;
-  const label = attributeDefLabel(defs, 'voltage', 'Bobin voltajı');
+  const label = attributeDefLabel(defs, 'voltage', 'Bobin kodu');
   const voltageCodes = [...getVoltageCodesForSeries(series.id)].sort(
     (a, b) => b.code.length - a.code.length
   );
@@ -60,32 +60,41 @@ function extractVoltageFromCatalog(
       continue;
     }
 
-    if (entry.code === 'H7' || (entry.requiresCatalogCheck && !entry.labelTr)) {
+    if (entry.code === 'H7') {
+      const hSplit = normalized.match(/-(H)([4-7])(?:-|$)/i);
+      if (hSplit) {
+        return buildAttributeResult({
+          key: PARSER_KEYS.coil_rating,
+          label,
+          value: hSplit[1].toUpperCase(),
+          evidence: 'code',
+          confidence: catalogConfidenceToAttribute(entry.confidence),
+          requiresCatalogCheck: true,
+          sourceToken: hSplit[1].toUpperCase(),
+          category: HYDRAULIC_VALVE_CATEGORY,
+        });
+      }
       return buildAttributeResult({
-        key: 'voltage',
+        key: PARSER_KEYS.coil_rating,
         label,
-        value: null,
+        value: 'H7',
         evidence: 'unknown',
         confidence: 'unknown',
         requiresCatalogCheck: true,
         sourceToken: 'H7',
         category: HYDRAULIC_VALVE_CATEGORY,
-        note: 'H7 kodu bobin voltajı olarak doğrulanamaz; katalog kontrolü gerekir.',
       });
     }
 
-    const normalizedValue = normalizeVoltage(entry.labelTr);
     return buildAttributeResult({
-      key: 'voltage',
+      key: PARSER_KEYS.coil_rating,
       label,
-      value: normalizedValue,
-      normalizedValue,
+      value: entry.code,
       evidence: 'code',
       confidence: catalogConfidenceToAttribute(entry.confidence),
       requiresCatalogCheck: entry.requiresCatalogCheck,
       sourceToken: entry.code,
       category: HYDRAULIC_VALVE_CATEGORY,
-      note: `Kodda ${entry.code} geçti.`,
     });
   }
 
@@ -93,40 +102,36 @@ function extractVoltageFromCatalog(
   const inferred = extractInferredVoltageFromPatterns(normalized, inferredPatterns);
   if (inferred) {
     return buildAttributeResult({
-      key: 'voltage',
+      key: PARSER_KEYS.coil_rating,
       label,
-      value: inferred.voltageValue,
-      normalizedValue: inferred.voltageValue,
+      value: inferred.token,
       evidence: 'inferred',
       confidence: 'medium',
       requiresCatalogCheck: true,
       sourceToken: inferred.token,
       category: HYDRAULIC_VALVE_CATEGORY,
-      note: 'Voltaj koddan tahmin edildi; katalogdan doğrulanmalıdır.',
     });
   }
 
   if (series.defaultCoilVoltageTr) {
     return buildAttributeResult({
-      key: 'voltage',
+      key: PARSER_KEYS.coil_rating,
       label,
       value: null,
       evidence: 'series_table',
       confidence: 'medium',
       requiresCatalogCheck: true,
       category: HYDRAULIC_VALVE_CATEGORY,
-      note: 'Seri bilgisinde tipik voltaj var; koddan doğrulanmadı.',
     });
   }
 
   return buildAttributeResult({
-    key: 'voltage',
+    key: PARSER_KEYS.coil_rating,
     label,
     value: null,
     evidence: 'unknown',
     confidence: 'unknown',
     category: HYDRAULIC_VALVE_CATEGORY,
-    note: 'Voltaj koddan çıkarılamadı.',
   });
 }
 
@@ -183,18 +188,16 @@ function extractFunctionFromCatalog(
       return buildFunctionAttribute(series, mapping);
     }
 
-    const label = attributeDefLabel(series.attributes, 'function_token', 'Fonksiyon / spool');
+    const label = attributeDefLabel(series.attributes, 'function_token', 'Fonksiyon kodu');
     return buildAttributeResult({
-      key: 'function_token',
+      key: PARSER_KEYS.function_code,
       label,
       value: patternToken,
-      normalizedValue: normalizeFunctionToken(patternToken),
       evidence: 'code',
       confidence: 'low',
       requiresCatalogCheck: true,
       sourceToken: patternToken,
       category: HYDRAULIC_VALVE_CATEGORY,
-      note: 'Fonksiyon kodu koddan okundu; sembol davranışı katalogdan doğrulanmalıdır.',
     });
   }
 
@@ -212,20 +215,16 @@ function buildFunctionAttribute(
   series: CatalogSeries,
   mapping: CatalogFunctionMapping
 ): TechnicalAttributeResult {
-  const label = attributeDefLabel(series.attributes, 'function_token', 'Fonksiyon / spool');
+  const label = attributeDefLabel(series.attributes, 'function_token', 'Fonksiyon kodu');
   return buildAttributeResult({
-    key: 'function_token',
+    key: PARSER_KEYS.function_code,
     label,
     value: mapping.token,
-    normalizedValue: normalizeFunctionToken(mapping.token),
     evidence: 'code',
     confidence: catalogConfidenceToAttribute(mapping.confidence),
     requiresCatalogCheck: mapping.requiresCatalogCheck,
     sourceToken: mapping.token,
     category: HYDRAULIC_VALVE_CATEGORY,
-    note:
-      mapping.noteTr ??
-      'Bu bilgi koddan algılandı. Teknik anlamı katalog sembolleriyle doğrulanmalıdır.',
   });
 }
 
@@ -301,13 +300,12 @@ export function extractHydraulicAttributes(
   } else {
     results.push(
       buildAttributeResult({
-        key: 'voltage',
-        label: 'Bobin voltajı',
+        key: PARSER_KEYS.coil_rating,
+        label: 'Bobin kodu',
         value: null,
         evidence: 'unknown',
         confidence: 'unknown',
         category: HYDRAULIC_VALVE_CATEGORY,
-        note: 'Voltaj koddan çıkarılamadı.',
       })
     );
   }
@@ -329,17 +327,16 @@ export function extractHydraulicAttributes(
   if (connector) {
     results.push(
       buildAttributeResult({
-        key: 'connector_token',
+        key: PARSER_KEYS.connector_type,
         label: series
-          ? attributeDefLabel(series.attributes, 'connector_token', 'Konnektör')
-          : 'Konnektör',
+          ? attributeDefLabel(series.attributes, 'connector_token', 'Konnektör kodu')
+          : 'Konnektör kodu',
         value: connector,
         evidence: 'code',
         confidence: 'low',
         requiresCatalogCheck: true,
         sourceToken: connector,
         category: HYDRAULIC_VALVE_CATEGORY,
-        note: 'Bu bilgi koddan algılandı. Teknik anlamı katalogdan kontrol edilmelidir.',
       })
     );
   }
@@ -352,14 +349,13 @@ export function extractHydraulicAttributes(
   if (revision) {
     results.push(
       buildAttributeResult({
-        key: 'revision',
-        label: 'Revizyon / seri',
+        key: PARSER_KEYS.design_series,
+        label: 'Tasarım serisi kodu',
         value: revision,
         evidence: 'code',
         confidence: 'medium',
         sourceToken: revision,
         category: HYDRAULIC_VALVE_CATEGORY,
-        note: 'Bu bilgi koddan algılandı.',
       })
     );
   }

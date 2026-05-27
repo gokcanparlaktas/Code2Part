@@ -209,10 +209,8 @@ function describeCenteringFromProfile(
 
   const hasCentering =
     profile.centering.value && profile.centering.value !== 'unknown';
-  const parsedFromCode =
-    centeringAttr?.evidence === 'code' || centeringAttr?.evidence === 'series_table';
 
-  if (hasCentering && parsedFromCode) {
+  if (hasCentering) {
     return {
       title: 'Merkezleme',
       primaryDescription: getCenteringDisplay(profile.centering.value),
@@ -446,7 +444,10 @@ function describeVickersSpoolSpringFromAttributes(
     primaryDescription: springMeaning,
     details: [rawCodeLabel(token)!],
     rawCode: token,
-    confidence: confidenceFromAttr(readAttr(map, 'function_token'), 'medium'),
+    confidence: confidenceFromAttr(
+      readAttr(map, 'function_code') ?? readAttr(map, 'function_token'),
+      'medium',
+    ),
     requiresCatalogCheck: springMeaning === CATALOG_WAYS_TR,
   };
 }
@@ -461,7 +462,7 @@ function describeVickersDesignNumberFromAttributes(
   if (!isVickers) {
     return null;
   }
-  const token = readToken(map, 'design_number');
+  const token = readToken(map, 'design_series') ?? readToken(map, 'design_number');
   if (!token) {
     return null;
   }
@@ -472,7 +473,10 @@ function describeVickersDesignNumberFromAttributes(
     primaryDescription: display,
     details: [rawCodeLabel(upper)!],
     rawCode: upper,
-    confidence: confidenceFromAttr(readAttr(map, 'design_number'), 'medium'),
+    confidence: confidenceFromAttr(
+      readAttr(map, 'design_series') ?? readAttr(map, 'design_number'),
+      'medium',
+    ),
     requiresCatalogCheck: upper !== '60' && upper !== '61',
   };
 }
@@ -487,7 +491,8 @@ function describeTankPressureRatingFromAttributes(
   if (!isVickers) {
     return null;
   }
-  const token = readToken(map, 'tank_pressure_rating_code');
+  const token =
+    readToken(map, 'tank_pressure_rating') ?? readToken(map, 'tank_pressure_rating_code');
   if (!token) {
     return null;
   }
@@ -498,7 +503,10 @@ function describeTankPressureRatingFromAttributes(
     primaryDescription: ratingBar ? `${ratingBar} bar` : CATALOG_WAYS_TR,
     details: [rawCodeLabel(upper)!],
     rawCode: upper,
-    confidence: confidenceFromAttr(readAttr(map, 'tank_pressure_rating_code'), 'medium'),
+    confidence: confidenceFromAttr(
+      readAttr(map, 'tank_pressure_rating') ?? readAttr(map, 'tank_pressure_rating_code'),
+      'medium',
+    ),
     requiresCatalogCheck: ratingBar === null,
   };
 }

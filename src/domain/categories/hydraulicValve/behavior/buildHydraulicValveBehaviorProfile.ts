@@ -1,4 +1,13 @@
+import {
+  isUnknownCanonical,
+  resolveCanonicalAttribute,
+} from '@/domain/canonical/resolveCanonicalAttribute';
+import {
+  readFirstParserDisplay,
+  readFirstParserToken,
+} from '@/domain/canonical/readParserAttribute';
 import { resolveHydraulicFunctionBehavior } from '@/domain/categories/hydraulicValve/functionMappings/hydraulicFunctionBehavior';
+import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
 import type { ProductIdentification } from '@/types/product';
 import type { TechnicalAttribute } from '@/types/technicalAttribute';
 
@@ -255,26 +264,34 @@ export function buildHydraulicValveBehaviorProfile(
       : String(identification.standardFamily.value ?? ''));
 
   const manufacturerFunctionCode =
-    readDisplayString(map, 'function_token') ??
-    readDisplayString(map, 'spool_function_code') ??
+    readFirstParserDisplay(map, ['function_code', 'function_token', 'spool_function_code']) ??
     readDisplayString(map, 'spool_symbol');
 
-  const voltageCode =
-    readDisplayString(map, 'coil_voltage_code') ??
-    map.get('voltage')?.sourceToken ??
-    undefined;
+  const voltageCode = readFirstParserToken(map, ['coil_rating', 'coil_voltage_code']) ?? undefined;
 
-  let voltage: string | null =
-    readDisplayString(map, 'voltage') ?? null;
-  if (voltageCode && UNRESOLVED_VOLTAGE_CODES.has(voltageCode)) {
-    voltage = null;
-    requiresCatalogCheck = true;
-    notes.push('Bobin/voltaj kodu katalogdan doğrulanmalıdır.');
+  let voltage: string | null = readDisplayString(map, 'voltage') ?? null;
+  if (voltageCode) {
+    const resolved = resolveCanonicalAttribute({
+      category: HYDRAULIC_VALVE_CATEGORY,
+      manufacturer: brand,
+      series,
+      attributeKey: 'coil_rating',
+      rawToken: voltageCode,
+    });
+    if (!isUnknownCanonical(resolved)) {
+      voltage = resolved.displayValue;
+      if (resolved.requiresCatalogCheck) {
+        requiresCatalogCheck = true;
+      }
+    } else if (UNRESOLVED_VOLTAGE_CODES.has(voltageCode)) {
+      voltage = null;
+      requiresCatalogCheck = true;
+      notes.push('Bobin/voltaj kodu katalogdan doğrulanmalıdır.');
+    }
   }
 
   const connectorCode =
-    readDisplayString(map, 'connector_token') ??
-    readDisplayString(map, 'connector_option') ??
+    readFirstParserToken(map, ['connector_type', 'connector_token', 'connector_option']) ??
     undefined;
   const connector = readDisplayString(map, 'connector') ?? connectorCode ?? null;
 
@@ -297,7 +314,7 @@ export function buildHydraulicValveBehaviorProfile(
     connectorCode: connectorCode ?? null,
     manualOverride: readDisplayString(map, 'manual_override') ?? null,
     designSeries:
-      readDisplayString(map, 'design_number') ?? readDisplayString(map, 'component_series') ?? null,
+      readFirstParserDisplay(map, ['design_series', 'design_number', 'component_series']) ?? null,
     maxPressureBar: parsePressureBar(readDisplayString(map, 'max_pressure_abp')),
     maxFlowLpm: parseFlowLpm(map),
     confidence,

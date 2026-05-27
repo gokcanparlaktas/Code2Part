@@ -76,7 +76,8 @@ export function buildPneumaticCylinderCompatibilityProfile(options: {
 
   const bore = pickAttr(attrs, 'bore');
   const stroke = pickAttr(attrs, 'stroke');
-  const cushioning = pickAttr(attrs, 'cushioning_token');
+  const cushioning =
+    pickAttr(attrs, 'cushioning_type') ?? pickAttr(attrs, 'cushioning_token');
 
   const profile: ProductCompatibilityProfile = {
     productCategory: PNEUMATIC_CYLINDER_CATEGORY,

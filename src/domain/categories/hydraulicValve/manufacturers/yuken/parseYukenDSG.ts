@@ -1,39 +1,17 @@
 /**
  * Yuken DSG-01 / DSG-03 directional valve model code parsing.
- * Behavior tags are practical hints; catalog verification is always required.
+ * Emits structured raw fields only; canonical meanings come from resolveCanonicalAttribute.
  */
 
 import { buildAttributeResult } from '@/domain/attributes/extractors/attributeEvidence';
+import { PARSER_KEYS } from '@/domain/attributes/extractors/parserFieldKeys';
 import { normalizeProductCode } from '@/domain/attributes/extractors/attributeNormalization';
 import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
 import type { TechnicalAttributeResult } from '@/types/technicalAttributeResult';
 
-import {
-  getYukenDSGSpoolSemantics,
-  springCodeToCentering,
-  springCodeToLabelTr,
-  YUKEN_DSG_CATALOG_NOTE_TR,
-  YUKEN_DSG_CENTER_CONDITION_LABEL_TR,
-  YUKEN_DSG_CENTERING_LABEL_TR,
-} from './yukenDSGSpoolSemantics';
+import { getYukenDSGSpoolSemantics } from './yukenDSGSpoolSemantics';
 
 const CATALOG_SOURCE = 'Yuken DSG katalog model kodu';
-
-const VOLTAGE_BY_TOKEN: Record<string, string> = {
-  D12: '12V DC',
-  D24: '24V DC',
-  D48: '48V DC',
-};
-
-const CONNECTOR_BY_TOKEN: Record<string, { labelTr: string; token: string }> = {
-  N: { token: 'N', labelTr: 'Takılı konnektör' },
-  N1: { token: 'N1', labelTr: 'Göstergeli takılı konnektör' },
-};
-
-const CETOP_BY_SIZE: Record<'01' | '03', string> = {
-  '01': 'CETOP 03 / NG6',
-  '03': 'CETOP 05 / NG10',
-};
 
 const SERIES_BY_SIZE: Record<'01' | '03', string> = {
   '01': 'DSG-01',
@@ -96,18 +74,46 @@ function parsePositionCount(digit: string): 2 | 3 | null {
   return null;
 }
 
-function appendSpoolBehaviorAttributes(
+function appendSpoolRawFields(
   results: TechnicalAttributeResult[],
   parsed: YukenDSGParsedCode
 ): void {
   const semantics = getYukenDSGSpoolSemantics(parsed.spoolFunctionCode);
-  const centering = springCodeToCentering(parsed.springCode);
   const positions =
     semantics?.numberOfPositions ?? parsePositionCount(parsed.positionCountDigit);
-  const centerCondition = semantics?.centerCondition ?? 'unknown';
-  const behaviorNote =
-    semantics?.behaviorNoteTr ??
-    `${parsed.spoolFunctionCode}: ${YUKEN_DSG_CATALOG_NOTE_TR}`;
+
+  results.push(
+    buildAttributeResult({
+      key: PARSER_KEYS.function_code,
+      label: 'Fonksiyon kodu',
+      value: parsed.spoolFunctionCode,
+      evidence: 'code',
+      confidence: 'medium',
+      requiresCatalogCheck: true,
+      sourceToken: parsed.spoolFunctionCode,
+      category: HYDRAULIC_VALVE_CATEGORY,
+    }),
+    buildAttributeResult({
+      key: PARSER_KEYS.spool_symbol,
+      label: 'Sürgü tipi',
+      value: parsed.spoolType,
+      evidence: 'code',
+      confidence: 'medium',
+      requiresCatalogCheck: true,
+      sourceToken: parsed.spoolType,
+      category: HYDRAULIC_VALVE_CATEGORY,
+    }),
+    buildAttributeResult({
+      key: PARSER_KEYS.spring_arrangement,
+      label: 'Yay kodu',
+      value: parsed.springCode,
+      evidence: 'code',
+      confidence: 'medium',
+      requiresCatalogCheck: true,
+      sourceToken: parsed.springCode,
+      category: HYDRAULIC_VALVE_CATEGORY,
+    })
+  );
 
   if (positions !== null) {
     results.push(
@@ -120,59 +126,9 @@ function appendSpoolBehaviorAttributes(
         requiresCatalogCheck: true,
         sourceToken: parsed.positionCountDigit,
         category: HYDRAULIC_VALVE_CATEGORY,
-        note: behaviorNote,
       })
     );
   }
-
-  results.push(
-    buildAttributeResult({
-      key: 'spring_arrangement',
-      label: 'Yay düzeni',
-      value: springCodeToLabelTr(parsed.springCode),
-      normalizedValue: centering,
-      evidence: 'code',
-      confidence: 'medium',
-      requiresCatalogCheck: true,
-      sourceToken: parsed.springCode,
-      category: HYDRAULIC_VALVE_CATEGORY,
-      note: behaviorNote,
-    }),
-    buildAttributeResult({
-      key: 'centering',
-      label: 'Merkezleme',
-      value: YUKEN_DSG_CENTERING_LABEL_TR[centering],
-      normalizedValue: centering,
-      evidence: 'code',
-      confidence: centering === 'unknown' ? 'low' : 'medium',
-      requiresCatalogCheck: true,
-      sourceToken: parsed.springCode,
-      category: HYDRAULIC_VALVE_CATEGORY,
-      note: behaviorNote,
-    }),
-    buildAttributeResult({
-      key: 'center_condition',
-      label: 'Merkez durumu',
-      value: YUKEN_DSG_CENTER_CONDITION_LABEL_TR[centerCondition],
-      normalizedValue: centerCondition,
-      evidence: semantics ? 'series_table' : 'unknown',
-      confidence: semantics ? 'medium' : 'low',
-      requiresCatalogCheck: true,
-      sourceToken: parsed.spoolFunctionCode,
-      category: HYDRAULIC_VALVE_CATEGORY,
-      note: behaviorNote,
-    }),
-    buildAttributeResult({
-      key: 'spool_behavior_note',
-      label: 'Sürgü davranışı',
-      value: behaviorNote,
-      evidence: semantics ? 'series_table' : 'unknown',
-      confidence: 'medium',
-      requiresCatalogCheck: true,
-      sourceToken: parsed.spoolFunctionCode,
-      category: HYDRAULIC_VALVE_CATEGORY,
-    })
-  );
 }
 
 export function parseYukenDSG(inputCode: string): TechnicalAttributeResult[] | null {
@@ -185,9 +141,6 @@ export function parseYukenDSG(inputCode: string): TechnicalAttributeResult[] | n
   if (!parsed) {
     return null;
   }
-
-  const voltage = VOLTAGE_BY_TOKEN[parsed.voltageToken];
-  const connector = CONNECTOR_BY_TOKEN[parsed.connectorToken];
 
   const results: TechnicalAttributeResult[] = [
     buildAttributeResult({
@@ -208,70 +161,27 @@ export function parseYukenDSG(inputCode: string): TechnicalAttributeResult[] | n
       category: HYDRAULIC_VALVE_CATEGORY,
     }),
     buildAttributeResult({
-      key: 'product_type',
-      label: 'Ürün tipi',
-      value: 'Hidrolik yön kontrol valfi',
-      evidence: 'series_table',
-      confidence: 'high',
-      category: HYDRAULIC_VALVE_CATEGORY,
-      note: 'DSG = solenoid tahrikli yön kontrol valfi.',
-    }),
-    buildAttributeResult({
-      key: 'cetop_ng',
-      label: 'CETOP / NG',
-      value: CETOP_BY_SIZE[parsed.valveSize],
+      key: PARSER_KEYS.mounting_standard,
+      label: 'Montaj boyutu kodu',
+      value: parsed.valveSize,
       evidence: 'code',
       confidence: 'high',
+      requiresCatalogCheck: false,
+      sourceToken: parsed.valveSize,
       category: HYDRAULIC_VALVE_CATEGORY,
-      note: parsed.valveSize === '01' ? 'DSG-01 = CETOP 03 / NG6' : 'DSG-03 = CETOP 05 / NG10',
     }),
     buildAttributeResult({
-      key: 'spool_function_code',
-      label: 'Sürgü fonksiyon kodu',
-      value: parsed.spoolFunctionCode,
+      key: PARSER_KEYS.coil_rating,
+      label: 'Bobin kodu',
+      value: parsed.voltageToken,
       evidence: 'code',
-      confidence: 'medium',
-      requiresCatalogCheck: true,
-      sourceToken: parsed.spoolFunctionCode,
-      category: HYDRAULIC_VALVE_CATEGORY,
-      note: YUKEN_DSG_CATALOG_NOTE_TR,
-    }),
-    buildAttributeResult({
-      key: 'function_token',
-      label: 'Fonksiyon / spool',
-      value: parsed.spoolFunctionCode,
-      evidence: 'code',
-      confidence: 'medium',
-      requiresCatalogCheck: true,
-      sourceToken: parsed.spoolFunctionCode,
-      category: HYDRAULIC_VALVE_CATEGORY,
-      note: YUKEN_DSG_CATALOG_NOTE_TR,
-    }),
-    buildAttributeResult({
-      key: 'spool_type',
-      label: 'Sürgü tipi',
-      value: parsed.spoolType,
-      evidence: 'code',
-      confidence: 'medium',
-      requiresCatalogCheck: true,
-      sourceToken: parsed.spoolType,
-      category: HYDRAULIC_VALVE_CATEGORY,
-      note: YUKEN_DSG_CATALOG_NOTE_TR,
-    }),
-    buildAttributeResult({
-      key: 'voltage',
-      label: 'Bobin voltajı',
-      value: voltage ?? null,
-      normalizedValue: voltage ?? null,
-      evidence: 'code',
-      confidence: voltage ? 'high' : 'low',
-      requiresCatalogCheck: !voltage,
+      confidence: 'high',
+      requiresCatalogCheck: false,
       sourceToken: parsed.voltageToken,
       category: HYDRAULIC_VALVE_CATEGORY,
-      note: voltage ? `Katalog: ${parsed.voltageToken} = ${voltage}` : undefined,
     }),
     buildAttributeResult({
-      key: 'connector_token',
+      key: PARSER_KEYS.connector_type,
       label: 'Konnektör kodu',
       value: parsed.connectorToken,
       evidence: 'code',
@@ -281,30 +191,18 @@ export function parseYukenDSG(inputCode: string): TechnicalAttributeResult[] | n
       category: HYDRAULIC_VALVE_CATEGORY,
     }),
     buildAttributeResult({
-      key: 'connector',
-      label: 'Konnektör',
-      value: connector?.labelTr ?? parsed.connectorToken,
-      evidence: 'code',
-      confidence: 'high',
-      requiresCatalogCheck: false,
-      sourceToken: parsed.connectorToken,
-      category: HYDRAULIC_VALVE_CATEGORY,
-      note: connector ? `${connector.labelTr} (${connector.token})` : undefined,
-    }),
-    buildAttributeResult({
-      key: 'design_number',
-      label: 'Tasarım numarası',
+      key: PARSER_KEYS.design_series,
+      label: 'Tasarım serisi kodu',
       value: parsed.designNumber,
       evidence: 'code',
       confidence: 'medium',
       requiresCatalogCheck: true,
       sourceToken: parsed.designNumber,
       category: HYDRAULIC_VALVE_CATEGORY,
-      note: 'Katalog tasarım / revizyon numarası.',
     }),
   ];
 
-  appendSpoolBehaviorAttributes(results, parsed);
+  appendSpoolRawFields(results, parsed);
 
   return results;
 }

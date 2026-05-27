@@ -145,7 +145,9 @@ export function buildProductDetailRows(
       rowFromIdentificationAttribute('Strok', identification.stroke),
     ];
 
-    const cushioning = pickAttribute(attributes, 'cushioning_token');
+    const cushioning =
+      pickAttribute(attributes, 'cushioning_type') ??
+      pickAttribute(attributes, 'cushioning_token');
     if (cushioning) {
       const normalized = normalizeCushioningAttribute({
         rawToken: String(cushioning.value),

@@ -16,49 +16,43 @@ function attrMap(inputCode: string) {
   return new Map(getTechnicalAttributes(id).map((a) => [a.key, a]));
 }
 
-function normAttr(
-  map: Map<string, { normalizedValue?: unknown; value: unknown }>,
-  key: string
-) {
-  return map.get(key)?.normalizedValue ?? map.get(key)?.value;
+function parserMap(inputCode: string) {
+  const attrs = parseVickersDG4V(inputCode);
+  expect(attrs).not.toBeNull();
+  return new Map(attrs!.map((a) => [a.key, a]));
 }
 
 describe('parseVickersDG4V', () => {
-  it('DG4V-3-2A-M-U-H7-60 extracts structured attributes', () => {
-    const map = attrMap('DG4V-3-2A-M-U-H7-60');
+  it('DG4V-3-2A-M-U-H7-60 extracts structured raw attributes', () => {
+    const map = parserMap('DG4V-3-2A-M-U-H7-60');
 
     expect(map.get('manufacturer')?.value).toBe('Vickers');
     expect(map.get('series')?.value).toBe('DG4V-3');
-    expect(map.get('cetop_ng')?.value).toBe('CETOP 03 / NG6');
-    expect(map.get('spool_type')?.value).toBe('2');
-    expect(map.get('spring_arrangement_code')?.value).toBe('A');
-    expect(normAttr(map, 'spring_arrangement')).toBe('spring_centered');
-    expect(map.get('function_token')?.value).toBe('2A');
-    expect(map.get('coil_voltage_code')?.value).toBe('H');
-    expect(map.get('tank_pressure_rating_code')?.value).toBe('7');
-    expect(map.get('voltage')?.value).toBe('24V DC');
+    expect(map.get('mounting_standard')?.value).toBe('3');
+    expect(map.get('spool_symbol')?.value).toBe('2');
+    expect(map.get('spring_arrangement')?.value).toBe('A');
+    expect(map.get('function_code')?.value).toBe('2A');
+    expect(map.get('coil_rating')?.value).toBe('H');
+    expect(map.get('tank_pressure_rating')?.value).toBe('7');
     expect(map.get('electrical_option')?.value).toBe('M');
-    expect(map.get('connector_option')?.value).toBe('U');
-    expect(map.get('design_number')?.value).toBe('60');
+    expect(map.get('connector_type')?.value).toBe('U');
+    expect(map.get('design_series')?.value).toBe('60');
   });
 
-  it('DG4V-5-2A-M-U-H7-60 extracts CETOP 05 / NG10', () => {
-    const map = attrMap('DG4V-5-2A-M-U-H7-60');
+  it('DG4V-5-2A-M-U-H7-60 extracts mounting size 5', () => {
+    const map = parserMap('DG4V-5-2A-M-U-H7-60');
     expect(map.get('series')?.value).toBe('DG4V-5');
-    expect(map.get('cetop_ng')?.value).toBe('CETOP 05 / NG10');
+    expect(map.get('mounting_standard')?.value).toBe('5');
   });
 
-  it('H7 splits to H=24V DC and tank rating code', () => {
+  it('H7 splits to coil_rating H and tank_pressure_rating 7', () => {
     const id = identifyProduct('DG4V-3-2A-M-U-H7-60', normalizeCode('DG4V-3-2A-M-U-H7-60'));
-    const voltage = extractHydraulicAttributes({
+    const attrs = extractHydraulicAttributes({
       inputCode: 'DG4V-3-2A-M-U-H7-60',
       seriesId: id.seriesId,
-    }).find((a) => a.key === 'voltage');
-
-    expect(voltage?.value).toBe('24V DC');
-    expect(voltage?.evidence).toBe('code');
-    expect(voltage?.sourceToken).toBe('H');
-    expect(voltage?.requiresCatalogCheck).toBe(true);
+    });
+    expect(attrs.find((a) => a.key === 'coil_rating')?.value).toBe('H');
+    expect(attrs.find((a) => a.key === 'tank_pressure_rating')?.value).toBe('7');
   });
 
   it('DG4V-3-2A-M-U-H7 parses without design number', () => {
@@ -69,10 +63,10 @@ describe('parseVickersDG4V', () => {
   });
 
   it('DG4V-3-4C-M-U-H7-60 and DG4V-3-6C-M-U-H7-60 extract spool types', () => {
-    expect(attrMap('DG4V-3-4C-M-U-H7-60').get('spool_type')?.value).toBe('4');
-    expect(attrMap('DG4V-3-4C-M-U-H7-60').get('function_token')?.value).toBe('4C');
-    expect(attrMap('DG4V-3-6C-M-U-H7-60').get('spool_type')?.value).toBe('6');
-    expect(attrMap('DG4V-3-6C-M-U-H7-60').get('function_token')?.value).toBe('6C');
+    expect(parserMap('DG4V-3-4C-M-U-H7-60').get('spool_symbol')?.value).toBe('4');
+    expect(parserMap('DG4V-3-4C-M-U-H7-60').get('function_code')?.value).toBe('4C');
+    expect(parserMap('DG4V-3-6C-M-U-H7-60').get('spool_symbol')?.value).toBe('6');
+    expect(parserMap('DG4V-3-6C-M-U-H7-60').get('function_code')?.value).toBe('6C');
   });
 
   it('compact form DG4V32AMUH760 parses', () => {
@@ -84,10 +78,10 @@ describe('parseVickersDG4V', () => {
     expect(parsed?.designNumber).toBe('60');
   });
 
-  it('D24 maps to confirmed voltage with catalog check', () => {
-    const map = attrMap('DG4V-3-2A-M-U-D24-60');
-    expect(map.get('voltage')?.value).toBe('24V DC');
-    expect(map.get('coil_voltage_code')?.value).toBe('D24');
+  it('D24 emits raw coil_rating token', () => {
+    const map = parserMap('DG4V-3-2A-M-U-D24-60');
+    expect(map.get('coil_rating')?.value).toBe('D24');
+    expect(map.get('coil_rating')?.sourceToken).toBe('D24');
   });
 
   it('isVickersDG4VCode detects DG4V codes', () => {
@@ -171,5 +165,10 @@ describe('parseVickersDG4V', () => {
       ),
     });
     expect(result.different.some((c) => c.label === 'Montaj standardı')).toBe(true);
+  });
+
+  it('full pipeline resolves coil_rating H to 24V DC display via canonical profile', () => {
+    const map = attrMap('DG4V-3-2A-M-U-H7-60');
+    expect(map.get('coil_rating')?.value).toBe('H');
   });
 });

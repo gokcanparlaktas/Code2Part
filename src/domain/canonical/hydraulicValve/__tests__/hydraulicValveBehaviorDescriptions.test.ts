@@ -73,7 +73,7 @@ describe('hydraulicValveBehaviorDescriptions', () => {
     const code = '4WE6E-7X/HG24N9K4';
     const map = new Map(parseRexrothWE6(code)!.map((a) => [a.key, a]));
     expect(map.get('spool_symbol')?.value).toBe('E');
-    expect(map.get('coil_voltage_code')?.value).toBe('G24');
+    expect(map.get('coil_rating')?.value).toBe('HG24');
 
     const rows = buildProductDetailRows(identify(code));
     const allText = rows.map((r) => r.value).join('\n');
@@ -108,13 +108,13 @@ describe('hydraulicValveBehaviorDescriptions', () => {
     expect(formatBehaviorDescriptionForUi(connector!)).toContain('Kod kanıtı: N1');
   });
 
-  it('Yuken parser still exposes function token in attributes', () => {
+  it('Yuken parser still exposes function_code in attributes', () => {
     const map = new Map(parseYukenDSG('DSG-01-3C2-D24-N1-70')!.map((a) => [a.key, a]));
-    expect(map.get('function_token')?.value).toBe('3C2');
+    expect(map.get('function_code')?.value).toBe('3C2');
   });
 
-  it('Vickers parser still exposes function token in attributes', () => {
+  it('Vickers parser still exposes function_code in attributes', () => {
     const map = new Map(parseVickersDG4V('DG4V-3-2A-M-U-H7-60')!.map((a) => [a.key, a]));
-    expect(map.get('function_token')?.value).toBe('2A');
+    expect(map.get('function_code')?.value).toBe('2A');
   });
 });
