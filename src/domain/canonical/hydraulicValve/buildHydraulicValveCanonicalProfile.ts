@@ -1,3 +1,4 @@
+import { formatConnectorDisplayValue } from '@/domain/canonical/connector/formatConnectorDisplayValue';
 import {
   isUnknownCanonical,
   resolveCanonicalAttribute,
@@ -42,6 +43,7 @@ import { applyBehaviorDisplayToCanonicalProfile } from './hydraulicValveBehavior
 import type {
   CanonicalCoilVoltage,
   CanonicalConfidence,
+  CanonicalConnectorType,
   CanonicalField,
   HydraulicValveCanonicalProfile,
 } from './hydraulicValveCanonicalTypes';
@@ -322,10 +324,27 @@ export function buildHydraulicValveCanonicalProfile(
     readFirstParserToken(map, ['connector_type', 'connector_token', 'connector_option']) ??
     connectorAttr?.sourceToken;
 
-  const connectorType = normalizeConnectorType({
-    rawValue: readDisplayString(map, 'connector') ?? readDisplayString(map, 'connector_option'),
-    rawToken: rawConnectorCode,
-  });
+  const resolvedConnector = rawConnectorCode
+    ? resolveCanonicalAttribute({
+        category: HYDRAULIC_VALVE_CATEGORY,
+        manufacturer: brand,
+        series,
+        attributeKey: 'connector_type',
+        rawToken: rawConnectorCode,
+        evidence: connectorAttr?.evidence,
+        confidence: connectorAttr?.confidence as CanonicalConfidence | undefined,
+      })
+    : null;
+
+  const connectorType: CanonicalConnectorType =
+    resolvedConnector && !isUnknownCanonical(resolvedConnector)
+      ? (resolvedConnector.canonicalKey as CanonicalConnectorType)
+      : normalizeConnectorType({
+          rawValue: readDisplayString(map, 'connector') ?? readDisplayString(map, 'connector_option'),
+          rawToken: rawConnectorCode,
+          manufacturer: brand,
+          series,
+        });
 
   const manualOverrideAttr = readAttr(map, 'manual_override');
   const manualOverride = normalizeManualOverride({
@@ -402,18 +421,30 @@ export function buildHydraulicValveCanonicalProfile(
         coilRatingAttr?.requiresCatalogCheck,
       importance: 'critical',
     }),
-    connectorType: buildCanonicalField({
-      key: 'connectorType',
-      label: FIELD_LABELS.connectorType,
-      value: connectorType,
-      displayFormatter: getConnectorTypeDisplay,
-      rawValue: readDisplayString(map, 'connector') ?? readDisplayString(map, 'connector_option'),
-      rawToken: rawConnectorCode,
-      evidence: attrEvidence(connectorAttr),
-      confidence: attrConfidence(connectorAttr),
-      requiresCatalogCheck: connectorAttr?.requiresCatalogCheck,
-      importance: 'important',
-    }),
+    connectorType: (() => {
+      const field = buildCanonicalField({
+        key: 'connectorType',
+        label: FIELD_LABELS.connectorType,
+        value: connectorType,
+        displayFormatter: getConnectorTypeDisplay,
+        rawValue: readDisplayString(map, 'connector') ?? readDisplayString(map, 'connector_option'),
+        rawToken: rawConnectorCode,
+        evidence: attrEvidence(connectorAttr),
+        confidence: attrConfidence(connectorAttr),
+        requiresCatalogCheck:
+          resolvedConnector?.requiresCatalogCheck ?? connectorAttr?.requiresCatalogCheck,
+        importance: 'important',
+      });
+      if (resolvedConnector && !isUnknownCanonical(resolvedConnector)) {
+        field.displayValue = formatConnectorDisplayValue(resolvedConnector);
+        field.connectorFamilyKey = resolvedConnector.connectorFamilyKey;
+        field.connectorStandardKey = resolvedConnector.connectorStandardKey;
+        field.connectorOptions = resolvedConnector.connectorOptions;
+        field.isGenericConnector = resolvedConnector.isGenericConnector;
+        field.displayDetail = resolvedConnector.displayDetail;
+      }
+      return field;
+    })(),
     manualOverride: buildCanonicalField({
       key: 'manualOverride',
       label: FIELD_LABELS.manualOverride,
@@ -515,19 +546,6 @@ export function buildHydraulicValveCanonicalProfile(
     profile.coilVoltage.displayValue = voltageDisplay.displayValue;
     if (voltageDisplay.requiresCatalogCheck) {
       profile.coilVoltage.requiresCatalogCheck = true;
-    }
-  }
-
-  const connectorDisplay = normalizeHydraulicConnectorDisplay({
-    rawValue: readDisplayString(map, 'connector') ?? readDisplayString(map, 'connector_option'),
-    rawToken: rawConnectorCode,
-    manufacturer: brand,
-    series,
-  });
-  if (connectorDisplay) {
-    profile.connectorType.displayValue = connectorDisplay.displayValue;
-    if (connectorDisplay.requiresCatalogCheck) {
-      profile.connectorType.requiresCatalogCheck = true;
     }
   }
 

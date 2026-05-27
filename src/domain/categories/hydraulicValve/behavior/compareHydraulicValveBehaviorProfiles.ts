@@ -1,5 +1,11 @@
 import type { AttributeComparison, CompatibilityStatus } from '@/types/compatibility';
+import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
 
+import {
+  compareConnectorCanonicalSnapshots,
+  connectorSnapshotFromResolved,
+} from '@/domain/canonical/connector/compareConnectorCanonical';
+import { resolveCanonicalAttribute } from '@/domain/canonical/resolveCanonicalAttribute';
 import {
   normalizeConnectorDisplay,
   normalizeVoltageDisplay,
@@ -235,23 +241,28 @@ function compareConnector(
   target: HydraulicValveBehaviorProfile,
   _crossBrand: boolean
 ): AttributeComparison {
-  const sourceNorm = normalizeConnectorDisplay({
-    rawValue: source.connector,
-    rawToken: source.connectorCode ?? undefined,
-    sourceManufacturer: source.brand,
-  });
-  const targetNorm = normalizeConnectorDisplay({
-    rawValue: target.connector,
-    rawToken: target.connectorCode ?? undefined,
-    sourceManufacturer: target.brand,
-  });
+  const sourceResolved = source.connectorCode
+    ? resolveCanonicalAttribute({
+        category: HYDRAULIC_VALVE_CATEGORY,
+        manufacturer: source.brand,
+        series: source.series,
+        attributeKey: 'connector_type',
+        rawToken: source.connectorCode,
+      })
+    : null;
+  const targetResolved = target.connectorCode
+    ? resolveCanonicalAttribute({
+        category: HYDRAULIC_VALVE_CATEGORY,
+        manufacturer: target.brand,
+        series: target.series,
+        attributeKey: 'connector_type',
+        rawToken: target.connectorCode,
+      })
+    : null;
 
-  const sourceDisplay =
-    sourceNorm?.displayValue ?? displayOrUnknown(source.connector ?? source.connectorCode);
-  const targetDisplay =
-    targetNorm?.displayValue ?? displayOrUnknown(target.connector ?? target.connectorCode);
-
-  if (!sourceNorm || !targetNorm) {
+  if (!sourceResolved || !targetResolved) {
+    const sourceDisplay = displayOrUnknown(source.connector ?? source.connectorCode);
+    const targetDisplay = displayOrUnknown(target.connector ?? target.connectorCode);
     return {
       label: 'Konnektör kodu',
       sourceDisplay,
@@ -260,21 +271,12 @@ function compareConnector(
     };
   }
 
-  if (sourceNorm.canonicalValue === targetNorm.canonicalValue) {
-    return {
-      label: 'Konnektör kodu',
-      sourceDisplay,
-      targetDisplay,
-      status: 'compatible',
-    };
-  }
-
-  return {
-    label: 'Konnektör kodu',
-    sourceDisplay,
-    targetDisplay,
-    status: 'different',
-  };
+  const result = compareConnectorCanonicalSnapshots(
+    connectorSnapshotFromResolved(sourceResolved),
+    connectorSnapshotFromResolved(targetResolved),
+    'Konnektör kodu',
+  );
+  return result.comparison;
 }
 
 export function compareHydraulicValveBehaviorProfiles(

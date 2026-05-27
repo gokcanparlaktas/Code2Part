@@ -47,8 +47,8 @@ describe('hydraulicValveComparison (attribute-based)', () => {
 
     const result = compareProducts(source, candidate);
     expect(result.compatible.some((c) => c.label === 'Konnektör tipi')).toBe(true);
-    expect(result.compatible.find((c) => c.label === 'Konnektör tipi')?.sourceDisplay).toBe(
-      'DIN EN 175301-803 konnektör'
+    expect(result.compatible.find((c) => c.label === 'Konnektör tipi')?.sourceDisplay).toContain(
+      'DIN valf soketi'
     );
   });
 

@@ -39,18 +39,16 @@ describe("normalizeHydraulicValveAttribute", () => {
     expect(normalizeCoilVoltage({ rawToken: "24DC" })).toBe("DC_24V");
   });
 
-  it("K4 displays DIN 43650 Form A / EN 175301-803", () => {
-    const canonical = normalizeConnectorType({ rawToken: "K4" });
-    expect(canonical).toBe("DIN_43650_FORM_A_EN_175301_803");
-    expect(getConnectorTypeDisplay(canonical)).toBe(
-      "DIN 43650 Form A / EN 175301-803",
-    );
+  it("K4 displays DIN valve connector family", () => {
+    const canonical = normalizeConnectorType({ rawToken: "K4", manufacturer: "Rexroth", series: "4WE6" });
+    expect(canonical).toBe("DIN_VALVE_CONNECTOR");
+    expect(getConnectorTypeDisplay(canonical)).toContain("DIN valf soketi");
   });
 
   it("C4Z displays AMP Junior-Timer", () => {
-    const canonical = normalizeConnectorType({ rawToken: "C4Z" });
+    const canonical = normalizeConnectorType({ rawToken: "C4Z", manufacturer: "Rexroth", series: "4WE6" });
     expect(canonical).toBe("AMP_JUNIOR_TIMER");
-    expect(getConnectorTypeDisplay(canonical)).toBe("AMP Junior-Timer");
+    expect(getConnectorTypeDisplay(canonical)).toContain("AMP");
   });
 
   it("N/N1 remain plug-in connector unless exact connector type is known", () => {
@@ -215,7 +213,7 @@ describe("buildHydraulicValveCanonicalProfile", () => {
     );
     expect(profile.mountingStandard.displayValue).toContain("NG6");
     expect(profile.coilVoltage.value).toBe("DC_24V");
-    expect(profile.connectorType.value).toBe("DIN_43650_FORM_A_EN_175301_803");
+    expect(profile.connectorType.value).toBe("DIN_VALVE_CONNECTOR");
     expect(profile.rawFunctionCode).toBe("E");
   });
 

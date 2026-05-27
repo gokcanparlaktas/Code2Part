@@ -52,7 +52,7 @@ describe('hydraulicValveBehaviorDescriptions', () => {
     expect(voltage?.requiresCheck).toBe(false);
 
     const connector = rows.find((r) => r.label === 'Konnektör tipi');
-    expect(connector?.value).toContain('ISO 4400 / DIN 43650');
+    expect(connector?.value).toContain('DIN valf soketi');
     expect(connector?.requiresCheck).toBe(false);
 
     const tank = rows.find((r) => r.label === 'Tank hattı basınç sınıfı');

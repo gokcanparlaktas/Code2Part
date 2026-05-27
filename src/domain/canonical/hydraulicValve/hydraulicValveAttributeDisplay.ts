@@ -1,5 +1,11 @@
 import { getVickersDG4VSpoolSemantics } from '@/domain/categories/hydraulicValve/manufacturers/vickers/vickersDG4VSemantics';
 import { getYukenDSGSpoolSemantics } from '@/domain/categories/hydraulicValve/manufacturers/yuken/yukenDSGSpoolSemantics';
+import { formatConnectorDisplayValue } from '@/domain/canonical/connector/formatConnectorDisplayValue';
+import {
+  isUnknownCanonical,
+  resolveCanonicalAttribute,
+} from '@/domain/canonical/resolveCanonicalAttribute';
+import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
 
 import {
   getCoilVoltageDisplay,
@@ -53,14 +59,6 @@ const VOLTAGE_TOKEN_PRIORITY = [
   'DC12',
   'DC48',
 ] as const;
-
-const CONNECTOR_TOKEN_DISPLAY: Record<string, string> = {
-  K4: 'DIN EN 175301-803 konnektör',
-  C4Z: 'AMP Junior-Timer konnektör',
-  N: 'Fişli konnektör',
-  N1: 'Fişli konnektör, gösterge ışıklı',
-  U: 'ISO 4400 / DIN 43650',
-};
 
 const MANUAL_OVERRIDE_TOKEN_DISPLAY: Record<string, string> = {
   N9: 'Gizli / korumalı manuel kumanda',
@@ -313,52 +311,56 @@ export function normalizeHydraulicConnectorDisplay(options: {
     return null;
   }
 
-  const mapped = CONNECTOR_TOKEN_DISPLAY[token];
-  if (mapped) {
-    const note =
-      token === 'U'
-        ? undefined
-        : token === 'N' || token === 'N1'
-          ? undefined
-          : undefined;
+  const resolved = resolveCanonicalAttribute({
+    category: HYDRAULIC_VALVE_CATEGORY,
+    manufacturer: options.manufacturer,
+    series: options.series,
+    attributeKey: 'connector_type',
+    rawToken: token,
+  });
+
+  if (!isUnknownCanonical(resolved)) {
     return {
-      displayValue: mapped,
-      rawToken: token,
-      rawTokenLabel: rawTokenLabel(token),
-      canonicalValue: getConnectorTypeDisplay(normalizeConnectorType({ rawToken: token })),
-      requiresCatalogCheck: token === 'M',
-      note,
+      displayValue: formatConnectorDisplayValue(resolved),
+      canonicalValue: resolved.canonicalKey,
+      requiresCatalogCheck: resolved.requiresCatalogCheck,
+      note: resolved.isGenericConnector
+        ? 'Konnektör tipi katalogdan doğrulanmalıdır.'
+        : undefined,
     };
   }
 
-  const canonical = getConnectorTypeDisplay(normalizeConnectorType({ rawValue: options.rawValue, rawToken: token }));
+  const canonical = getConnectorTypeDisplay(
+    normalizeConnectorType({
+      rawValue: options.rawValue,
+      rawToken: token,
+      manufacturer: options.manufacturer,
+      series: options.series,
+    }),
+  );
   if (canonical !== 'Bilinmiyor') {
     return {
       displayValue: canonical,
-      rawToken: token,
-      rawTokenLabel: rawTokenLabel(token),
       canonicalValue: canonical,
-      requiresCatalogCheck: normalizeConnectorType({ rawToken: token }) === 'PLUG_IN_CONNECTOR',
+      requiresCatalogCheck:
+        normalizeConnectorType({
+          rawToken: token,
+          manufacturer: options.manufacturer,
+          series: options.series,
+        }) === 'PLUG_IN_CONNECTOR',
       note:
-        normalizeConnectorType({ rawToken: token }) === 'PLUG_IN_CONNECTOR'
+        normalizeConnectorType({
+          rawToken: token,
+          manufacturer: options.manufacturer,
+          series: options.series,
+        }) === 'PLUG_IN_CONNECTOR'
           ? 'Konnektör tipi katalogdan doğrulanmalıdır.'
           : undefined,
     };
   }
 
-  if (options.rawValue && /175301|DIN/i.test(String(options.rawValue))) {
-    return {
-      displayValue: String(options.rawValue),
-      rawToken: token,
-      rawTokenLabel: rawTokenLabel(token),
-      requiresCatalogCheck: false,
-    };
-  }
-
   return {
-    displayValue: `Konnektör / bobin seçeneği ${token}`,
-    rawToken: token,
-    rawTokenLabel: rawTokenLabel(token),
+    displayValue: 'Katalogdan doğrulanmalı',
     requiresCatalogCheck: true,
     note: VICKERS_CONNECTOR_NOTE_TR,
   };

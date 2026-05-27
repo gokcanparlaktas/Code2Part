@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { DemoDisclaimerNote } from '@/components/DemoDisclaimerNote';
 import { validateCatalogV2 } from '@/domain/catalog/validateCatalogV2';
+import { buildCanonicalCoverageDiagnostics } from '@/domain/diagnostics/canonicalCoverageDiagnostics';
 import { validateCatalog } from '@/domain/validation/validateCatalog';
 import type { ValidationIssue } from '@/types/validation';
 
@@ -43,6 +44,9 @@ function IssueList({
 
 export default function DiagnosticsScreen() {
   const validation = useMemo(() => validateCatalog(), []);
+  const validationV2 = useMemo(() => validateCatalogV2(), []);
+  const canonicalCoverage = useMemo(() => buildCanonicalCoverageDiagnostics(), []);
+  const topMissingMappings = canonicalCoverage.missingMappings.slice(0, 10);
 
   return (
     <ScrollView
@@ -101,6 +105,48 @@ export default function DiagnosticsScreen() {
         <Text style={styles.countRow}>
           Kontrol kuralı: {validationV2.summary.checkRulesCount}
         </Text>
+      </View>
+
+      <View style={styles.countsCard}>
+        <Text style={styles.countsTitle}>Canonical sözlük kapsaması</Text>
+        <Text style={styles.countRow}>
+          Kapsama: %{canonicalCoverage.coveragePercent}
+        </Text>
+        <Text style={styles.countRow}>
+          Çözülen alan: {canonicalCoverage.resolvedAttributes} /{' '}
+          {canonicalCoverage.totalParsedAttributes}
+        </Text>
+        <Text style={styles.countRow}>
+          Eksik mapping: {canonicalCoverage.unresolvedAttributes}
+        </Text>
+        <Text style={styles.countRow}>
+          Katalog kontrolü gereken alan: {canonicalCoverage.requiresCatalogCheckCount}
+        </Text>
+        <Text style={styles.countRow}>
+          Kontrol edilen kod: {canonicalCoverage.totalCheckedCodes}
+        </Text>
+        {canonicalCoverage.byCategory.map((row) => (
+          <Text key={row.category} style={styles.countSubRow}>
+            {row.category}: %{row.coveragePercent} ({row.resolved}/{row.total})
+          </Text>
+        ))}
+        {topMissingMappings.length > 0 ? (
+          <>
+            <Text style={[styles.countsTitle, styles.subsectionTitle]}>
+              En sık eksik mapping (ilk 10)
+            </Text>
+            {topMissingMappings.map((entry, index) => (
+              <Text
+                key={`${entry.attributeKey}-${entry.rawToken}-${entry.exampleCode}-${index}`}
+                style={styles.countSubRow}
+              >
+                {entry.attributeKey}
+                {entry.rawToken ? ` · ${entry.rawToken}` : ''}
+                {entry.manufacturer ? ` · ${entry.manufacturer}` : ''}
+              </Text>
+            ))}
+          </>
+        ) : null}
       </View>
 
       <View style={styles.countsCard}>
@@ -191,6 +237,16 @@ const styles = StyleSheet.create({
   countRow: {
     color: '#334155',
     fontSize: 15,
+  },
+  countSubRow: {
+    color: '#64748B',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  subsectionTitle: {
+    fontSize: 14,
+    marginBottom: 0,
+    marginTop: 8,
   },
   section: {
     gap: 10,

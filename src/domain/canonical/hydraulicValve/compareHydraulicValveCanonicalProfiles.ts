@@ -16,6 +16,13 @@ import {
 import { buildCategoryComparison } from '@/domain/categories/hydraulicValve/behavior/behaviorComparisonToCompatibility';
 
 import { isCatalogCheckDisplayText } from '@/domain/canonical/catalogCheckDisplay';
+import {
+  compareConnectorCanonicalSnapshots,
+  connectorSnapshotFromResolved,
+  type ConnectorCanonicalSnapshot,
+} from '@/domain/canonical/connector/compareConnectorCanonical';
+import { resolveCanonicalAttribute } from '@/domain/canonical/resolveCanonicalAttribute';
+import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
 
 import { FIELD_LABELS } from './hydraulicValveCanonicalDictionary';
 import { normalizeHydraulicVoltageDisplay } from './hydraulicValveAttributeDisplay';
@@ -132,66 +139,54 @@ function compareCanonicalEnumField<T extends string>(options: {
   };
 }
 
-function compareConnectorFields(
-  source: HydraulicValveCanonicalProfile,
-  target: HydraulicValveCanonicalProfile
-): { comparison: AttributeComparison; sentence: string | null } {
-  const sourceValue = source.connectorType.value;
-  const targetValue = target.connectorType.value;
-  const sourceDisplay = source.connectorType.displayValue;
-  const targetDisplay = target.connectorType.displayValue;
-
-  if (isUnknownCanonicalValue(sourceValue) || isUnknownCanonicalValue(targetValue)) {
+function connectorSnapshotFromProfileField(
+  field: HydraulicValveCanonicalProfile['connectorType'],
+  brand?: string,
+  series?: string,
+): ConnectorCanonicalSnapshot {
+  if (field.connectorFamilyKey) {
     return {
-      comparison: {
-        label: FIELD_LABELS.connectorType,
-        sourceDisplay,
-        targetDisplay,
-        status: 'unknownOrCheck',
-      },
-      sentence: 'Konnektör tipi katalogdan doğrulanmalıdır.',
+      canonicalKey: field.value ?? 'unknown',
+      displayValue: field.displayValue,
+      connectorFamilyKey: field.connectorFamilyKey,
+      connectorStandardKey: field.connectorStandardKey,
+      connectorOptions: field.connectorOptions,
+      isGenericConnector: field.isGenericConnector,
+      requiresCatalogCheck: Boolean(field.requiresCatalogCheck),
+      resolved: !isUnknownCanonicalValue(field.value),
     };
   }
 
-  if (sourceValue === targetValue) {
-    return {
-      comparison: {
-        label: FIELD_LABELS.connectorType,
-        sourceDisplay,
-        targetDisplay,
-        status: 'compatible',
-      },
-      sentence: `Konnektör tipi aynı: ${sourceDisplay}`,
-    };
-  }
-
-  const genericVsSpecific =
-    (sourceValue === 'PLUG_IN_CONNECTOR' &&
-      targetValue.startsWith('DIN_43650')) ||
-    (targetValue === 'PLUG_IN_CONNECTOR' &&
-      sourceValue.startsWith('DIN_43650'));
-
-  if (genericVsSpecific) {
-    return {
-      comparison: {
-        label: FIELD_LABELS.connectorType,
-        sourceDisplay,
-        targetDisplay,
-        status: 'unknownOrCheck',
-      },
-      sentence: 'Konnektör tipi katalogdan doğrulanmalıdır.',
-    };
+  const rawToken = field.rawToken;
+  if (rawToken) {
+    const resolved = resolveCanonicalAttribute({
+      category: HYDRAULIC_VALVE_CATEGORY,
+      manufacturer: brand,
+      series,
+      attributeKey: 'connector_type',
+      rawToken,
+    });
+    return connectorSnapshotFromResolved(resolved);
   }
 
   return {
-    comparison: {
-      label: FIELD_LABELS.connectorType,
-      sourceDisplay,
-      targetDisplay,
-      status: 'different',
-    },
-    sentence: `Konnektör tipi farklı: ${sourceDisplay} / ${targetDisplay}`,
+    canonicalKey: field.value ?? 'unknown',
+    displayValue: field.displayValue,
+    requiresCatalogCheck: Boolean(field.requiresCatalogCheck),
+    resolved: !isUnknownCanonicalValue(field.value),
   };
+}
+
+function compareConnectorFields(
+  source: HydraulicValveCanonicalProfile,
+  target: HydraulicValveCanonicalProfile
+): { comparison: AttributeComparison; sentence: string | null; warning?: string } {
+  const result = compareConnectorCanonicalSnapshots(
+    connectorSnapshotFromProfileField(source.connectorType, source.brand, source.series),
+    connectorSnapshotFromProfileField(target.connectorType, target.brand, target.series),
+    FIELD_LABELS.connectorType,
+  );
+  return result;
 }
 
 function compareOptionalNumericFields(
@@ -377,6 +372,9 @@ export function compareHydraulicValveCanonicalProfiles(
 
   const connector = compareConnectorFields(source, target);
   pushResult(result, connector.comparison, connector.sentence, 'important');
+  if (connector.warning) {
+    result.warnings.push(connector.warning);
+  }
 
   const manual = compareCanonicalEnumField({
     sourceField: source.manualOverride,

@@ -1,4 +1,10 @@
 import {
+  isUnknownCanonical,
+  resolveCanonicalAttribute,
+} from '@/domain/canonical/resolveCanonicalAttribute';
+import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
+
+import {
   CENTER_CONDITION_DICTIONARY,
   CENTERING_DICTIONARY,
   COIL_VOLTAGE_DICTIONARY,
@@ -100,9 +106,22 @@ export function normalizeCoilVoltage(options: {
 export function normalizeConnectorType(options: {
   rawValue?: string | number | null;
   rawToken?: string | null;
+  manufacturer?: string;
+  series?: string;
 }): CanonicalConnectorType {
   const token = options.rawToken?.trim();
   if (token) {
+    const resolved = resolveCanonicalAttribute({
+      category: HYDRAULIC_VALVE_CATEGORY,
+      manufacturer: options.manufacturer,
+      series: options.series,
+      attributeKey: 'connector_type',
+      rawToken: token,
+    });
+    if (!isUnknownCanonical(resolved)) {
+      return resolved.canonicalKey as CanonicalConnectorType;
+    }
+
     const fromToken = lookupConnectorTypeAlias(token);
     if (fromToken) {
       return fromToken;
@@ -123,8 +142,8 @@ export function normalizeConnectorType(options: {
     return fromAlias;
   }
 
-  if (/DIN/i.test(raw) || /175301/i.test(raw) || /43650/i.test(raw)) {
-    return 'DIN_43650_FORM_A_EN_175301_803';
+  if (/DIN/i.test(raw) || /175301/i.test(raw) || /43650/i.test(raw) || /ISO\s*4400/i.test(raw)) {
+    return 'DIN_VALVE_CONNECTOR';
   }
 
   return 'unknown';

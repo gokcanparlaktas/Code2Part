@@ -1,8 +1,12 @@
+import { formatConnectorDisplayValue } from '@/domain/canonical/connector/formatConnectorDisplayValue';
 import { getCanonicalDisplayValueForUi } from '@/domain/canonical/resolveCanonicalAttribute';
 import type { CanonicalResolvedField } from '@/types/canonicalAttribute';
 
 /** Primary translated meaning only (raw tokens stay in data, not main UI). */
 export function formatCanonicalDetailValue(resolved: CanonicalResolvedField): string {
+  if (resolved.rawAttributeKey === 'connector_type' || resolved.attributeKey === 'connector_type') {
+    return formatConnectorDisplayValue(resolved);
+  }
   return getCanonicalDisplayValueForUi(resolved);
 }
 

@@ -110,7 +110,7 @@ describe('DG4V product detail and comparison', () => {
     expect(allText).toContain('Bobin voltajı');
     expect(allText).toContain('24V DC');
     expect(allText).toContain('Konnektör tipi');
-    expect(allText).toContain('ISO 4400 / DIN 43650');
+    expect(allText).toContain('DIN valf soketi');
     expect(allText).toContain('Tank hattı basınç sınıfı');
     expect(allText).toContain('207 bar');
     expect(allText).toContain('Tasarım serisi');

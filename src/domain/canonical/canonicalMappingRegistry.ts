@@ -2,6 +2,7 @@ import {
   HYDRAULIC_VALVE_CATEGORY,
   PNEUMATIC_CYLINDER_CATEGORY,
 } from '@/types/category';
+import { CONNECTOR_CANONICAL_MAPPING_ENTRIES } from '@/domain/canonical/connector/connectorCanonicalMappings';
 import type { CanonicalMappingEntry } from '@/types/canonicalAttribute';
 
 function coilRatingEntry(options: {
@@ -138,4 +139,6 @@ export const CANONICAL_MAPPING_ENTRIES: CanonicalMappingEntry[] = [
     sourceDocument: 'Festo DSBC type code',
     notes: ['Variant token supporting ISO 15552; primary standard_family comes from series catalog.'],
   },
+
+  ...CONNECTOR_CANONICAL_MAPPING_ENTRIES,
 ];

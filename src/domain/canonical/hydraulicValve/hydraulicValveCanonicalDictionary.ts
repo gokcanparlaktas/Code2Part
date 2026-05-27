@@ -192,40 +192,42 @@ export const CONNECTOR_TYPE_DICTIONARY: Record<
   Exclude<CanonicalConnectorType, "unknown">,
   CanonicalDictionaryEntry
 > = {
-  DIN_43650_FORM_A_EN_175301_803: entry(
-    "DIN_43650_FORM_A_EN_175301_803",
-    "DIN 43650 Form A / EN 175301-803",
-    "important",
-    { aliases: ["K4", "DIN", "DIN43650", "ISO4400", "EN175301803"] },
-  ),
-  DIN_43650_FORM_B_EN_175301_803: entry(
-    "DIN_43650_FORM_B_EN_175301_803",
-    "DIN 43650 Form B / EN 175301-803",
-    "important",
-  ),
-  DIN_43650_FORM_C_EN_175301_803: entry(
-    "DIN_43650_FORM_C_EN_175301_803",
-    "DIN 43650 Form C / EN 175301-803",
-    "important",
-  ),
-  AMP_JUNIOR_TIMER: entry("AMP_JUNIOR_TIMER", "AMP Junior-Timer", "important", {
-    aliases: ["C4Z", "AMP", "JUNIOR_TIMER"],
-  }),
-  M12: entry("M12", "M12", "important"),
-  LEAD_WIRE: entry("LEAD_WIRE", "Kablo ucu", "important", {
-    aliases: ["LEADWIRE", "LEAD_WIRE"],
-  }),
-  CONDUIT_BOX: entry("CONDUIT_BOX", "Kablo giriş kutusu", "important", {
-    aliases: ["CONDUIT", "CONDUIT_BOX"],
-  }),
-  PLUG_IN_CONNECTOR: entry(
-    "PLUG_IN_CONNECTOR",
-    "Takılı konnektör",
+  DIN_VALVE_CONNECTOR: entry(
+    "DIN_VALVE_CONNECTOR",
+    "DIN valf soketi / ISO 4400",
     "important",
     {
-      aliases: ["N", "N1"],
+      aliases: [
+        "K4",
+        "U",
+        "U1",
+        "U6",
+        "DIN",
+        "DIN43650",
+        "ISO4400",
+        "EN175301803",
+        "DIN_43650_FORM_A_EN_175301_803",
+      ],
     },
   ),
+  PLUG_IN_CONNECTOR: entry("PLUG_IN_CONNECTOR", "Fişli konnektör", "important", {
+    aliases: ["N", "N1"],
+  }),
+  AMP_JUNIOR_TIMER: entry("AMP_JUNIOR_TIMER", "AMP / Junior Timer konnektör", "important", {
+    aliases: ["C4Z", "KUP4", "AMP", "JUNIOR_TIMER"],
+  }),
+  DEUTSCH_CONNECTOR: entry("DEUTSCH_CONNECTOR", "Deutsch konnektör", "important", {
+    aliases: ["KUP5"],
+  }),
+  M12_4_PIN: entry("M12_4_PIN", "M12 4-pin konnektör", "important", {
+    aliases: ["KUPM4L", "M12"],
+  }),
+  FLYING_LEAD: entry("FLYING_LEAD", "Kablo çıkışlı bağlantı", "important", {
+    aliases: ["LEADWIRE", "LEAD_WIRE"],
+  }),
+  TERMINAL_BOX: entry("TERMINAL_BOX", "Terminal kutulu bağlantı", "important", {
+    aliases: ["CONDUIT", "CONDUIT_BOX"],
+  }),
 };
 
 export const MANUAL_OVERRIDE_DICTIONARY: Record<

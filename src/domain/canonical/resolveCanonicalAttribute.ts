@@ -6,6 +6,7 @@ import {
   type CanonicalResolvedField,
 } from '@/types/canonicalAttribute';
 
+import { isCatalogCheckDisplayText } from './catalogCheckDisplay';
 import { CANONICAL_MAPPING_ENTRIES } from './canonicalMappingRegistry';
 
 export function compactCanonicalToken(raw: string): string {
@@ -20,6 +21,36 @@ export function normalizeCanonicalSeries(value?: string | null): string {
   return compactCanonicalToken(value ?? '');
 }
 
+export function normalizeCanonicalSeriesFamily(value?: string | null): string {
+  return compactCanonicalToken(value ?? '');
+}
+
+/** Derives series family for mapping specificity (minimal rules; extend as catalog grows). */
+export function inferCanonicalSeriesFamily(series?: string | null): string | null {
+  const compact = normalizeCanonicalSeries(series);
+  if (!compact) {
+    return null;
+  }
+  if (compact.startsWith('DG4V')) {
+    return 'DG4V';
+  }
+  if (compact.startsWith('4WE6')) {
+    return '4WE6';
+  }
+  if (compact.startsWith('DSG')) {
+    return 'DSG';
+  }
+  return null;
+}
+
+function resolveSeriesFamily(context: CanonicalResolveContext): string | null {
+  const explicit = context.seriesFamily?.trim();
+  if (explicit) {
+    return normalizeCanonicalSeriesFamily(explicit);
+  }
+  return inferCanonicalSeriesFamily(context.series);
+}
+
 export function formatRawTokenEvidenceLabel(rawToken?: string): string | undefined {
   if (!rawToken) {
     return undefined;
@@ -29,6 +60,24 @@ export function formatRawTokenEvidenceLabel(rawToken?: string): string | undefin
 
 export function isUnknownCanonical(resolved: Pick<CanonicalResolvedField, 'canonicalKey'>): boolean {
   return resolved.canonicalKey === UNKNOWN_CANONICAL_KEY;
+}
+
+export function isCanonicallyResolvedField(
+  resolved: Pick<
+    CanonicalResolvedField,
+    'canonicalKey' | 'displayValue' | 'resolved'
+  >,
+): boolean {
+  if (!resolved.resolved || isUnknownCanonical(resolved)) {
+    return false;
+  }
+  if (!resolved.displayValue?.trim()) {
+    return false;
+  }
+  if (isCatalogCheckDisplayText(resolved.displayValue)) {
+    return false;
+  }
+  return true;
 }
 
 /** UI display text; unknown canonical fields use catalog-check message only here. */
@@ -75,6 +124,13 @@ function mappingSpecificity(entry: CanonicalMappingEntry, context: CanonicalReso
       return -1;
     }
     score += 4;
+  } else if (entry.seriesFamily) {
+    const entryFamily = normalizeCanonicalSeriesFamily(entry.seriesFamily);
+    const contextFamily = resolveSeriesFamily(context);
+    if (!contextFamily || entryFamily !== contextFamily) {
+      return -1;
+    }
+    score += 3;
   }
 
   if (entry.attributeKey !== context.attributeKey) {
@@ -155,5 +211,14 @@ export function resolveCanonicalAttribute(
     sourceDocument: mapping.sourceDocument,
     notes: mapping.notes,
     resolved: true,
+    connectorFamilyKey: mapping.connectorFamilyKey,
+    connectorStandardKey: mapping.connectorStandardKey,
+    connectorSubtypeKey: mapping.connectorSubtypeKey,
+    pinCount: mapping.pinCount,
+    hasIndicatorLight: mapping.hasIndicatorLight,
+    hasPgPlug: mapping.hasPgPlug,
+    isGenericConnector: mapping.isGenericConnector,
+    connectorOptions: mapping.connectorOptions,
+    displayDetail: mapping.displayDetail,
   };
 }

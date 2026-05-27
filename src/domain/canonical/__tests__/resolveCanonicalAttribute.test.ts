@@ -9,9 +9,11 @@ import {
 
 import {
   getCanonicalDisplayValueForUi,
+  inferCanonicalSeriesFamily,
   isUnknownCanonical,
   resolveCanonicalAttribute,
 } from '../resolveCanonicalAttribute';
+import { CONNECTOR_CANONICAL_MAPPING_ENTRIES } from '@/domain/canonical/connector/connectorCanonicalMappings';
 
 describe('resolveCanonicalAttribute', () => {
   describe('coil_rating → coil_voltage (DC_24V)', () => {
@@ -136,6 +138,32 @@ describe('resolveCanonicalAttribute', () => {
       });
       expect(resolved.resolved).toBe(false);
       expect(resolved.canonicalKey).toBe(UNKNOWN_CANONICAL_KEY);
+    });
+  });
+
+  describe('seriesFamily matching', () => {
+    it('infers DG4V family from DG4V-3 and DG4V-5 series', () => {
+      expect(inferCanonicalSeriesFamily('DG4V-3')).toBe('DG4V');
+      expect(inferCanonicalSeriesFamily('DG4V-5')).toBe('DG4V');
+    });
+
+    it('prefers exact series over seriesFamily when both exist', () => {
+      const familyOnly = resolveCanonicalAttribute({
+        category: HYDRAULIC_VALVE_CATEGORY,
+        manufacturer: 'Vickers',
+        series: 'DG4V-5',
+        attributeKey: 'connector_type',
+        rawToken: 'U',
+      });
+      expect(familyOnly.canonicalKey).toBe('DIN_VALVE_CONNECTOR');
+
+      const hasExactSeriesEntry = CONNECTOR_CANONICAL_MAPPING_ENTRIES.some(
+        (entry) =>
+          entry.manufacturer === 'Vickers' &&
+          entry.series === 'DG4V-3' &&
+          entry.rawToken === 'U',
+      );
+      expect(hasExactSeriesEntry).toBe(false);
     });
   });
 

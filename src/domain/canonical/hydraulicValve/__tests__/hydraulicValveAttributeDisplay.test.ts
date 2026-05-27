@@ -49,7 +49,8 @@ describe('hydraulicValveAttributeDisplay', () => {
     expect(allText).not.toContain('Sürgü tipi 2');
     expect(allText).not.toContain('Kod kanıtı:');
     expect(voltage?.value).toContain('24V DC');
-    expect(connector?.value).toContain('Fişli konnektör, gösterge ışıklı');
+    expect(connector?.value).toContain('Fişli konnektör');
+    expect(connector?.value).toContain('Işıklı');
   });
 
   it('Atos DHI-0711-X 24DC uses catalog behavior wording, not symbol family label', () => {
@@ -132,7 +133,7 @@ describe('hydraulicValveAttributeDisplay', () => {
 
   it('maps Yuken N1 connector to readable label', () => {
     const display = normalizeHydraulicConnectorDisplay({ rawToken: 'N1' });
-    expect(display?.displayValue).toBe('Fişli konnektör, gösterge ışıklı');
+    expect(display?.displayValue).toBe('Fişli konnektör (Işıklı)');
   });
 
   it('Yuken function display path avoids raw spool type label', () => {

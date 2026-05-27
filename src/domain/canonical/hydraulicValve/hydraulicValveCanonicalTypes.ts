@@ -1,4 +1,5 @@
 import type { EvidenceLevel } from '@/types/product';
+import type { ConnectorFamilyKey, ConnectorOptionKey } from '@/types/canonicalAttribute';
 
 export type HydraulicMountingStandard =
   | 'ISO_4401_03_CETOP_03_NG6_NFPA_D03'
@@ -50,14 +51,13 @@ export type CanonicalCoilVoltage =
   | 'unknown';
 
 export type CanonicalConnectorType =
-  | 'DIN_43650_FORM_A_EN_175301_803'
-  | 'DIN_43650_FORM_B_EN_175301_803'
-  | 'DIN_43650_FORM_C_EN_175301_803'
-  | 'AMP_JUNIOR_TIMER'
-  | 'M12'
-  | 'LEAD_WIRE'
-  | 'CONDUIT_BOX'
+  | 'DIN_VALVE_CONNECTOR'
   | 'PLUG_IN_CONNECTOR'
+  | 'AMP_JUNIOR_TIMER'
+  | 'DEUTSCH_CONNECTOR'
+  | 'M12_4_PIN'
+  | 'FLYING_LEAD'
+  | 'TERMINAL_BOX'
   | 'unknown';
 
 export type CanonicalManualOverride =
@@ -86,6 +86,11 @@ export type CanonicalField<T> = {
   requiresCatalogCheck?: boolean;
   importance: CanonicalImportance;
   notes?: string[];
+  connectorFamilyKey?: ConnectorFamilyKey;
+  connectorStandardKey?: string;
+  connectorOptions?: ConnectorOptionKey[];
+  displayDetail?: string;
+  isGenericConnector?: boolean;
 };
 
 export type HydraulicValveCanonicalProfile = {
