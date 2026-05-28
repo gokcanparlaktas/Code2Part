@@ -165,6 +165,31 @@ export function compareConnectorCanonicalSnapshots(
   const sourceFamily = source.connectorFamilyKey ?? 'UNKNOWN';
   const targetFamily = target.connectorFamilyKey ?? 'UNKNOWN';
 
+  if (sourceFamily === 'NO_CONNECTOR' || targetFamily === 'NO_CONNECTOR') {
+    if (sourceFamily === targetFamily) {
+      return {
+        comparison: {
+          label,
+          sourceDisplay,
+          targetDisplay,
+          status: 'compatible',
+        },
+        sentence: 'İki üründe de konnektör dahil değil; bağlantı aksesuarı ayrıca sipariş edilir.',
+        warning: 'Konnektör/aksesuar seçimi ayrıca kontrol edilmelidir.',
+      };
+    }
+    return {
+      comparison: {
+        label,
+        sourceDisplay,
+        targetDisplay,
+        status: 'unknownOrCheck',
+      },
+      sentence:
+        'Bir üründe konnektör dahil değil; bağlantı aksesuarı ayrıca kontrol edilmelidir.',
+    };
+  }
+
   if (sourceFamily !== targetFamily && sourceFamily !== 'UNKNOWN' && targetFamily !== 'UNKNOWN') {
     return {
       comparison: {

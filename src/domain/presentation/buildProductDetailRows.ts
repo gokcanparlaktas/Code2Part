@@ -157,7 +157,28 @@ export function buildProductDetailRows(
         const label = (revision.label ?? '').trim().toLowerCase();
         const isRawDesignSeriesCode =
           revision.key === 'design_series' && (label.includes('kodu') || label.includes('code'));
-        if (!isRawDesignSeriesCode) {
+        const rawToken = String(revision.value ?? '').trim();
+        const resolved = rawToken
+          ? resolveCanonicalAttribute({
+              category: HYDRAULIC_VALVE_CATEGORY,
+              manufacturer: identification.brand.value ?? undefined,
+              series: identification.series.value ?? undefined,
+              attributeKey: 'design_series',
+              rawToken,
+              evidence: revision.evidence,
+              confidence: revision.confidence,
+            })
+          : null;
+
+        if (resolved && !isUnknownCanonical(resolved) && resolved.displayValue.trim()) {
+          rows.push({
+            label: 'Tasarım serisi',
+            value: resolved.displayValue,
+            evidence: formatEvidence(revision.evidence),
+            requiresCheck: resolved.requiresCatalogCheck,
+          });
+        } else if (!isRawDesignSeriesCode) {
+          // Do not show raw "... kodu" rows as-is.
           rows.push(rowFromParsedTechnicalAttribute(revision));
         }
       }

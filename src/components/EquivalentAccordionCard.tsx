@@ -1,16 +1,21 @@
-import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState, type ReactNode } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import {
   MATCH_PERCENTAGE_RING_SIZE,
   MatchPercentageRing,
-} from '@/components/common/MatchPercentageRing';
-import { calculateMatchPercentage } from '@/domain/scoring/calculateMatchPercentage';
-import type { AttributeComparison, CheckItem, CompatibilityResult } from '@/types/compatibility';
-import { formatCollapsedRiskHint } from '@/utils/formatRisk';
+} from "@/components/common/MatchPercentageRing";
+import { groupCheckItemsByImportance } from "@/domain/presentation/groupCheckItemsByImportance";
+import { calculateMatchPercentage } from "@/domain/scoring/calculateMatchPercentage";
+import type {
+  AttributeComparison,
+  CheckItem,
+  CompatibilityResult,
+} from "@/types/compatibility";
+import { formatCollapsedRiskHint } from "@/utils/formatRisk";
 
-import { RiskLevelBadge } from './RiskLevelBadge';
-import { SeverityBadge } from './SeverityBadge';
+import { RiskLevelBadge } from "./RiskLevelBadge";
+import { SeverityBadge } from "./SeverityBadge";
 
 interface EquivalentAccordionCardProps {
   result: CompatibilityResult;
@@ -69,6 +74,50 @@ function SectionBlock({
   );
 }
 
+function CheckItemsGroup({
+  title,
+  items,
+  defaultExpanded,
+}: {
+  title: string;
+  items: CheckItem[];
+  defaultExpanded: boolean;
+}) {
+  const [open, setOpen] = useState(defaultExpanded);
+  if (items.length === 0) {
+    return null;
+  }
+
+  return (
+    <View style={styles.checkGroupCard}>
+      <Pressable
+        onPress={() => setOpen((v) => !v)}
+        style={({ pressed }) => [
+          styles.checkGroupHeader,
+          pressed && styles.headerPressed,
+        ]}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+      >
+        <Text style={styles.checkGroupTitle}>
+          {title} ({items.length})
+        </Text>
+        <Text style={styles.checkGroupChevron}>{open ? "▼" : "▶"}</Text>
+      </Pressable>
+      {open ? (
+        <View style={styles.checkGroupBody}>
+          {items.map((item) => (
+            <CheckRow
+              key={`${title}-${item.field}-${item.reasonTr}`}
+              item={item}
+            />
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 export function EquivalentAccordionCard({
   result,
   expanded,
@@ -76,14 +125,18 @@ export function EquivalentAccordionCard({
 }: EquivalentAccordionCardProps) {
   const { candidate, summary } = result;
   const hasChecks = result.checkItems.length > 0;
-  const modelCode = candidate.suggestedCode ?? 'Model oluşturulamadı';
+  const modelCode = candidate.suggestedCode ?? "Model oluşturulamadı";
   const riskHint = formatCollapsedRiskHint(summary.riskLevel, hasChecks);
   const matchPercentage = calculateMatchPercentage(result);
+  const groupedChecks = groupCheckItemsByImportance(result.checkItems);
 
   return (
     <View style={[styles.card, expanded && styles.cardExpanded]}>
       <Pressable
-        style={({ pressed }) => [styles.header, pressed && styles.headerPressed]}
+        style={({ pressed }) => [
+          styles.header,
+          pressed && styles.headerPressed,
+        ]}
         onPress={onToggle}
         accessibilityRole="button"
         accessibilityState={{ expanded }}
@@ -91,7 +144,7 @@ export function EquivalentAccordionCard({
         <View style={styles.headerTop}>
           <View style={styles.titleBlock}>
             <Text style={styles.brandSeries}>
-              {candidate.brand} {candidate.series}
+              {candidate.brand}
             </Text>
             <Text style={styles.modelLine}>
               <Text style={styles.modelLabel}>Model: </Text>
@@ -103,7 +156,7 @@ export function EquivalentAccordionCard({
           <View style={styles.headerTrailing}>
             <MatchPercentageRing match={matchPercentage} />
             <View style={styles.chevronAlign}>
-              <Text style={styles.chevron}>{expanded ? '▼' : '▶'}</Text>
+              <Text style={styles.chevron}>{expanded ? "▼" : "▶"}</Text>
             </View>
           </View>
         </View>
@@ -141,9 +194,23 @@ export function EquivalentAccordionCard({
             isEmpty={result.checkItems.length === 0}
             emptyMessage="Bu bölümde kontrol gerektiren madde yok."
           >
-            {result.checkItems.map((item) => (
-              <CheckRow key={`${item.field}-${item.reasonTr}`} item={item} />
-            ))}
+            <View style={styles.checkGroups}>
+              <CheckItemsGroup
+                title="Kritik kontroller"
+                items={groupedChecks.critical}
+                defaultExpanded={false}
+              />
+              <CheckItemsGroup
+                title="Kontrol gerekli"
+                items={groupedChecks.important}
+                defaultExpanded={false}
+              />
+              <CheckItemsGroup
+                title="Düşük önemli"
+                items={groupedChecks.optional}
+                defaultExpanded={false}
+              />
+            </View>
           </SectionBlock>
         </View>
       ) : null}
@@ -153,25 +220,25 @@ export function EquivalentAccordionCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E2E8F0",
     borderRadius: 14,
     borderWidth: 1,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   cardExpanded: {
-    borderColor: '#93C5FD',
+    borderColor: "#93C5FD",
   },
   header: {
     padding: 16,
   },
   headerPressed: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: "#F8FAFC",
   },
   headerTop: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: "flex-start",
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   titleBlock: {
     flex: 1,
@@ -179,57 +246,57 @@ const styles = StyleSheet.create({
     paddingRight: 8,
   },
   brandSeries: {
-    color: '#0F172A',
+    color: "#0F172A",
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: "800",
     lineHeight: 22,
   },
   headerTrailing: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
+    alignItems: "flex-start",
+    flexDirection: "row",
     gap: 4,
   },
   chevronAlign: {
     height: MATCH_PERCENTAGE_RING_SIZE,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   chevron: {
-    color: '#64748B',
+    color: "#64748B",
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
     width: 14,
   },
   modelLine: {
-    color: '#1E40AF',
+    color: "#1E40AF",
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   modelLabel: {
-    color: '#64748B',
-    fontWeight: '600',
+    color: "#64748B",
+    fontWeight: "600",
   },
   matchLevel: {
-    color: '#334155',
+    color: "#334155",
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   riskHint: {
-    color: '#B45309',
+    color: "#B45309",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   body: {
-    borderTopColor: '#E2E8F0',
+    borderTopColor: "#E2E8F0",
     borderTopWidth: 1,
     gap: 16,
     padding: 16,
     paddingTop: 14,
   },
   riskBadgeRow: {
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
   },
   summaryText: {
-    color: '#475569',
+    color: "#475569",
     fontSize: 15,
     lineHeight: 22,
   },
@@ -237,59 +304,92 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   sectionTitle: {
-    color: '#0F172A',
+    color: "#0F172A",
     fontSize: 17,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   empty: {
-    color: '#94A3B8',
+    color: "#94A3B8",
     fontSize: 14,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
   compatibleRow: {
-    backgroundColor: '#F0FDF4',
+    backgroundColor: "#F0FDF4",
     borderRadius: 10,
     gap: 4,
     padding: 12,
   },
   differentRow: {
-    backgroundColor: '#FEF2F2',
+    backgroundColor: "#FEF2F2",
     borderRadius: 10,
     gap: 4,
     padding: 12,
   },
   rowLabel: {
-    color: '#0F172A',
+    color: "#0F172A",
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   rowValue: {
-    color: '#166534',
+    color: "#166534",
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   checkRow: {
-    backgroundColor: '#FFFBEB',
-    borderColor: '#FDE68A',
+    backgroundColor: "#FFFBEB",
+    borderColor: "#FDE68A",
     borderRadius: 10,
     borderWidth: 1,
     gap: 8,
     padding: 12,
   },
   checkHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   checkField: {
-    color: '#0F172A',
+    color: "#0F172A",
     flex: 1,
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   checkReason: {
-    color: '#92400E',
+    color: "#92400E",
     fontSize: 15,
     lineHeight: 22,
+  },
+  checkGroups: {
+    gap: 10,
+  },
+  checkGroupCard: {
+    borderColor: "#E2E8F0",
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  checkGroupHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  checkGroupTitle: {
+    color: "#0F172A",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  checkGroupChevron: {
+    color: "#64748B",
+    fontSize: 13,
+    fontWeight: "700",
+    textAlign: "right",
+    width: 14,
+  },
+  checkGroupBody: {
+    gap: 10,
+    padding: 12,
+    paddingTop: 6,
   },
 });

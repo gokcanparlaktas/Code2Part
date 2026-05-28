@@ -32,6 +32,7 @@ function formatMissing(fields: SuggestedProduct['missingFields']): string {
 export function ProductSuggestionCard({ query, suggestion, onPress }: ProductSuggestionCardProps) {
   const { detectedAttributes } = suggestion;
   const matchPercentage = matchPercentageFromSuggestion(query, suggestion);
+  const modelCode = suggestion.exampleCodeFormat?.trim() ?? '';
 
   return (
     <Pressable
@@ -39,9 +40,17 @@ export function ProductSuggestionCard({ query, suggestion, onPress }: ProductSug
       onPress={onPress}
     >
       <View style={styles.headerRow}>
-        <Text style={styles.title}>
-          {suggestion.brand} {suggestion.series}
-        </Text>
+        <View style={styles.headerText}>
+          <Text style={styles.title}>
+            {suggestion.brand}
+          </Text>
+          {modelCode ? (
+            <Text style={styles.modelLine}>
+              <Text style={styles.modelLabel}>Model: </Text>
+              {modelCode}
+            </Text>
+          ) : null}
+        </View>
         <MatchPercentageRing match={matchPercentage} />
       </View>
 
@@ -79,12 +88,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
+  headerText: {
+    flex: 1,
+    paddingRight: 8,
+  },
   title: {
     color: '#0F172A',
-    flex: 1,
     fontSize: 16,
     fontWeight: '700',
-    paddingRight: 8,
+  },
+  modelLine: {
+    color: '#1E40AF',
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  modelLabel: {
+    color: '#64748B',
+    fontWeight: '600',
   },
   meta: {
     color: '#475569',

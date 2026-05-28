@@ -347,17 +347,38 @@ export function extractHydraulicAttributes(
       ? extractLastCaptureFromPatterns(normalized, revisionPatterns, 'revision')
       : null;
   if (revision) {
-    results.push(
-      buildAttributeResult({
-        key: PARSER_KEYS.design_series,
-        label: 'Tasarım serisi kodu',
-        value: revision,
-        evidence: 'code',
-        confidence: 'medium',
-        sourceToken: revision,
-        category: HYDRAULIC_VALVE_CATEGORY,
-      })
-    );
+    const isAtosNoConnectorToken =
+      (series?.brand ?? '').trim().toLowerCase() === 'atos' &&
+      revision.trim().toUpperCase() === 'X';
+    if (isAtosNoConnectorToken) {
+      results.push(
+        buildAttributeResult({
+          key: PARSER_KEYS.connector_type,
+          label: series
+            ? attributeDefLabel(series.attributes, 'connector_token', 'Konnektör kodu')
+            : 'Konnektör kodu',
+          value: revision,
+          evidence: 'code',
+          confidence: 'medium',
+          requiresCatalogCheck: false,
+          sourceToken: revision,
+          category: HYDRAULIC_VALVE_CATEGORY,
+        })
+      );
+      // Keep parsing other known tokens; only skip design_series row for X.
+    } else {
+      results.push(
+        buildAttributeResult({
+          key: PARSER_KEYS.design_series,
+          label: 'Tasarım serisi kodu',
+          value: revision,
+          evidence: 'code',
+          confidence: 'medium',
+          sourceToken: revision,
+          category: HYDRAULIC_VALVE_CATEGORY,
+        })
+      );
+    }
   }
 
   for (const known of getKnownTokensForSeries(series?.id ?? '')) {

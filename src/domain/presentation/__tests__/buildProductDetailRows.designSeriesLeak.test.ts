@@ -16,6 +16,8 @@ describe('buildProductDetailRows design-series raw leakage', () => {
     const { labels, text } = rowsText('DSG-01-3C2-D24-N1-50');
     expect(labels).not.toContain('Tasarım serisi kodu');
     expect(text).not.toMatch(/Tasarım serisi kodu:\s*50/i);
+    expect(text).toContain('Tasarım serisi');
+    expect(text).toContain('Tasarım numarası 50');
     expect(text).not.toContain('Kod kanıtı:');
   });
 

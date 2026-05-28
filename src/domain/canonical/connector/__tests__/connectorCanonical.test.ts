@@ -79,6 +79,14 @@ describe('connector canonical resolver', () => {
     expect(n.isGenericConnector).toBe(true);
   });
 
+  it('Atos DHI X resolves to NO_CONNECTOR_INCLUDED (connector not included)', () => {
+    const resolved = resolveConnector('X', 'Atos', 'DHI');
+    expect(resolved.canonicalKey).toBe('NO_CONNECTOR_INCLUDED');
+    expect(resolved.connectorFamilyKey).toBe('NO_CONNECTOR');
+    expect(resolved.displayValue).toContain('Konnektör dahil değil');
+    expect(resolved.requiresCatalogCheck).toBe(false);
+  });
+
   it('Vickers KUP4 resolves to AMP_JUNIOR_TIMER', () => {
     const resolved = resolveConnector('KUP4', 'Vickers', 'DG4V-3');
     expect(resolved.canonicalKey).toBe('AMP_JUNIOR_TIMER');
@@ -129,6 +137,14 @@ describe('connector canonical comparison', () => {
     const kup4 = connectorSnapshotFromResolved(resolveConnector('KUP4', 'Vickers', 'DG4V-3'));
     const result = compareConnectorCanonicalSnapshots(u, kup4);
     expect(result.comparison.status).toBe('different');
+  });
+
+  it('NO_CONNECTOR_INCLUDED vs DIN connector yields check, not compatible', () => {
+    const noConn = connectorSnapshotFromResolved(resolveConnector('X', 'Atos', 'DHI'));
+    const din = connectorSnapshotFromResolved(resolveConnector('K4', 'Rexroth', '4WE6'));
+    const result = compareConnectorCanonicalSnapshots(noConn, din);
+    expect(result.comparison.status).toBe('unknownOrCheck');
+    expect(result.sentence).toMatch(/ayr[iı] sipariş|aksesuar/i);
   });
 
   it('Yuken N vs N1 is compatible with light option detail', () => {

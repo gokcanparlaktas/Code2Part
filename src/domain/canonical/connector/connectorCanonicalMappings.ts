@@ -82,6 +82,34 @@ export const CONNECTOR_CANONICAL_MAPPING_ENTRIES: CanonicalMappingEntry[] = [
     requiresCatalogCheck: true,
   }),
 
+  // Atos DHI/DHU: X = connector not included / order separately
+  connectorEntry({
+    id: 'atos_dhi_connector_x_no_connector',
+    manufacturer: 'Atos',
+    series: 'DHI',
+    rawToken: 'X',
+    canonicalKey: 'NO_CONNECTOR_INCLUDED',
+    canonicalValue: 'NO_CONNECTOR_INCLUDED',
+    displayValue: 'Konnektör dahil değil / ayrı sipariş edilir',
+    connectorFamilyKey: 'NO_CONNECTOR',
+    confidence: 'medium',
+    requiresCatalogCheck: false,
+    notes: ['Atos kod seçeneği: konnektör dahil değil.'],
+  }),
+  connectorEntry({
+    id: 'atos_dhu_connector_x_no_connector',
+    manufacturer: 'Atos',
+    series: 'DHU',
+    rawToken: 'X',
+    canonicalKey: 'NO_CONNECTOR_INCLUDED',
+    canonicalValue: 'NO_CONNECTOR_INCLUDED',
+    displayValue: 'Konnektör dahil değil / ayrı sipariş edilir',
+    connectorFamilyKey: 'NO_CONNECTOR',
+    confidence: 'medium',
+    requiresCatalogCheck: false,
+    notes: ['Atos kod seçeneği: konnektör dahil değil.'],
+  }),
+
   // Vickers DG4V family (DG4V-3, DG4V-5, …) — seriesFamily avoids per-size duplication
   connectorEntry({
     id: 'vickers_dg4v_family_connector_u',

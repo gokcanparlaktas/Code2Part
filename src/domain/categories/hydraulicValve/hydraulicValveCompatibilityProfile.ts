@@ -81,6 +81,58 @@ function buildCoilVoltageProfileAttribute(
   });
 }
 
+function buildDesignSeriesProfileAttribute(options: {
+  attrs: TechnicalAttribute[];
+  identification: ProductIdentification | null;
+}): AttributeDef {
+  const design = pickFirstAttr(options.attrs, [
+    "design_series",
+    "component_series",
+    "revision",
+  ]);
+  if (!design?.value) {
+    return fromTechAttr(null, {
+      label: "Tasarım serisi",
+      importance: "optional",
+      compareMode: "ignore",
+    });
+  }
+
+  const rawToken = String(design.value);
+  if ((options.identification?.brand.value ?? '').trim().toLowerCase() === 'atos' && rawToken.trim().toUpperCase() === 'X') {
+    // Atos X is not a design series; treated as connector option elsewhere.
+    return fromTechAttr(null, {
+      label: "Tasarım serisi",
+      importance: "optional",
+      compareMode: "ignore",
+    });
+  }
+  const resolved = resolveCanonicalAttribute({
+    category: HYDRAULIC_VALVE_CATEGORY,
+    manufacturer: options.identification?.brand.value ?? undefined,
+    series: options.identification?.series.value ?? undefined,
+    attributeKey: "design_series",
+    rawToken,
+    evidence: design.evidence,
+    confidence: design.confidence,
+  });
+
+  if (isUnknownCanonical(resolved)) {
+    // Avoid leaking raw token into primary UI; keep optional and check-required.
+    return canonicalResolvedToProfileAttribute(resolved, {
+      label: "Tasarım serisi",
+      importance: "optional",
+      compareMode: "ignore",
+    });
+  }
+
+  return canonicalResolvedToProfileAttribute(resolved, {
+    label: "Tasarım serisi",
+    importance: "optional",
+    compareMode: "ignore",
+  });
+}
+
 function attrValueString(
   attrs: TechnicalAttribute[],
   key: string,
@@ -269,10 +321,9 @@ export function buildHydraulicValveCompatibilityProfile(options: {
         importance: "optional",
         compareMode: "catalog_check",
       }),
-      designSeries: fromTechAttr(designSeries, {
-        label: "Tasarım serisi",
-        importance: "optional",
-        compareMode: "catalog_check",
+      designSeries: buildDesignSeriesProfileAttribute({
+        attrs,
+        identification: options.identification ?? null,
       }),
       // Some vendors expose explicit codes; keep them as optional.
       connectorTokenRaw: fromCandidateString({

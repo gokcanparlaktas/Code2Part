@@ -1,9 +1,13 @@
-import { compareProducts } from './compareProducts';
-import { findEquivalents } from './findEquivalents';
-import { identifyProduct } from './identifyProduct';
-import { normalizeCode } from './normalizeCode';
 import type { CompatibilityResult } from '@/types/compatibility';
 import type { ProductIdentification } from '@/types/product';
+
+import { buildCompatibilityResultsFromDiscoveries } from './buildCompatibilityResultsFromDiscoveries';
+import {
+  findEquivalentCandidates,
+  logEquivalentCandidateDiscoveryDiagnostics,
+} from './findEquivalentCandidates';
+import { identifyProduct } from './identifyProduct';
+import { normalizeCode } from './normalizeCode';
 
 export interface ProductSearchResult {
   identification: ProductIdentification;
@@ -23,9 +27,12 @@ export function resolveProductSearch(inputCode: string): ProductSearchResult {
     };
   }
 
-  const equivalents = findEquivalents(identification);
-  const compatibilityResults = equivalents.map((candidate) =>
-    compareProducts(identification, candidate)
+  const discoveries = findEquivalentCandidates(identification, inputCode);
+  logEquivalentCandidateDiscoveryDiagnostics(inputCode);
+
+  const compatibilityResults = buildCompatibilityResultsFromDiscoveries(
+    identification,
+    discoveries,
   );
 
   return {

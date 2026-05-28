@@ -1,15 +1,14 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { DemoDisclaimerNote } from '@/components/DemoDisclaimerNote';
 import { EquivalentAccordionCard } from '@/components/EquivalentAccordionCard';
 import { ReliabilityNote } from '@/components/ReliabilityNote';
 import { SourceProductSummary } from '@/components/SourceProductSummary';
 import { sortCompatibilityResultsByMatchPercentage } from '@/domain/presentation/sortCompatibilityResults';
-import { filterVisibleEquivalentResults } from '@/domain/resolver/filterVisibleEquivalentResults';
-import { resolveProductSearch } from '@/domain/resolver/resolveProductSearch';
 import { normalizeCode } from '@/domain/resolver/normalizeCode';
+import { resolveProductSearch } from '@/domain/resolver/resolveProductSearch';
 import { isEquivalenceMappingUnverified } from '@/utils/catalogReliability';
 import { decodeProductCodeFromRoute } from '@/utils/productCodeRouteParam';
 
@@ -27,7 +26,7 @@ function compatibilityResultKey(result: {
   return result.candidate.seriesId;
 }
 
-function EquivalentsScreen() {
+export default function AllAlternativesScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
   const inputCode = decodeProductCodeFromRoute(code);
 
@@ -43,10 +42,6 @@ function EquivalentsScreen() {
   }, [inputCode]);
 
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
-  const limited = useMemo(
-    () => filterVisibleEquivalentResults(compatibilityResults),
-    [compatibilityResults],
-  );
 
   if (!inputCode || !isResolvable) {
     return (
@@ -66,8 +61,7 @@ function EquivalentsScreen() {
       showsVerticalScrollIndicator={false}
     >
       <Text style={styles.pageSubtitle}>
-        Bu ürüne benzer kullanılabilecek seri adayları. Liste teknik onay yerine geçmez;
-        kontrol edilmesi gereken alanlar kart içinde gösterilir.
+        {compatibilityResults.length} alternatif bulundu.
       </Text>
 
       <SourceProductSummary identification={identification} />
@@ -84,47 +78,19 @@ function EquivalentsScreen() {
         </View>
       ) : (
         <View style={styles.accordionList}>
-          {limited.visible.map((result) => {
+          {compatibilityResults.map((result) => {
             const rowKey = compatibilityResultKey(result);
             return (
-            <EquivalentAccordionCard
-              key={rowKey}
-              result={result}
-              expanded={expandedKey === rowKey}
-              onToggle={() =>
-                setExpandedKey((current) =>
-                  current === rowKey
-                    ? null
-                    : rowKey
-                )
-              }
-            />
+              <EquivalentAccordionCard
+                key={rowKey}
+                result={result}
+                expanded={expandedKey === rowKey}
+                onToggle={() =>
+                  setExpandedKey((current) => (current === rowKey ? null : rowKey))
+                }
+              />
             );
           })}
-          {limited.isLimited ? (
-            <View style={styles.limitedFooter}>
-              <Text style={styles.limitedHint}>
-                Düşük uyumlu alternatifler gizlendi.
-              </Text>
-              <Pressable
-                onPress={() =>
-                  router.push({
-                    pathname: '/all-alternatives',
-                    params: { code: inputCode },
-                  })
-                }
-                style={({ pressed }) => [
-                  styles.allButton,
-                  pressed && styles.allButtonPressed,
-                ]}
-                accessibilityRole="button"
-              >
-                <Text style={styles.allButtonText}>
-                  Tüm alternatifleri gör ({limited.totalCount})
-                </Text>
-              </Pressable>
-            </View>
-          ) : null}
         </View>
       )}
 
@@ -150,51 +116,27 @@ const styles = StyleSheet.create({
   accordionList: {
     gap: 12,
   },
-  limitedFooter: {
-    gap: 10,
-    paddingTop: 6,
-  },
-  limitedHint: {
-    color: '#64748B',
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  allButton: {
-    alignItems: 'center',
-    backgroundColor: '#0F172A',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  allButtonPressed: {
-    opacity: 0.9,
-  },
-  allButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
-  },
   emptyCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     padding: 18,
   },
   emptyText: {
-    color: '#64748B',
+    color: '#334155',
     fontSize: 15,
     lineHeight: 22,
-    textAlign: 'center',
   },
   centered: {
+    alignItems: 'center',
     flex: 1,
-    gap: 10,
     justifyContent: 'center',
-    padding: 24,
+    padding: 20,
   },
   errorTitle: {
-    color: '#9A3412',
+    color: '#0F172A',
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '800',
+    marginBottom: 6,
     textAlign: 'center',
   },
   errorMessage: {
@@ -205,4 +147,3 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EquivalentsScreen;

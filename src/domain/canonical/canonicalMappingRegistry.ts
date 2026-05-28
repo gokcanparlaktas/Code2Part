@@ -68,6 +68,37 @@ function cushioningEntry(
   };
 }
 
+function designSeriesEntry(options: {
+  id: string;
+  manufacturer?: string;
+  series?: string;
+  seriesFamily?: string;
+  rawToken: string;
+  canonicalKey: string;
+  displayValue: string;
+  confidence?: CanonicalMappingEntry['confidence'];
+  requiresCatalogCheck?: boolean;
+  notes?: string[];
+}): CanonicalMappingEntry {
+  return {
+    id: options.id,
+    category: HYDRAULIC_VALVE_CATEGORY,
+    manufacturer: options.manufacturer,
+    series: options.series,
+    seriesFamily: options.seriesFamily,
+    attributeKey: 'design_series',
+    rawToken: options.rawToken,
+    canonicalKey: options.canonicalKey,
+    canonicalValue: options.canonicalKey,
+    displayValue: options.displayValue,
+    evidence: 'code',
+    confidence: options.confidence ?? 'high',
+    requiresCatalogCheck: options.requiresCatalogCheck ?? false,
+    notes: options.notes,
+    resolvedAttributeKey: 'design_series',
+  };
+}
+
 /** Local canonical mappings (Firestore-ready shape). */
 export const CANONICAL_MAPPING_ENTRIES: CanonicalMappingEntry[] = [
   // coil_rating → coil_voltage (24V DC)
@@ -140,5 +171,64 @@ export const CANONICAL_MAPPING_ENTRIES: CanonicalMappingEntry[] = [
     notes: ['Variant token supporting ISO 15552; primary standard_family comes from series catalog.'],
   },
 
+  // design_series / revision tokens (low-importance metadata; must not drive compatibility)
+  designSeriesEntry({
+    id: 'vickers_dg4v_design_60',
+    manufacturer: 'Vickers',
+    seriesFamily: 'DG4V',
+    rawToken: '60',
+    canonicalKey: 'VICKERS_BASIC_DESIGN',
+    displayValue: 'Basic design',
+    requiresCatalogCheck: false,
+  }),
+  designSeriesEntry({
+    id: 'vickers_dg4v_design_61',
+    manufacturer: 'Vickers',
+    seriesFamily: 'DG4V',
+    rawToken: '61',
+    canonicalKey: 'VICKERS_TYPE_8_SPOOL_DESIGN',
+    displayValue: 'Type 8 spool design',
+    requiresCatalogCheck: false,
+  }),
+  designSeriesEntry({
+    id: 'rexroth_component_series_3x',
+    manufacturer: 'Rexroth',
+    rawToken: '3X',
+    canonicalKey: 'REXROTH_COMPONENT_SERIES_3X',
+    displayValue: 'Komponent serisi 3X',
+    requiresCatalogCheck: false,
+  }),
+  designSeriesEntry({
+    id: 'rexroth_component_series_6x',
+    manufacturer: 'Rexroth',
+    rawToken: '6X',
+    canonicalKey: 'REXROTH_COMPONENT_SERIES_6X',
+    displayValue: 'Komponent serisi 6X',
+    requiresCatalogCheck: false,
+  }),
+  designSeriesEntry({
+    id: 'rexroth_component_series_7x',
+    manufacturer: 'Rexroth',
+    rawToken: '7X',
+    canonicalKey: 'REXROTH_COMPONENT_SERIES_7X',
+    displayValue: 'Komponent serisi 7X',
+    requiresCatalogCheck: false,
+  }),
+  designSeriesEntry({
+    id: 'yuken_design_number_50',
+    manufacturer: 'Yuken',
+    rawToken: '50',
+    canonicalKey: 'YUKEN_DESIGN_NUMBER_50',
+    displayValue: 'Tasarım numarası 50',
+    requiresCatalogCheck: false,
+  }),
+  designSeriesEntry({
+    id: 'yuken_design_number_70',
+    manufacturer: 'Yuken',
+    rawToken: '70',
+    canonicalKey: 'YUKEN_DESIGN_NUMBER_70',
+    displayValue: 'Tasarım numarası 70',
+    requiresCatalogCheck: false,
+  }),
   ...CONNECTOR_CANONICAL_MAPPING_ENTRIES,
 ];

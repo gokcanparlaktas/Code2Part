@@ -17,6 +17,7 @@ export type ConnectorFamilyKey =
   | 'AMP_JUNIOR_TIMER'
   | 'DEUTSCH_CONNECTOR'
   | 'M12_CONNECTOR'
+  | 'NO_CONNECTOR'
   | 'FLYING_LEAD'
   | 'TERMINAL_BOX'
   | 'UNKNOWN';

@@ -24,6 +24,7 @@ export default function RootLayout() {
         <Stack.Screen name="search" options={{ title: 'Ürün kodu ara' }} />
         <Stack.Screen name="result" options={{ title: 'Sonuç' }} />
         <Stack.Screen name="equivalents" options={{ title: 'Muadiller' }} />
+        <Stack.Screen name="all-alternatives" options={{ title: 'Tüm Alternatifler' }} />
         <Stack.Screen name="history" options={{ title: 'Son Aramalar' }} />
         <Stack.Screen name="diagnostics" options={{ title: 'Veri Kontrolü' }} />
       </Stack>

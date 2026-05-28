@@ -141,6 +141,59 @@ describe('resolveCanonicalAttribute', () => {
     });
   });
 
+  describe('design_series mappings (low-importance metadata)', () => {
+    it('maps Rexroth 7X to component series display', () => {
+      const resolved = resolveCanonicalAttribute({
+        category: HYDRAULIC_VALVE_CATEGORY,
+        manufacturer: 'Rexroth',
+        series: '4WE6',
+        attributeKey: 'design_series',
+        rawToken: '7X',
+      });
+      expect(resolved.canonicalKey).toBe('REXROTH_COMPONENT_SERIES_7X');
+      expect(resolved.displayValue).toBe('Komponent serisi 7X');
+      expect(resolved.requiresCatalogCheck).toBe(false);
+    });
+
+    it('maps Vickers 60 to Basic design', () => {
+      const resolved = resolveCanonicalAttribute({
+        category: HYDRAULIC_VALVE_CATEGORY,
+        manufacturer: 'Vickers',
+        series: 'DG4V-3',
+        attributeKey: 'design_series',
+        rawToken: '60',
+      });
+      expect(resolved.canonicalKey).toBe('VICKERS_BASIC_DESIGN');
+      expect(resolved.displayValue).toBe('Basic design');
+      expect(resolved.requiresCatalogCheck).toBe(false);
+    });
+
+    it('maps Yuken 70 to design number display', () => {
+      const resolved = resolveCanonicalAttribute({
+        category: HYDRAULIC_VALVE_CATEGORY,
+        manufacturer: 'Yuken',
+        series: 'DSG-01',
+        attributeKey: 'design_series',
+        rawToken: '70',
+      });
+      expect(resolved.canonicalKey).toBe('YUKEN_DESIGN_NUMBER_70');
+      expect(resolved.displayValue).toBe('Tasarım numarası 70');
+      expect(resolved.requiresCatalogCheck).toBe(false);
+    });
+
+    it('maps Atos X to Variant X but requires catalog check', () => {
+      const resolved = resolveCanonicalAttribute({
+        category: HYDRAULIC_VALVE_CATEGORY,
+        manufacturer: 'Atos',
+        series: 'DHI',
+        attributeKey: 'design_series',
+        rawToken: 'X',
+      });
+      expect(resolved.resolved).toBe(false);
+      expect(resolved.canonicalKey).toBe(UNKNOWN_CANONICAL_KEY);
+    });
+  });
+
   describe('seriesFamily matching', () => {
     it('infers DG4V family from DG4V-3 and DG4V-5 series', () => {
       expect(inferCanonicalSeriesFamily('DG4V-3')).toBe('DG4V');

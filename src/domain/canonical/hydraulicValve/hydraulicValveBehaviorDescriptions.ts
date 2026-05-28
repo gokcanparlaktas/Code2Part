@@ -21,6 +21,11 @@ import {
   normalizeHydraulicManualOverrideDisplay,
   normalizeHydraulicVoltageDisplay,
 } from './hydraulicValveAttributeDisplay';
+import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
+import {
+  isUnknownCanonical,
+  resolveCanonicalAttribute,
+} from '@/domain/canonical/resolveCanonicalAttribute';
 
 export type HydraulicBehaviorDescription = {
   title: string;
@@ -475,7 +480,14 @@ function describeVickersDesignNumberFromAttributes(
     return null;
   }
   const upper = token.trim().toUpperCase();
-  const display = upper === '60' ? 'Basic design' : upper === '61' ? 'Type 8 spool' : upper;
+  const resolved = resolveCanonicalAttribute({
+    category: HYDRAULIC_VALVE_CATEGORY,
+    manufacturer: profile.brand ?? undefined,
+    series: profile.series ?? undefined,
+    attributeKey: 'design_series',
+    rawToken: upper,
+  });
+  const display = !isUnknownCanonical(resolved) ? resolved.displayValue : upper;
   return {
     title: 'Tasarım serisi',
     primaryDescription: display,
@@ -485,7 +497,7 @@ function describeVickersDesignNumberFromAttributes(
       readAttr(map, 'design_series') ?? readAttr(map, 'design_number'),
       'medium',
     ),
-    requiresCatalogCheck: upper !== '60' && upper !== '61',
+    requiresCatalogCheck: isUnknownCanonical(resolved) || resolved.requiresCatalogCheck,
   };
 }
 
