@@ -129,8 +129,9 @@ describe('canonical pipeline integration', () => {
         normalizeCode('DG4V-3-2A-M-U-H7-60')
       ),
     });
-    expect(result.compatible.some((c) => c.label === 'Bobin voltajı')).toBe(false);
-    expect(result.checkItems.some((c) => c.field === 'Bobin voltajı')).toBe(true);
+    expect(result.compatible.some((c) => c.label === 'Bobin voltajı')).toBe(true);
+    // still requires verification messaging via warnings (catalog check)
+    expect((result.warnings ?? []).some((w) => w.toLowerCase().includes('bobin voltajı'))).toBe(true);
   });
 
   it('resolved fields use machine canonical keys not display strings', () => {

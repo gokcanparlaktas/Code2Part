@@ -86,6 +86,18 @@ describe("compareHydraulicValveCanonicalProfiles", () => {
     ).toBe(true);
   });
 
+  it("Vickers H vs Rexroth EG24 compare as compatible voltage (catalog check warning only)", () => {
+    const vickers = buildProfile("DG4V-3-2A-M-U-H7-60");
+    const rexroth = buildProfile("4WE6E-6X/EG24N9K4");
+    const result = compareHydraulicValveCanonicalProfiles(vickers, rexroth);
+
+    const voltage = result.comparisons.find((c) => c.label === "Bobin voltajı");
+    expect(voltage?.status).toBe("compatible");
+    expect(voltage?.sourceDisplay).toBe("24V DC");
+    expect(voltage?.targetDisplay).toBe("24V DC");
+    expect(result.warnings.some((w) => w.toLowerCase().includes("bobin voltajı"))).toBe(true);
+  });
+
   it("24V DC vs 110V AC is different", () => {
     const dc = buildProfile("4WE6E-6X/EG24N9K4");
     const acProfile = buildHydraulicValveCanonicalProfile({

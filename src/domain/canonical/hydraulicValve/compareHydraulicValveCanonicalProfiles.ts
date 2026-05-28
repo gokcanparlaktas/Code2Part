@@ -356,8 +356,15 @@ export function compareHydraulicValveCanonicalProfiles(
     crossBrand,
   });
   if (source.coilVoltage.requiresCatalogCheck || target.coilVoltage.requiresCatalogCheck) {
-    voltage.comparison.status = 'unknownOrCheck';
-    pushResult(result, voltage.comparison, 'Bobin voltajı katalogdan doğrulanmalıdır.', 'critical');
+    // If both sides canonically resolve to the same voltage, treat as compatible
+    // but still warn that the coil code should be verified from catalog.
+    if (voltage.comparison.status === 'compatible') {
+      pushResult(result, voltage.comparison, voltage.sentence, 'critical');
+      result.warnings.push('Bobin voltajı kodu katalogdan doğrulanmalıdır.');
+    } else {
+      voltage.comparison.status = 'unknownOrCheck';
+      pushResult(result, voltage.comparison, 'Bobin voltajı katalogdan doğrulanmalıdır.', 'critical');
+    }
   } else {
     pushResult(result, voltage.comparison, voltage.sentence, 'critical');
   }

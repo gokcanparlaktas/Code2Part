@@ -110,7 +110,7 @@ describe('hydraulicValveAttributeDisplay', () => {
     expect(result.different.some((c) => c.label === 'Bobin voltajı')).toBe(false);
   });
 
-  it('Vickers H-derived 24V DC still stays unknown/check vs confirmed 24V DC', () => {
+  it('Vickers H-derived 24V DC compares as compatible (but warns to verify)', () => {
     const source = identify('4WE6E-6X/EG24N9K4');
     const target = identify('DG4V-3-2A-M-U-H7-60');
     const targetSeries = getProductSeriesById('vickers_dg4v3')!;
@@ -127,8 +127,10 @@ describe('hydraulicValveAttributeDisplay', () => {
 
     const result = compareProducts(source, candidate);
     const voltage = result.compatible.find((c) => c.label === 'Bobin voltajı');
-    expect(voltage).toBeUndefined();
-    expect(result.checkItems.some((c) => c.field === 'Bobin voltajı')).toBe(true);
+    expect(voltage?.status).toBe('compatible');
+    expect(voltage?.sourceDisplay).toBe('24V DC');
+    expect(voltage?.targetDisplay).toBe('24V DC');
+    expect((result.warnings ?? []).some((w) => w.toLowerCase().includes('bobin voltajı'))).toBe(true);
   });
 
   it('maps Yuken N1 connector to readable label', () => {

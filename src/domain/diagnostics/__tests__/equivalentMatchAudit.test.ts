@@ -36,3 +36,13 @@ describe('buildEquivalentMatchAudit', () => {
   );
 });
 
+describe('equivalentMatchAudit coil voltage regression', () => {
+  it('DG4V-3 vs Rexroth EG24 does not list Bobin voltajı as unknownOrCheck', () => {
+    const audit = buildEquivalentMatchAudit('DG4V-3-2A-M-U-H7-60');
+    const first = audit.candidates[0]!;
+    expect(first.code).toBe('4WE6E-6X/EG24N9K4');
+    expect(first.compatible).toContain('Bobin voltajı');
+    expect(first.unknownOrCheck).not.toContain('Bobin voltajı');
+  });
+});
+
