@@ -31,6 +31,7 @@ function formatMissing(fields: SuggestedProduct['missingFields']): string {
 
 export function ProductSuggestionCard({ query, suggestion, onPress }: ProductSuggestionCardProps) {
   const { detectedAttributes } = suggestion;
+  const isExactCodeMatch = suggestion.matchedBy === 'exact_match';
   const matchPercentage = matchPercentageFromSuggestion(query, suggestion);
   const modelCode = suggestion.exampleCodeFormat?.trim() ?? '';
 
@@ -64,7 +65,9 @@ export function ProductSuggestionCard({ query, suggestion, onPress }: ProductSug
         <Text style={styles.detected}>Strok: {detectedAttributes.strokeMm} mm</Text>
       ) : null}
 
-      <Text style={styles.missing}>{formatMissing(suggestion.missingFields)}</Text>
+      {!isExactCodeMatch ? (
+        <Text style={styles.missing}>{formatMissing(suggestion.missingFields)}</Text>
+      ) : null}
       <Text style={styles.hint}>{suggestion.suggestionTextTr}</Text>
     </Pressable>
   );

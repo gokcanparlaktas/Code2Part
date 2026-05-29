@@ -115,4 +115,33 @@ describe('calculateSuggestionMatchPercentage', () => {
     expect(match.percentage).not.toBe(50);
     expect(match.level).toBe('low');
   });
+
+  it('returns 100% when query equals suggestion example code', () => {
+    const query = '4WE6E-6X/EG24N9K4';
+    const match = matchPercentageFromSuggestion(
+      query,
+      stubSuggestion({
+        seriesId: 'rexroth_4we6',
+        series: '4WE6',
+        exampleCodeFormat: '4WE6E-6X/EG24N9K4',
+        matchedBy: 'exact_match',
+      })
+    );
+    expect(match.percentage).toBe(100);
+  });
+
+  it('returns 100% for short pneumatic exact codes (C96, SI)', () => {
+    for (const query of ['C96-40-80', 'SI-63-150']) {
+      const match = matchPercentageFromSuggestion(
+        query,
+        stubSuggestion({
+          seriesId: query.startsWith('C96') ? 'smc_c96' : 'airtac_si',
+          series: query.startsWith('C96') ? 'C96' : 'SI',
+          exampleCodeFormat: query,
+          matchedBy: 'exact_match',
+        })
+      );
+      expect(match.percentage).toBe(100);
+    }
+  });
 });
