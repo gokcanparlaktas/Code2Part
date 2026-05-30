@@ -2,18 +2,13 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { CompatibilityWarningsList } from '@/components/CompatibilityWarningsList';
-import { DemoDisclaimerNote } from '@/components/DemoDisclaimerNote';
 import { EquivalentAccordionCard } from '@/components/EquivalentAccordionCard';
-import { collectEquivalencePageWarnings } from '@/domain/presentation/collectEquivalencePageWarnings';
-import { ReliabilityNote } from '@/components/ReliabilityNote';
 import { SourceProductSummary } from '@/components/SourceProductSummary';
 import { sortCompatibilityResultsByMatchPercentage } from '@/domain/presentation/sortCompatibilityResults';
 import { filterVisibleEquivalentResults } from '@/domain/resolver/filterVisibleEquivalentResults';
 import { useBackendCompareLoader } from '@/hooks/useBackendCompareLoader';
 import { useResolvedProductSearch } from '@/hooks/useResolvedProductSearch';
 import { isBackendResolverMode } from '@/services/resolverService';
-import { isEquivalenceMappingUnverified } from '@/utils/catalogReliability';
 import {
   compatibilityResultKey,
   mergeCompatibilityResultDisplay,
@@ -53,11 +48,6 @@ function EquivalentsScreen() {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const limited = useMemo(
     () => filterVisibleEquivalentResults(compatibilityResults),
-    [compatibilityResults],
-  );
-
-  const pageWarnings = useMemo(
-    () => collectEquivalencePageWarnings(compatibilityResults),
     [compatibilityResults],
   );
 
@@ -127,16 +117,7 @@ function EquivalentsScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.pageSubtitle}>
-        Bu ürüne benzer kullanılabilecek seri adayları. Liste teknik onay yerine geçmez;
-        kontrol edilmesi gereken alanlar kart içinde gösterilir.
-      </Text>
-
       <SourceProductSummary identification={identification} />
-
-      {isEquivalenceMappingUnverified(identification.seriesId) ? (
-        <ReliabilityNote message="Bu muadil eşleştirme manuel eklenmiştir, sipariş öncesi teknik doğrulama önerilir." />
-      ) : null}
 
       {compareErrorMessage ? (
         <View style={styles.compareErrorCard}>
@@ -197,9 +178,6 @@ function EquivalentsScreen() {
         </View>
       )}
 
-      <CompatibilityWarningsList warnings={pageWarnings} />
-
-      <DemoDisclaimerNote compact />
     </ScrollView>
   );
 }

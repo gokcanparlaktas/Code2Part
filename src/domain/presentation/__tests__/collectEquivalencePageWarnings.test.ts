@@ -1,5 +1,6 @@
 import { collectEquivalencePageWarnings } from '@/domain/presentation/collectEquivalencePageWarnings';
 import { GENERAL_ORDER_CATALOG_WARNING_TR } from '@/domain/presentation/formatUserFacingCatalogDisplay';
+import { GENERIC_COMPATIBILITY_WARNING_TEXTS } from '@/domain/presentation/filterGenericCompatibilityWarnings';
 import type { CompatibilityResult } from '@/types/compatibility';
 
 function minimalResult(warnings: string[]): CompatibilityResult {
@@ -27,16 +28,17 @@ function minimalResult(warnings: string[]): CompatibilityResult {
 }
 
 describe('collectEquivalencePageWarnings', () => {
-  it('dedupes repeated warnings across candidates', () => {
+  it('dedupes repeated warnings across candidates and suppresses generic disclaimer warnings', () => {
     const shared = [
-      'Sürgü merkez davranışı eşleşmesi, inceleme gerektiren katalog aday verisindeki port durumlarına dayanır',
-      'Hidrolik valflerde sembol, sürgü tipi ve bobin voltajı mutlaka kontrol edilmelidir.',
+      'Bobin voltajı uygulama koşullarına göre farklılık gösterebilir.',
+      GENERIC_COMPATIBILITY_WARNING_TEXTS[0],
     ];
     const page = collectEquivalencePageWarnings([
       minimalResult(shared),
       minimalResult(shared),
     ]);
-    expect(page).toContain(GENERAL_ORDER_CATALOG_WARNING_TR);
-    expect(page.length).toBeLessThanOrEqual(3);
+    expect(page).not.toContain(GENERAL_ORDER_CATALOG_WARNING_TR);
+    expect(page).not.toContain(GENERIC_COMPATIBILITY_WARNING_TEXTS[0]);
+    expect(page).toEqual(['Bobin voltajı uygulama koşullarına göre farklılık gösterebilir.']);
   });
 });

@@ -10,8 +10,6 @@ import {
   View,
 } from 'react-native';
 
-import { DemoDisclaimerNote } from '@/components/DemoDisclaimerNote';
-
 import {
   DEFAULT_SUGGESTION_LIMIT,
   suggestProductsDetailed,
@@ -156,7 +154,6 @@ export function ProductCodeSearchCard() {
         ))}
       </View>
 
-      <DemoDisclaimerNote compact />
     </View>
   );
 }

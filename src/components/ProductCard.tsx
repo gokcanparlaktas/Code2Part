@@ -1,9 +1,12 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { ProductIdentification } from '@/types/product';
 import { buildProductDetailRows } from '@/domain/presentation/buildProductDetailRows';
 import type { ProductDetailRowView } from '@/services/mapBackendResolverDtos';
+
 import { ConfidenceBadge } from './ConfidenceBadge';
+import { ProductDetailsModal } from './ProductDetailsModal';
 
 interface ProductCardProps {
   identification: ProductIdentification;
@@ -37,26 +40,57 @@ export function ProductCard({
   noticeText,
   detailRows,
 }: ProductCardProps) {
-  const rows: DetailRowProps[] =
-    detailRows && detailRows.length > 0
-      ? detailRows
-      : buildProductDetailRows(identification);
+  const [detailsVisible, setDetailsVisible] = useState(false);
+  const isFullMatch = identification.outcome === 'full';
+
+  const rows: DetailRowProps[] = useMemo(
+    () =>
+      detailRows && detailRows.length > 0
+        ? detailRows
+        : buildProductDetailRows(identification),
+    [detailRows, identification]
+  );
+
+  const technicalRows = isFullMatch ? rows : [];
 
   return (
     <View style={styles.card}>
       <Text style={styles.title}>{title}</Text>
-      <Text style={styles.codeLabel}>Normalize kod</Text>
+      <Text style={styles.codeLabel}>Ürün kodu</Text>
       <Text style={styles.code}>{identification.normalizedCode}</Text>
 
-      {identification.outcome === 'series_only' && noticeText && (
-        <View style={styles.alertBox}>
-          <Text style={styles.alertText}>
-            {noticeText}
-          </Text>
-        </View>
-      )}
+      {isFullMatch && technicalRows.length > 0 ? (
+        <>
+          <Pressable
+            style={({ pressed }) => [
+              styles.detailsLink,
+              pressed && styles.detailsLinkPressed,
+            ]}
+            onPress={() => setDetailsVisible(true)}
+            accessibilityRole="button"
+          >
+            <Text style={styles.detailsLinkText}>Ürün detayları</Text>
+            <Text style={styles.detailsLinkChevron}>›</Text>
+          </Pressable>
+          <ProductDetailsModal
+            visible={detailsVisible}
+            onClose={() => setDetailsVisible(false)}
+            rows={technicalRows}
+          />
+        </>
+      ) : null}
 
-      <ConfidenceBadge confidence={identification.confidence} />
+      {identification.outcome === 'series_only' && noticeText ? (
+        <View style={styles.alertBox}>
+          <Text style={styles.alertText}>{noticeText}</Text>
+        </View>
+      ) : null}
+
+      {isFullMatch ? (
+        <ConfidenceBadge confidence="high" label="Tam eşleşme" />
+      ) : (
+        <ConfidenceBadge confidence={identification.confidence} />
+      )}
 
       <View style={styles.details}>
         {rows.map((row) => (
@@ -95,6 +129,31 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
+  detailsLink: {
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF',
+    borderColor: '#BFDBFE',
+    borderRadius: 10,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  detailsLinkPressed: {
+    opacity: 0.92,
+  },
+  detailsLinkText: {
+    color: '#1E40AF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  detailsLinkChevron: {
+    color: '#1E40AF',
+    fontSize: 22,
+    fontWeight: '600',
+    lineHeight: 22,
+  },
   alertBox: {
     backgroundColor: '#FEF3C7',
     borderRadius: 8,
@@ -131,10 +190,5 @@ const styles = StyleSheet.create({
   evidence: {
     color: '#94A3B8',
     fontSize: 12,
-  },
-  reviewHint: {
-    color: '#B45309',
-    fontSize: 12,
-    fontWeight: '500',
   },
 });

@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { filterGenericCompatibilityWarningsForUi } from '@/domain/presentation/filterGenericCompatibilityWarnings';
 import { formatCompatibilityWarningForUi } from '@/domain/presentation/formatCompatibilityMetadata';
 
 interface CompatibilityWarningsListProps {
@@ -7,14 +8,16 @@ interface CompatibilityWarningsListProps {
 }
 
 export function CompatibilityWarningsList({ warnings }: CompatibilityWarningsListProps) {
-  if (warnings.length === 0) {
+  const visibleWarnings = filterGenericCompatibilityWarningsForUi(warnings);
+
+  if (visibleWarnings.length === 0) {
     return null;
   }
 
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Uyarılar</Text>
-      {warnings.map((warning) => {
+      {visibleWarnings.map((warning) => {
         const formatted = formatCompatibilityWarningForUi(warning);
         return (
           <View

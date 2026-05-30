@@ -1,7 +1,6 @@
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { DemoDisclaimerNote } from "@/components/DemoDisclaimerNote";
 import { ProductCodeSearchCard } from "@/components/ProductCodeSearchCard";
 
 export default function HomeScreen() {
@@ -37,7 +36,6 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        <DemoDisclaimerNote />
       </ScrollView>
     </SafeAreaView>
   );

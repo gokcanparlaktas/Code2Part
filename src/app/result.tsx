@@ -2,13 +2,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { DemoDisclaimerNote } from '@/components/DemoDisclaimerNote';
-import { EvidenceDetails } from '@/components/EvidenceDetails';
-import { LowConfidenceWarningCard } from '@/components/LowConfidenceWarningCard';
 import { ProductCard } from '@/components/ProductCard';
-import { ReliabilityNote } from '@/components/ReliabilityNote';
 import { PartialSuggestionsPanel } from '@/components/PartialSuggestionsPanel';
-import { TechnicalAttributesCard } from '@/components/TechnicalAttributesCard';
 import { UnresolvedResultCard } from '@/components/UnresolvedResultCard';
 import { calculateProductReliability } from '@/domain/reliability/calculateProductReliability';
 import { suggestProducts } from '@/domain/resolver/suggestProducts';
@@ -18,7 +13,6 @@ import {
   recordSearch,
   saveUnresolvedSearch,
 } from '@/services/localSearchStore';
-import { isSeriesDataUnverified } from '@/utils/catalogReliability';
 import {
   decodeProductCodeFromRoute,
   productCodeEquivalentsHref,
@@ -30,7 +24,7 @@ export default function ResultScreen() {
   const [alreadySaved, setAlreadySaved] = useState(false);
   const { loading, errorMessage, data } = useResolvedProductSearch(inputCode);
 
-  const { identification, hasEquivalents, isUnresolved, suggestions, productDetailRows, source } =
+  const { identification, hasEquivalents, isUnresolved, suggestions, productDetailRows } =
     useMemo(() => {
       if (!data) {
         return {
@@ -39,7 +33,6 @@ export default function ResultScreen() {
           isUnresolved: false,
           suggestions: [],
           productDetailRows: [],
-          source: 'local' as const,
         };
       }
 
@@ -54,7 +47,6 @@ export default function ResultScreen() {
         isUnresolved: unresolved,
         suggestions: partialSuggestions,
         productDetailRows: data.productDetailRows,
-        source: data.source,
       };
     }, [data, inputCode]);
 
@@ -74,13 +66,6 @@ export default function ResultScreen() {
     () => (identification ? calculateProductReliability(identification) : null),
     [identification]
   );
-  const showLowConfidence = Boolean(
-    reliability && !isUnresolved && reliability.isLowConfidence
-  );
-  const showSeriesReliabilityNote =
-    Boolean(identification) &&
-    !isUnresolved &&
-    isSeriesDataUnverified(identification!.seriesId);
 
   const openEquivalents = () => {
     router.push(productCodeEquivalentsHref(inputCode));
@@ -171,32 +156,11 @@ export default function ResultScreen() {
         </>
       ) : (
         <>
-          {showLowConfidence ? (
-            <LowConfidenceWarningCard
-              title={reliability.warningTitleTr}
-              message={reliability.warningMessageTr}
-            />
-          ) : null}
-
           <ProductCard
             identification={identification}
             noticeText={reliability.seriesOnlyNoticeTr}
             detailRows={productDetailRows}
           />
-
-          {showSeriesReliabilityNote ? (
-            <ReliabilityNote message="Bu seri bilgisi henüz katalog kaynağıyla doğrulanmamış olabilir." />
-          ) : null}
-
-          {identification.outcome === 'full' ? (
-            <>
-              <TechnicalAttributesCard
-                identification={identification}
-                detailRows={productDetailRows}
-              />
-              {source === 'local' ? <EvidenceDetails identification={identification} /> : null}
-            </>
-          ) : null}
 
           {hasEquivalents ? (
             <Pressable
@@ -218,7 +182,6 @@ export default function ResultScreen() {
         </>
       )}
 
-      <DemoDisclaimerNote compact />
     </ScrollView>
   );
 }

@@ -2,17 +2,12 @@ import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { CompatibilityWarningsList } from '@/components/CompatibilityWarningsList';
-import { DemoDisclaimerNote } from '@/components/DemoDisclaimerNote';
 import { EquivalentAccordionCard } from '@/components/EquivalentAccordionCard';
-import { collectEquivalencePageWarnings } from '@/domain/presentation/collectEquivalencePageWarnings';
-import { ReliabilityNote } from '@/components/ReliabilityNote';
 import { SourceProductSummary } from '@/components/SourceProductSummary';
 import { sortCompatibilityResultsByMatchPercentage } from '@/domain/presentation/sortCompatibilityResults';
 import { useBackendCompareLoader } from '@/hooks/useBackendCompareLoader';
 import { useResolvedProductSearch } from '@/hooks/useResolvedProductSearch';
 import { isBackendResolverMode } from '@/services/resolverService';
-import { isEquivalenceMappingUnverified } from '@/utils/catalogReliability';
 import {
   compatibilityResultKey,
   mergeCompatibilityResultDisplay,
@@ -50,11 +45,6 @@ export default function AllAlternativesScreen() {
   }, [data]);
 
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
-
-  const pageWarnings = useMemo(
-    () => collectEquivalencePageWarnings(compatibilityResults),
-    [compatibilityResults],
-  );
 
   useEffect(() => {
     if (!expandedKey || !isBackendResolverMode()) {
@@ -122,15 +112,7 @@ export default function AllAlternativesScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.pageSubtitle}>
-        {compatibilityResults.length} alternatif bulundu.
-      </Text>
-
       <SourceProductSummary identification={identification} />
-
-      {isEquivalenceMappingUnverified(identification.seriesId) ? (
-        <ReliabilityNote message="Bu muadil eşleştirme manuel eklenmiştir, sipariş öncesi teknik doğrulama önerilir." />
-      ) : null}
 
       {compareErrorMessage ? (
         <View style={styles.compareErrorCard}>
@@ -167,9 +149,6 @@ export default function AllAlternativesScreen() {
         </View>
       )}
 
-      <CompatibilityWarningsList warnings={pageWarnings} />
-
-      <DemoDisclaimerNote compact />
     </ScrollView>
   );
 }

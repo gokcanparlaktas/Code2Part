@@ -12,15 +12,16 @@ const COLORS: Record<ConfidenceLevel, { bg: string; text: string }> = {
 
 interface ConfidenceBadgeProps {
   confidence: ConfidenceLevel;
+  label?: string;
 }
 
-export function ConfidenceBadge({ confidence }: ConfidenceBadgeProps) {
+export function ConfidenceBadge({ confidence, label }: ConfidenceBadgeProps) {
   const palette = COLORS[confidence];
 
   return (
     <View style={[styles.badge, { backgroundColor: palette.bg }]}>
       <Text style={[styles.text, { color: palette.text }]}>
-        {formatConfidence(confidence)}
+        {label ?? formatConfidence(confidence)}
       </Text>
     </View>
   );

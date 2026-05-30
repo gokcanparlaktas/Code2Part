@@ -7,6 +7,7 @@ import {
 } from "@/components/common/MatchPercentageRing";
 import { CompatibilityMetadataBanner } from "@/components/CompatibilityMetadataBanner";
 import { buildLegacyMatchScoreFootnote } from "@/domain/presentation/formatCompatibilityMetadata";
+import { formatCollapsedEquivalentCheckHint } from "@/domain/presentation/formatCollapsedEquivalentCheckHint";
 import { groupCheckItemsByImportance } from "@/domain/presentation/groupCheckItemsByImportance";
 import { calculateMatchPercentage } from "@/domain/scoring/calculateMatchPercentage";
 import type {
@@ -21,7 +22,19 @@ import {
 import { formatCollapsedRiskHint } from "@/utils/formatRisk";
 
 import { RiskLevelBadge } from "./RiskLevelBadge";
-import { SeverityBadge } from "./SeverityBadge";
+
+type CheckRowVariant = "critical" | "important" | "optional";
+type AccordionVariant = "default" | "compatible" | "different" | "critical" | "important";
+
+function checkRowVariant(severity: CheckItem["severity"]): CheckRowVariant {
+  if (severity === "high") {
+    return "critical";
+  }
+  if (severity === "low") {
+    return "optional";
+  }
+  return "important";
+}
 
 interface EquivalentAccordionCardProps {
   result: CompatibilityResult;
@@ -56,74 +69,93 @@ function DifferentRow({ item }: { item: AttributeComparison }) {
 }
 
 function CheckRow({ item }: { item: CheckItem }) {
+  const variant = checkRowVariant(item.severity);
+
   return (
-    <View style={styles.checkRow}>
-      <View style={styles.checkHeader}>
-        <Text style={styles.checkField}>{item.field}</Text>
-        <SeverityBadge severity={item.severity} />
-      </View>
-      <Text style={styles.checkReason}>{item.reasonTr}</Text>
+    <View
+      style={[
+        styles.checkRow,
+        variant === "critical" && styles.checkRowCritical,
+        variant === "important" && styles.checkRowImportant,
+        variant === "optional" && styles.checkRowOptional,
+      ]}
+    >
+      <Text style={styles.checkField}>{item.field}</Text>
+      <Text
+        style={[
+          styles.checkReason,
+          variant === "critical" && styles.checkReasonCritical,
+          variant === "important" && styles.checkReasonImportant,
+          variant === "optional" && styles.checkReasonOptional,
+        ]}
+      >
+        {item.reasonTr}
+      </Text>
     </View>
   );
 }
 
-function SectionBlock({
+function CollapsibleSection({
   title,
-  children,
+  count,
+  defaultExpanded = false,
+  variant = "default",
+  nested = false,
   emptyMessage,
   isEmpty,
+  children,
 }: {
   title: string;
-  children: ReactNode;
+  count: number;
+  defaultExpanded?: boolean;
+  variant?: AccordionVariant;
+  nested?: boolean;
   emptyMessage: string;
   isEmpty: boolean;
-}) {
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {isEmpty ? <Text style={styles.empty}>{emptyMessage}</Text> : children}
-    </View>
-  );
-}
-
-function CheckItemsGroup({
-  title,
-  items,
-  defaultExpanded,
-}: {
-  title: string;
-  items: CheckItem[];
-  defaultExpanded: boolean;
+  children: ReactNode;
 }) {
   const [open, setOpen] = useState(defaultExpanded);
-  if (items.length === 0) {
-    return null;
-  }
 
   return (
-    <View style={styles.checkGroupCard}>
+    <View
+      style={[
+        styles.accordionCard,
+        nested && styles.accordionCardNested,
+        variant === "compatible" && styles.accordionCardCompatible,
+        variant === "different" && styles.accordionCardDifferent,
+        variant === "critical" && styles.accordionCardCritical,
+        variant === "important" && styles.accordionCardImportant,
+      ]}
+    >
       <Pressable
-        onPress={() => setOpen((v) => !v)}
+        onPress={() => setOpen((current) => !current)}
         style={({ pressed }) => [
-          styles.checkGroupHeader,
+          styles.accordionHeader,
+          variant === "compatible" && styles.accordionHeaderCompatible,
+          variant === "different" && styles.accordionHeaderDifferent,
+          variant === "critical" && styles.accordionHeaderCritical,
+          variant === "important" && styles.accordionHeaderImportant,
           pressed && styles.headerPressed,
         ]}
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
       >
-        <Text style={styles.checkGroupTitle}>
-          {title} ({items.length})
+        <Text
+          style={[
+            styles.accordionTitle,
+            variant === "compatible" && styles.accordionTitleCompatible,
+            variant === "different" && styles.accordionTitleDifferent,
+            variant === "critical" && styles.accordionTitleCritical,
+            variant === "important" && styles.accordionTitleImportant,
+          ]}
+        >
+          {title} ({count})
         </Text>
-        <Text style={styles.checkGroupChevron}>{open ? "▼" : "▶"}</Text>
+        <Text style={styles.accordionChevron}>{open ? "▼" : "▶"}</Text>
       </Pressable>
       {open ? (
-        <View style={styles.checkGroupBody}>
-          {items.map((item) => (
-            <CheckRow
-              key={`${title}-${item.field}-${item.reasonTr}`}
-              item={item}
-            />
-          ))}
+        <View style={[styles.accordionBody, nested && styles.accordionBodyNested]}>
+          {isEmpty ? <Text style={styles.empty}>{emptyMessage}</Text> : children}
         </View>
       ) : null}
     </View>
@@ -151,6 +183,9 @@ export function EquivalentAccordionCard({
     matchPercentage.level
   );
   const groupedChecks = groupCheckItemsByImportance(result.checkItems);
+  const collapsedCheckHint = expanded
+    ? null
+    : formatCollapsedEquivalentCheckHint(result.checkItems.length);
 
   return (
     <View style={[styles.card, expanded && styles.cardExpanded]}>
@@ -165,22 +200,14 @@ export function EquivalentAccordionCard({
       >
         <View style={styles.headerTop}>
           <View style={styles.titleBlock}>
-            <Text style={styles.brandSeries}>
-              {candidate.brand}
-            </Text>
+            <Text style={styles.brandSeries}>{candidate.brand}</Text>
             <Text style={styles.modelLine}>
               <Text style={styles.modelLabel}>Model: </Text>
               {modelCode}
             </Text>
-            <Text style={styles.matchLevel}>{summary.matchLevelTr}</Text>
-            {result.metadata ? (
-              <CompatibilityMetadataBanner
-                metadata={result.metadata}
-                compact
-                hasCheckItems={hasChecks}
-              />
+            {!expanded && collapsedCheckHint ? (
+              <Text style={styles.riskHint}>{collapsedCheckHint}</Text>
             ) : null}
-            <Text style={styles.riskHint}>{statusLabel}</Text>
           </View>
           <View style={styles.headerTrailing}>
             <View style={styles.ringColumn}>
@@ -217,49 +244,86 @@ export function EquivalentAccordionCard({
             />
           ) : null}
 
-          <SectionBlock
-            title="Uyumlu"
-            isEmpty={result.compatible.length === 0}
-            emptyMessage="Bu bölümde uyumlu madde yok."
-          >
-            {result.compatible.map((item) => (
-              <CompatibleRow key={item.label} item={item} />
-            ))}
-          </SectionBlock>
+          <View style={styles.sections}>
+            <CollapsibleSection
+              title="Uyumlu"
+              count={result.compatible.length}
+              variant="compatible"
+              isEmpty={result.compatible.length === 0}
+              emptyMessage="Bu bölümde uyumlu madde yok."
+            >
+              <View style={styles.rowGroup}>
+                {result.compatible.map((item) => (
+                  <CompatibleRow key={item.label} item={item} />
+                ))}
+              </View>
+            </CollapsibleSection>
 
-          <SectionBlock
-            title="Uyumsuz"
-            isEmpty={result.different.length === 0}
-            emptyMessage="Bu bölümde farklı madde yok."
-          >
-            {result.different.map((item) => (
-              <DifferentRow key={item.label} item={item} />
-            ))}
-          </SectionBlock>
+            <CollapsibleSection
+              title="Uyumsuz"
+              count={result.different.length}
+              variant="different"
+              isEmpty={result.different.length === 0}
+              emptyMessage="Bu bölümde farklı madde yok."
+            >
+              <View style={styles.rowGroup}>
+                {result.different.map((item) => (
+                  <DifferentRow key={item.label} item={item} />
+                ))}
+              </View>
+            </CollapsibleSection>
 
-          <SectionBlock
-            title="Dikkat Edilmesi Gerekenler"
-            isEmpty={result.checkItems.length === 0}
-            emptyMessage="Bu bölümde kontrol gerektiren madde yok."
-          >
-            <View style={styles.checkGroups}>
-              <CheckItemsGroup
-                title="Kritik kontroller"
-                items={groupedChecks.critical}
-                defaultExpanded={false}
-              />
-              <CheckItemsGroup
-                title="Kontrol gerekli"
-                items={groupedChecks.important}
-                defaultExpanded={false}
-              />
-              <CheckItemsGroup
-                title="Düşük önemli"
-                items={groupedChecks.optional}
-                defaultExpanded={false}
-              />
-            </View>
-          </SectionBlock>
+            <CollapsibleSection
+              title="Dikkat Edilmesi Gerekenler"
+              count={result.checkItems.length}
+              isEmpty={result.checkItems.length === 0}
+              emptyMessage="Bu bölümde kontrol gerektiren madde yok."
+            >
+              <View style={styles.nestedSections}>
+                {groupedChecks.critical.length > 0 ? (
+                  <CollapsibleSection
+                    title="Kritik kontroller"
+                    count={groupedChecks.critical.length}
+                    variant="critical"
+                    nested
+                    isEmpty={false}
+                    emptyMessage=""
+                  >
+                    <View style={styles.rowGroup}>
+                      {groupedChecks.critical.map((item) => (
+                        <CheckRow key={`${item.field}-${item.reasonTr}`} item={item} />
+                      ))}
+                    </View>
+                  </CollapsibleSection>
+                ) : null}
+
+                {groupedChecks.important.length > 0 ? (
+                  <CollapsibleSection
+                    title="Kontrol gerekli"
+                    count={groupedChecks.important.length}
+                    variant="important"
+                    nested
+                    isEmpty={false}
+                    emptyMessage=""
+                  >
+                    <View style={styles.rowGroup}>
+                      {groupedChecks.important.map((item) => (
+                        <CheckRow key={`${item.field}-${item.reasonTr}`} item={item} />
+                      ))}
+                    </View>
+                  </CollapsibleSection>
+                ) : null}
+
+                {groupedChecks.optional.length > 0 ? (
+                  <View style={styles.rowGroup}>
+                    {groupedChecks.optional.map((item) => (
+                      <CheckRow key={`${item.field}-${item.reasonTr}`} item={item} />
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+            </CollapsibleSection>
+          </View>
         </View>
       ) : null}
     </View>
@@ -334,11 +398,6 @@ const styles = StyleSheet.create({
     color: "#64748B",
     fontWeight: "600",
   },
-  matchLevel: {
-    color: "#334155",
-    fontSize: 15,
-    fontWeight: "600",
-  },
   riskHint: {
     color: "#B45309",
     fontSize: 14,
@@ -364,18 +423,93 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontStyle: "italic",
   },
-  section: {
+  sections: {
     gap: 10,
   },
-  sectionTitle: {
+  nestedSections: {
+    gap: 10,
+  },
+  accordionCard: {
+    borderColor: "#E2E8F0",
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  accordionCardNested: {
+    borderRadius: 10,
+  },
+  accordionCardCompatible: {
+    borderColor: "#BBF7D0",
+  },
+  accordionCardDifferent: {
+    borderColor: "#FECACA",
+  },
+  accordionCardCritical: {
+    borderColor: "#FECACA",
+  },
+  accordionCardImportant: {
+    borderColor: "#FDE68A",
+  },
+  accordionHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  accordionHeaderCompatible: {
+    backgroundColor: "#F0FDF4",
+  },
+  accordionHeaderDifferent: {
+    backgroundColor: "#FEF2F2",
+  },
+  accordionHeaderCritical: {
+    backgroundColor: "#FEE2E2",
+  },
+  accordionHeaderImportant: {
+    backgroundColor: "#FEF3C7",
+  },
+  accordionTitle: {
     color: "#0F172A",
-    fontSize: 17,
+    flex: 1,
+    fontSize: 16,
     fontWeight: "700",
+  },
+  accordionTitleCompatible: {
+    color: "#166534",
+  },
+  accordionTitleDifferent: {
+    color: "#991B1B",
+  },
+  accordionTitleCritical: {
+    color: "#991B1B",
+  },
+  accordionTitleImportant: {
+    color: "#92400E",
+  },
+  accordionChevron: {
+    color: "#64748B",
+    fontSize: 13,
+    fontWeight: "700",
+    textAlign: "right",
+    width: 14,
+  },
+  accordionBody: {
+    borderTopColor: "#E2E8F0",
+    borderTopWidth: 1,
+    gap: 10,
+    padding: 12,
+  },
+  accordionBodyNested: {
+    backgroundColor: "#FAFAFA",
   },
   empty: {
     color: "#94A3B8",
     fontSize: 14,
     fontStyle: "italic",
+  },
+  rowGroup: {
+    gap: 10,
   },
   compatibleRow: {
     backgroundColor: "#F0FDF4",
@@ -400,60 +534,39 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   checkRow: {
-    backgroundColor: "#FFFBEB",
-    borderColor: "#FDE68A",
     borderRadius: 10,
     borderWidth: 1,
-    gap: 8,
+    gap: 6,
     padding: 12,
   },
-  checkHeader: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
+  checkRowCritical: {
+    backgroundColor: "#FEF2F2",
+    borderColor: "#FECACA",
+  },
+  checkRowImportant: {
+    backgroundColor: "#FFFBEB",
+    borderColor: "#FDE68A",
+  },
+  checkRowOptional: {
+    backgroundColor: "#F8FAFC",
+    borderColor: "#E2E8F0",
   },
   checkField: {
     color: "#0F172A",
-    flex: 1,
     fontSize: 15,
     fontWeight: "700",
   },
   checkReason: {
-    color: "#92400E",
     fontSize: 15,
     lineHeight: 22,
   },
-  checkGroups: {
-    gap: 10,
+  checkReasonCritical: {
+    color: "#991B1B",
   },
-  checkGroupCard: {
-    borderColor: "#E2E8F0",
-    borderRadius: 12,
-    borderWidth: 1,
-    overflow: "hidden",
+  checkReasonImportant: {
+    color: "#92400E",
   },
-  checkGroupHeader: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  checkGroupTitle: {
-    color: "#0F172A",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  checkGroupChevron: {
-    color: "#64748B",
-    fontSize: 13,
-    fontWeight: "700",
-    textAlign: "right",
-    width: 14,
-  },
-  checkGroupBody: {
-    gap: 10,
-    padding: 12,
-    paddingTop: 6,
+  checkReasonOptional: {
+    color: "#475569",
   },
 });

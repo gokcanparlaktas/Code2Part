@@ -3,20 +3,35 @@ import { useCallback, useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { FirstLaunchDisclaimerModal } from '@/components/FirstLaunchDisclaimerModal';
+import {
+  acceptAppDisclaimer,
+  hasAcceptedAppDisclaimer,
+} from '@/services/appDisclaimerStore';
+
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [appReady, setAppReady] = useState(false);
+  const [disclaimerVisible, setDisclaimerVisible] = useState(false);
 
   useEffect(() => {
     async function prepare() {
       try {
-        // Font, catalog warm-up, vb. buraya eklenebilir.
+        const accepted = await hasAcceptedAppDisclaimer();
+        if (!accepted) {
+          setDisclaimerVisible(true);
+        }
       } finally {
         setAppReady(true);
       }
     }
     prepare();
+  }, []);
+
+  const handleAcceptDisclaimer = useCallback(async () => {
+    await acceptAppDisclaimer();
+    setDisclaimerVisible(false);
   }, []);
 
   const onRootLayout = useCallback(async () => {
@@ -32,6 +47,10 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider onLayout={onRootLayout}>
       <StatusBar style="dark" />
+      <FirstLaunchDisclaimerModal
+        visible={disclaimerVisible}
+        onAccept={handleAcceptDisclaimer}
+      />
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: '#F8FAFC' },
