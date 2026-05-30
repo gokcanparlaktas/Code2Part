@@ -170,6 +170,12 @@ describe("compareValveFunctionBehavior", () => {
     expect(calculateMatchPercentage(result).percentage).toBeLessThan(100);
     expect(
       result.compatible.some((c) => c.label === "Sürgü davranışı"),
-    ).toBe(false);
+    ).toBe(true);
+    expect(
+      result.warnings.some((w) =>
+        w.includes("Sipariş öncesi katalog, uygulama basıncı/debisi")
+      )
+    ).toBe(true);
+    expect(result.checkItems.some((c) => c.field === "Konnektör tipi")).toBe(true);
   });
 });

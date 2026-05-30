@@ -1,8 +1,8 @@
 import { normalizeProductCode } from '@/domain/attributes/extractors/attributeNormalization';
 import {
-  isRexrothWE6Code,
-  parseRexrothWE6,
-} from '@/domain/categories/hydraulicValve/manufacturers/rexroth/parseRexrothWE6';
+  isRexrothWECode,
+  parseRexrothWE,
+} from '@/domain/categories/hydraulicValve/manufacturers/rexroth/parseRexrothWE';
 import {
   isVickersDG4VCode,
   parseVickersDG4V,
@@ -11,6 +11,10 @@ import {
   isYukenDSGCode,
   parseYukenDSG,
 } from '@/domain/categories/hydraulicValve/manufacturers/yuken/parseYukenDSG';
+import {
+  isYukenDSHGCode,
+  parseYukenDSHG,
+} from '@/domain/categories/hydraulicValve/manufacturers/yuken/parseYukenDSHG';
 import type {
   ConfidenceLevel,
   ProductSeriesRecord,
@@ -114,11 +118,12 @@ export function canFullyParseHydraulicProductCode(
   const normalized = normalizeProductCode(inputCode);
 
   if (
+    series.codePrefix.startsWith('3WE6') ||
     series.codePrefix.startsWith('4WE6') ||
     series.codePrefix.startsWith('4WE10') ||
-    isRexrothWE6Code(normalized)
+    isRexrothWECode(normalized)
   ) {
-    return parseRexrothWE6(inputCode) !== null;
+    return parseRexrothWE(inputCode) !== null;
   }
 
   if (
@@ -127,6 +132,14 @@ export function canFullyParseHydraulicProductCode(
     isYukenDSGCode(normalized)
   ) {
     return parseYukenDSG(inputCode) !== null;
+  }
+
+  if (
+    series.series.startsWith('DSHG') ||
+    series.codePrefix.startsWith('DSHG-') ||
+    isYukenDSHGCode(normalized)
+  ) {
+    return parseYukenDSHG(inputCode) !== null;
   }
 
   if (

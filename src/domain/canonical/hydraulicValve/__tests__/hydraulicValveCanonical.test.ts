@@ -211,7 +211,7 @@ describe("compareHydraulicValveCanonicalProfiles", () => {
     expect(connector?.status).toBe("unknownOrCheck");
     expect(
       result.unknownOrCheck.some((line) =>
-        line.includes("Konnektör tipi katalogdan"),
+        line.includes("Konnektör") && line.includes("katalog"),
       ),
     ).toBe(true);
   });

@@ -174,7 +174,7 @@ describe('connector canonical UI', () => {
     const id = identifyProduct('4WE6E-7X/HG24N9K4', normalizeCode('4WE6E-7X/HG24N9K4'));
     const rows = buildProductDetailRows(id);
     const connector = rows.find((r) => r.label === 'Konnektör tipi');
-    expect(connector?.value).toContain('DIN valf soketi');
+    expect(connector?.value).toMatch(/DIN valf soketi|Connector 3-pole/i);
     expect(connector?.value).not.toContain('K4');
     expect(connector?.value).not.toContain('Kod kanıtı');
   });

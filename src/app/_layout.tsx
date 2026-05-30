@@ -1,16 +1,36 @@
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
+import { SplashScreen, Stack } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-
-import { AppSplashScreen } from '@/components/AppSplashScreen';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const [appReady, setAppReady] = useState(false);
+
+  useEffect(() => {
+    async function prepare() {
+      try {
+        // Font, catalog warm-up, vb. buraya eklenebilir.
+      } finally {
+        setAppReady(true);
+      }
+    }
+    prepare();
+  }, []);
+
+  const onRootLayout = useCallback(async () => {
+    if (appReady) {
+      await SplashScreen.hideAsync();
+    }
+  }, [appReady]);
+
+  if (!appReady) {
+    return null;
+  }
+
   return (
-    <AppSplashScreen>
-    <SafeAreaProvider>
+    <SafeAreaProvider onLayout={onRootLayout}>
       <StatusBar style="dark" />
       <Stack
         screenOptions={{
@@ -29,6 +49,5 @@ export default function RootLayout() {
         <Stack.Screen name="diagnostics" options={{ title: 'Veri Kontrolü' }} />
       </Stack>
     </SafeAreaProvider>
-    </AppSplashScreen>
   );
 }

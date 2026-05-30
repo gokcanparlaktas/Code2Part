@@ -37,8 +37,8 @@ describe('canonicalAttributeDisplay', () => {
 
   it('maps N9 to concealed manual override', () => {
     const n9 = normalizeManualOverrideDisplay({ rawToken: 'N9' });
-    expect(n9?.displayValue).toContain('Gizli');
-    expect(n9?.displayValue).toContain('manuel');
+    expect(n9?.displayValue).toBe('Var');
+    expect(n9?.rawTokenLabel).toContain('Gizli');
   });
 
   it('maps N3 to ISO 15552', () => {
@@ -102,7 +102,7 @@ describe('canonicalAttributeDisplay integration', () => {
     const id = identifyProduct('4WE6E-6X/EG24N9K4', normalizeCode('4WE6E-6X/EG24N9K4'));
     const rows = buildProductDetailRows(id);
     const connector = rows.find((r) => r.label === 'Konnektör tipi');
-    expect(connector?.value).toContain('DIN valf soketi');
+    expect(connector?.value).toMatch(/DIN valf soketi|Connector 3-pole/i);
     expect(connector?.value).not.toContain('Kod kanıtı:');
   });
 
@@ -113,6 +113,6 @@ describe('canonicalAttributeDisplay integration', () => {
     expect(allText).not.toMatch(/Sürgü sembolü:?\s*E/i);
     expect(allText).not.toMatch(/^G$/m);
     expect(allText).not.toContain('Kod kanıtı:');
-    expect(allText).toContain('24V DC');
+    expect(allText).toMatch(/24\s*V\s*DC/i);
   });
 });

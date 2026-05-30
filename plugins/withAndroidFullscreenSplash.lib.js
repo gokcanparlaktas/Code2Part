@@ -2,56 +2,80 @@ const fs = require('fs');
 const path = require('path');
 const { generateImageAsync } = require('@expo/image-utils');
 
-const SPLASH_SOURCE = 'assets/images/android-icon-background.png';
+const SPLASH_SOURCE = 'assets/splash.png';
 const IMAGE_NAME = 'splashscreen_background_image';
+const SPLASH_COLOR = '#0A1628';
 
-const DENSITY_SIZES = {
-  mdpi: { width: 320, height: 568 },
-  hdpi: { width: 480, height: 854 },
-  xhdpi: { width: 720, height: 1280 },
-  xxhdpi: { width: 1080, height: 1920 },
-  xxxhdpi: { width: 1440, height: 2560 },
+/** Source asset is 853×1844 (portrait). */
+const SOURCE_ASPECT = 1844 / 853;
+
+const DENSITY_WIDTHS = {
+  mdpi: 320,
+  hdpi: 480,
+  xhdpi: 720,
+  xxhdpi: 1080,
+  xxxhdpi: 1440,
 };
 
 async function writeFullscreenSplashAssetsAsync(projectRoot) {
   const src = path.join(projectRoot, SPLASH_SOURCE);
-  for (const [density, { width, height }] of Object.entries(DENSITY_SIZES)) {
+  for (const [density, width] of Object.entries(DENSITY_WIDTHS)) {
+    const height = Math.round(width * SOURCE_ASPECT);
     const { source } = await generateImageAsync(
-      { projectRoot, cacheType: 'code2part-fullscreen-splash' },
+      { projectRoot, cacheType: 'code2part-fullscreen-splash-v2' },
       { src, width, height, resizeMode: 'cover' }
     );
     const dir = path.join(projectRoot, 'android/app/src/main/res', `drawable-${density}`);
     await fs.promises.mkdir(dir, { recursive: true });
-    await fs.promises.writeFile(path.join(dir, `${IMAGE_NAME}.png`), source);
+    const imagePath = path.join(dir, `${IMAGE_NAME}.png`);
+    await fs.promises.writeFile(imagePath, source);
+    // expo-splash-screen still references splashscreen_logo — use same cover bitmap.
+    await fs.promises.writeFile(path.join(dir, 'splashscreen_logo.png'), source);
   }
 
   const drawableDir = path.join(projectRoot, 'android/app/src/main/res/drawable');
   await fs.promises.mkdir(drawableDir, { recursive: true });
-  const layerList = `<?xml version="1.0" encoding="utf-8"?>
+
+  const fullscreenXml = `<?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
   <item android:drawable="@color/splashscreen_background"/>
   <item>
-    <bitmap android:gravity="fill" android:src="@drawable/${IMAGE_NAME}"/>
+    <bitmap android:gravity="center" android:src="@drawable/${IMAGE_NAME}"/>
   </item>
 </layer-list>
 `;
   await fs.promises.writeFile(
     path.join(drawableDir, 'splashscreen_fullscreen.xml'),
-    layerList
+    fullscreenXml
+  );
+
+  const launcherBgXml = `<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+  <item android:drawable="@color/splashscreen_background"/>
+  <item>
+    <bitmap android:gravity="center" android:src="@drawable/${IMAGE_NAME}"/>
+  </item>
+</layer-list>
+`;
+  await fs.promises.writeFile(
+    path.join(drawableDir, 'ic_launcher_background.xml'),
+    launcherBgXml
   );
 }
 
 async function patchSplashStylesXmlAsync(projectRoot) {
   const stylesPath = path.join(projectRoot, 'android/app/src/main/res/values/styles.xml');
-  const fullscreenStyle = `  <style name="Theme.App.SplashScreen" parent="AppTheme">
+  const splashStyle = `  <style name="Theme.App.SplashScreen" parent="AppTheme">
     <item name="android:windowBackground">@drawable/splashscreen_fullscreen</item>
-    <item name="android:statusBarColor">#0A1628</item>
-    <item name="android:navigationBarColor">#0A1628</item>
+    <item name="android:statusBarColor">${SPLASH_COLOR}</item>
+    <item name="android:navigationBarColor">${SPLASH_COLOR}</item>
+    <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
   </style>`;
   const content = await fs.promises.readFile(stylesPath, 'utf8');
   const updated = content.replace(
     /<style name="Theme\.App\.SplashScreen"[\s\S]*?<\/style>/,
-    fullscreenStyle
+    splashStyle
   );
   if (updated === content) {
     throw new Error('Could not patch Theme.App.SplashScreen in styles.xml');

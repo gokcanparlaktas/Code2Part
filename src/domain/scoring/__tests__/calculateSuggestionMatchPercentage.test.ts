@@ -60,7 +60,7 @@ describe('calculateSuggestionMatchPercentage', () => {
   it('returns much higher score for "50 100 PPVA N3"', () => {
     const match = calculateSuggestionMatchPercentage('50 100 PPVA N3', FULL_DSBC);
     expect(match.percentage).toBe(73);
-    expect(match.level).toBe('medium');
+    expect(match.level).toBe('high');
   });
 
   it('returns 100% for full matching code', () => {
@@ -97,7 +97,7 @@ describe('calculateSuggestionMatchPercentage', () => {
   it('assigns level from percentage thresholds', () => {
     expect(calculateSuggestionMatchPercentage('ds', FULL_DSBC).level).toBe('low');
     expect(calculateSuggestionMatchPercentage('50 100 PPVA N3', FULL_DSBC).level).toBe(
-      'medium'
+      'high'
     );
     expect(calculateSuggestionMatchPercentage(FULL_DSBC, FULL_DSBC).level).toBe('high');
   });

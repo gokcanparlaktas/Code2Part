@@ -2,6 +2,8 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import type { AttributeComparison, CheckItem, CompatibilityResult } from '@/types/compatibility';
 
+import { CompatibilityMetadataBanner } from './CompatibilityMetadataBanner';
+import { CompatibilityWarningsList } from './CompatibilityWarningsList';
 import { EquivalenceSummaryCard } from './EquivalenceSummaryCard';
 import { SeverityBadge } from './SeverityBadge';
 import { StatusBadge } from './StatusBadge';
@@ -87,6 +89,10 @@ export function CompatibilityTable({ result }: CompatibilityTableProps) {
 
       <Text style={styles.productType}>{candidate.productType}</Text>
 
+      {result.metadata ? (
+        <CompatibilityMetadataBanner metadata={result.metadata} />
+      ) : null}
+
       <ComparisonSection
         title="Uyumlu"
         items={result.compatible}
@@ -109,18 +115,14 @@ export function CompatibilityTable({ result }: CompatibilityTableProps) {
         )}
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Uyarılar</Text>
-        {result.warnings.length === 0 ? (
+      {result.warnings.length === 0 ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Uyarılar</Text>
           <Text style={styles.empty}>Ek uyarı yok.</Text>
-        ) : (
-          result.warnings.map((warning) => (
-            <View key={warning} style={styles.warningItem}>
-              <Text style={styles.warningText}>{warning}</Text>
-            </View>
-          ))
-        )}
-      </View>
+        </View>
+      ) : (
+        <CompatibilityWarningsList warnings={result.warnings} />
+      )}
     </View>
   );
 }
@@ -204,16 +206,6 @@ const styles = StyleSheet.create({
   },
   reason: {
     color: '#92400E',
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  warningItem: {
-    backgroundColor: '#FFF7ED',
-    borderRadius: 10,
-    padding: 12,
-  },
-  warningText: {
-    color: '#9A3412',
     fontSize: 15,
     lineHeight: 22,
   },

@@ -76,8 +76,11 @@ describe("hydraulic_valve category", () => {
     const compatibleLabels = result.compatible.map((c) => c.label);
     const differentLabels = result.different.map((c) => c.label);
 
-    expect(checkFields).toContain("Basınç değeri");
-    expect(checkFields).toContain("Debi değeri");
+    // Catalog pressure/flow values appear as compatible rows with review notes, not generic checks
+    expect(compatibleLabels).toContain("Maks. basınç (A/B/P)");
+    expect(compatibleLabels).toContain("Maks. debi");
+    expect(checkFields).not.toContain("Basınç değeri");
+    expect(checkFields).not.toContain("Debi değeri");
 
     // Known-equal attributes should be compatible (not "kontrol gerekli")
     expect(compatibleLabels).toContain("Montaj standardı");
@@ -85,16 +88,14 @@ describe("hydraulic_valve category", () => {
 
     // Generic plug-in vs specific DIN connector requires catalog check, not a hard mismatch
     expect(checkFields).toContain("Konnektör tipi");
-    // Cross-manufacturer function tokens require catalog check, not full compatibility
-    expect(compatibleLabels).not.toContain("Sürgü / fonksiyon kodu");
-    expect(checkFields).toContain("Sürgü sembolü / fonksiyon");
-    const spoolCheck = result.checkItems.find(
-      (c) => c.field === "Sürgü sembolü / fonksiyon",
-    );
-    expect(spoolCheck?.reasonTr).toContain("benzer olabilir");
-    expect(spoolCheck?.reasonTr).toContain(
-      "Katalog sembolüyle doğrulanmalıdır",
-    );
+    // Cross-manufacturer spool: compatible by catalog portState, with candidate review warning
+    expect(compatibleLabels).toContain("Sürgü davranışı");
+    expect(checkFields).not.toContain("Sürgü sembolü / fonksiyon");
+    expect(
+      result.warnings.some((w) =>
+        w.includes("Sipariş öncesi katalog, uygulama basıncı/debisi")
+      ),
+    ).toBe(true);
   });
 
   it("NG6 equivalents do not include NG10 series", () => {

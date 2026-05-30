@@ -62,10 +62,7 @@ export function TechnicalAttributesCard({
             <View key={row.label} style={styles.row}>
               <Text style={styles.fieldLabel}>{row.label}</Text>
               <DetailValueBlock value={row.value} />
-              <Text style={styles.meta}>
-                {row.evidence}
-                {row.requiresCheck ? " • Kontrol gerekli" : ""}
-              </Text>
+              <Text style={styles.meta}>{row.evidence}</Text>
             </View>
           ))}
         </View>

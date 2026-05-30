@@ -24,6 +24,21 @@ function primaryValuesForCode(code: string): string[] {
 }
 
 describe('hydraulicValveBehaviorDescriptions', () => {
+  it('4WE6E-6X/EG24N9K4 Merkez tipi uses portState summary with E as kod kanıtı', () => {
+    const id = identify('4WE6E-6X/EG24N9K4');
+    const descriptions = buildHydraulicValveBehaviorDescriptions({
+      identification: id,
+      attributes: getTechnicalAttributes(id),
+    });
+    const center = descriptions.find((d) => d.title === 'Merkez tipi');
+    expect(center?.primaryDescription).toBe('Kapalı merkez — P, T, A ve B kapalı');
+    expect(center?.details).toEqual(expect.arrayContaining(['Kod kanıtı: E']));
+    expect(center?.userEvidenceTr).toBe('Katalogdan');
+    expect(formatBehaviorDescriptionForUi(center!)).toBe(
+      'Kapalı merkez — P, T, A ve B kapalı'
+    );
+  });
+
   it('DSG-01-3C2-D24-N1-70 does not use raw 3C2 or sürgü tipi 2 as primary', () => {
     const code = 'DSG-01-3C2-D24-N1-70';
     const primaries = primaryValuesForCode(code);
@@ -33,6 +48,11 @@ describe('hydraulicValveBehaviorDescriptions', () => {
     expect(primaries.some((value) => value.includes('Sürgü tipi 2'))).toBe(false);
     expect(primaries.some((value) => value.includes('3 konumlu'))).toBe(true);
     expect(primaries.some((value) => value.includes('Yay merkezlemeli'))).toBe(true);
+    const center = buildHydraulicValveBehaviorDescriptions({
+      identification: identify(code),
+      attributes: getTechnicalAttributes(identify(code)),
+    }).find((d) => d.title === 'Merkez tipi');
+    expect(center?.primaryDescription).toContain('Kapalı merkez — P, T, A ve B kapalı');
 
     const allText = rows.map((r) => r.value).join('\n');
     expect(allText).not.toContain('Kod kanıtı:');
@@ -48,7 +68,7 @@ describe('hydraulicValveBehaviorDescriptions', () => {
     expect(primaries.some((value) => value.includes('Katalog'))).toBe(true);
 
     const voltage = rows.find((r) => r.label === 'Bobin voltajı');
-    expect(voltage?.value).toContain('24V DC');
+    expect(voltage?.value).toMatch(/24\s*V\s*DC/i);
     expect(voltage?.requiresCheck).toBe(false);
 
     const connector = rows.find((r) => r.label === 'Konnektör tipi');
@@ -76,7 +96,7 @@ describe('hydraulicValveBehaviorDescriptions', () => {
     expect(allText).not.toMatch(/fonksiyon:?\s*G24/i);
 
     const voltage = rows.find((r) => r.label === 'Bobin voltajı');
-    expect(voltage?.value).toContain('24V DC');
+    expect(voltage?.value).toMatch(/24\s*V\s*DC/i);
 
     const ways = rows.find((r) => r.label === 'Yol / konum yapısı');
     expect(ways?.value).toMatch(/4 yollu, 3 konumlu|3 konumlu/);

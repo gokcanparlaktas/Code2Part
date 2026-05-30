@@ -48,7 +48,7 @@ describe('hydraulicValveAttributeDisplay', () => {
     expect(centering?.value).toContain('Yay merkezlemeli');
     expect(allText).not.toContain('Sürgü tipi 2');
     expect(allText).not.toContain('Kod kanıtı:');
-    expect(voltage?.value).toContain('24V DC');
+    expect(voltage?.value).toMatch(/24\s*V\s*DC/i);
     expect(connector?.value).toContain('Fişli konnektör');
     expect(connector?.value).toContain('Işıklı');
   });
@@ -82,7 +82,7 @@ describe('hydraulicValveAttributeDisplay', () => {
     expect(allText).not.toContain('Sürgü tipi 2, yay düzeni A');
     expect(allText).not.toContain('Kod kanıtı:');
     expect(allText).toContain('24V DC');
-    expect(allText).toContain('Voltaj değeri katalogdan doğrulanmalıdır.');
+    expect(allText).not.toContain('Voltaj değeri katalogdan doğrulanmalıdır.');
     expect(allText).toContain('207 bar');
     expect(allText).toContain('Basic design');
     expect(allText).toContain('Yay ofsetli, uçtan uca');

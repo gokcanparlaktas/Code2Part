@@ -6,6 +6,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@catalog-data/*": [
+        "./data/catalog-data/*"
       ]
     }
   },

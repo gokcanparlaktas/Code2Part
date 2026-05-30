@@ -28,6 +28,8 @@ export interface YukenDSGParsedCode {
   spoolType: string;
   spoolFunctionCode: string;
   voltageToken: string;
+  /** Catalog manual-override segment: omitted in code = default (pin); C = push button + lock nut. */
+  manualOverrideToken: 'default' | 'C';
   connectorToken: string;
   designNumber: string;
 }
@@ -39,7 +41,7 @@ export function isYukenDSGCode(normalized: string): boolean {
 
 export function parseYukenDSGProductCode(normalized: string): YukenDSGParsedCode | null {
   const match = normalized.match(
-    /^DSG-?(01|03)-(\d)([CBD])(\d{2}|\d)-(D12|D24|D48)-(N1?)-(\d{2,3})$/
+    /^DSG-?(01|03)-(\d)([CBD])(\d{2}|\d)-(D12|D24|D48)-(?:([C])-)?(N1?)-(\d{2,3})$/
   );
   if (!match) {
     return null;
@@ -59,8 +61,9 @@ export function parseYukenDSGProductCode(normalized: string): YukenDSGParsedCode
     spoolType,
     spoolFunctionCode,
     voltageToken: match[5],
-    connectorToken: match[6],
-    designNumber: match[7],
+    manualOverrideToken: match[6] === 'C' ? 'C' : 'default',
+    connectorToken: match[7],
+    designNumber: match[8],
   };
 }
 
@@ -153,11 +156,37 @@ export function parseYukenDSG(inputCode: string): TechnicalAttributeResult[] | n
       note: CATALOG_SOURCE,
     }),
     buildAttributeResult({
+      key: 'family',
+      label: 'Aile',
+      value: 'DSG',
+      evidence: 'code',
+      confidence: 'high',
+      category: HYDRAULIC_VALVE_CATEGORY,
+    }),
+    buildAttributeResult({
+      key: 'source_family',
+      label: 'Kaynak aile',
+      value: parsed.series,
+      evidence: 'code',
+      confidence: 'high',
+      category: HYDRAULIC_VALVE_CATEGORY,
+    }),
+    buildAttributeResult({
       key: 'series',
       label: 'Seri',
       value: parsed.series,
       evidence: 'code',
       confidence: 'high',
+      category: HYDRAULIC_VALVE_CATEGORY,
+    }),
+    buildAttributeResult({
+      key: 'model_size',
+      label: 'Model boyutu',
+      value: parsed.valveSize,
+      evidence: 'code',
+      confidence: 'high',
+      requiresCatalogCheck: false,
+      sourceToken: parsed.valveSize,
       category: HYDRAULIC_VALVE_CATEGORY,
     }),
     buildAttributeResult({
@@ -191,8 +220,28 @@ export function parseYukenDSG(inputCode: string): TechnicalAttributeResult[] | n
       category: HYDRAULIC_VALVE_CATEGORY,
     }),
     buildAttributeResult({
+      key: PARSER_KEYS.manual_override,
+      label: 'Manual override code',
+      value: parsed.manualOverrideToken,
+      evidence: 'series_table',
+      confidence: 'high',
+      requiresCatalogCheck: false,
+      sourceToken: parsed.manualOverrideToken,
+      category: HYDRAULIC_VALVE_CATEGORY,
+    }),
+    buildAttributeResult({
       key: PARSER_KEYS.design_series,
       label: 'Tasarım serisi kodu',
+      value: parsed.designNumber,
+      evidence: 'code',
+      confidence: 'medium',
+      requiresCatalogCheck: true,
+      sourceToken: parsed.designNumber,
+      category: HYDRAULIC_VALVE_CATEGORY,
+    }),
+    buildAttributeResult({
+      key: PARSER_KEYS.design_number,
+      label: 'Tasarım numarası',
       value: parsed.designNumber,
       evidence: 'code',
       confidence: 'medium',

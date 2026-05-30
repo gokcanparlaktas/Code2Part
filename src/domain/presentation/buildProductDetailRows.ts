@@ -19,6 +19,11 @@ import {
 } from '@/types/category';
 import type { ProductIdentification, TechnicalAttribute as IdAttribute } from '@/types/product';
 import type { TechnicalAttribute } from '@/types/technicalAttribute';
+import {
+  isInternalCatalogWording,
+  USER_EVIDENCE_FROM_CODE_TR,
+  USER_EVIDENCE_FROM_SERIES_TR,
+} from '@/domain/presentation/formatUserFacingCatalogDisplay';
 import { formatAttributeValue, formatEvidence } from '@/utils/formatConfidence';
 
 export interface ProductDetailRow {
@@ -27,6 +32,14 @@ export interface ProductDetailRow {
   evidence: string;
   requiresCheck: boolean;
 }
+
+const PLACEHOLDER_PRIMARIES = [
+  'Katalogdan doğrulanmalı',
+  'Katalog sembolünden doğrulanmalı',
+  'Çalışma davranışı katalog sembolünden doğrulanmalıdır.',
+  'Port durumu katalog adayından çözümlendi',
+  'Bilinmiyor',
+] as const;
 
 function rowFromIdentificationAttribute(
   label: string,
@@ -50,7 +63,7 @@ function rowFromParsedTechnicalAttribute(attribute: TechnicalAttribute): Product
 
   const evidenceLabel =
     attribute.evidence === 'code'
-      ? 'Ürün kodundan'
+      ? USER_EVIDENCE_FROM_CODE_TR
       : attribute.evidence === 'series_table'
         ? 'Seri tablosundan'
         : attribute.evidence === 'standard'
@@ -84,20 +97,21 @@ function collectVariantInputs(attributes: TechnicalAttribute[]): PneumaticVarian
     }));
 }
 
-function behaviorEvidenceLabel(description: {
-  confidence: string;
+function isPlaceholderPrimary(primary: string): boolean {
+  return PLACEHOLDER_PRIMARIES.some(
+    (placeholder) => primary === placeholder || primary.includes(placeholder)
+  );
+}
+
+function behaviorRequiresUiCheck(description: {
+  primaryDescription: string;
   requiresCatalogCheck: boolean;
-}): string {
-  if (description.requiresCatalogCheck) {
-    return 'Katalogdan doğrulanmalı';
+  userEvidenceTr?: string;
+}): boolean {
+  if (description.userEvidenceTr && !isInternalCatalogWording(description.userEvidenceTr)) {
+    return false;
   }
-  if (description.confidence === 'high') {
-    return 'Ürün kodundan';
-  }
-  if (description.confidence === 'medium' || description.confidence === 'low') {
-    return 'Seri tablosundan';
-  }
-  return 'Bilinmiyor';
+  return description.requiresCatalogCheck && isPlaceholderPrimary(description.primaryDescription);
 }
 
 function profileAttributeToDetailRow(
@@ -107,7 +121,7 @@ function profileAttributeToDetailRow(
 ): ProductDetailRow {
   const display =
     attr.displayValue ??
-    (attr.value === null || attr.value === undefined ? 'Bilinmiyor — kontrol gerekli' : String(attr.value));
+    (attr.value === null || attr.value === undefined ? 'Belirsiz' : String(attr.value));
 
   return {
     label,
@@ -145,8 +159,16 @@ export function buildProductDetailRows(
       rows.push({
         label: description.title,
         value: formatBehaviorDescriptionForUi(description),
-        evidence: behaviorEvidenceLabel(description),
-        requiresCheck: Boolean(description.requiresCatalogCheck),
+        evidence:
+          description.userEvidenceTr ??
+          (description.confidence === 'high' || description.confidence === 'medium'
+            ? USER_EVIDENCE_FROM_CODE_TR
+            : USER_EVIDENCE_FROM_SERIES_TR),
+        requiresCheck: behaviorRequiresUiCheck({
+          primaryDescription: description.primaryDescription,
+          requiresCatalogCheck: Boolean(description.requiresCatalogCheck),
+          userEvidenceTr: description.userEvidenceTr,
+        }),
       });
     }
 
@@ -178,7 +200,6 @@ export function buildProductDetailRows(
             requiresCheck: resolved.requiresCatalogCheck,
           });
         } else if (!isRawDesignSeriesCode) {
-          // Do not show raw "... kodu" rows as-is.
           rows.push(rowFromParsedTechnicalAttribute(revision));
         }
       }
@@ -224,7 +245,7 @@ export function buildProductDetailRows(
         profileAttributeToDetailRow(
           'Sönümleme tipi',
           cushioningAttr,
-          cushioning.evidence === 'code' ? 'Ürün kodundan' : 'Seri tablosundan',
+          cushioning.evidence === 'code' ? USER_EVIDENCE_FROM_CODE_TR : 'Seri tablosundan',
         ),
       );
     }
@@ -245,7 +266,7 @@ export function buildProductDetailRows(
       rows.push({
         label: 'Varyant kodu',
         value: formatCanonicalDetailValue(resolved),
-        evidence: variant.evidence === 'code' ? 'Ürün kodundan' : 'Bilinmiyor',
+        evidence: variant.evidence === 'code' ? USER_EVIDENCE_FROM_CODE_TR : 'Bilinmiyor',
         requiresCheck: resolved.requiresCatalogCheck,
       });
     }

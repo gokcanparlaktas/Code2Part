@@ -24,12 +24,42 @@ import {
 import { resolveCanonicalAttribute } from '@/domain/canonical/resolveCanonicalAttribute';
 import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
 
-import { FIELD_LABELS } from './hydraulicValveCanonicalDictionary';
-import { normalizeHydraulicVoltageDisplay } from './hydraulicValveAttributeDisplay';
+import { portStatesMatch } from '@/domain/catalogData';
 import {
+  dedupeCheckItemsByField,
+  filterBaseCheckItemsCoveredByCanonical,
+  normalizeCheckFieldKey,
+  profileHasCatalogFlowEvidence,
+  profileHasCatalogPressureEvidence,
+} from '@/domain/presentation/dedupeCheckItems';
+import { deriveSummaryRiskLevelFromMetadata } from '@/domain/presentation/formatCompatibilityMetadata';
+import { consolidateCatalogWarningsForUi } from '@/domain/presentation/formatUserFacingCatalogDisplay';
+import { portStateBehaviorSummary } from '@/domain/presentation/formatCatalogFieldDisplay';
+
+import {
+  CATALOG_PORT_STATE_CANDIDATE_WARNING_TR,
+  compareSpoolBehaviorByCatalogPortState,
+  hasCatalogPortStateEvidence,
+} from './compareCatalogPortState';
+import { deriveHydraulicCompatibilityMetadata } from './deriveHydraulicCompatibilityMetadata';
+import { FIELD_LABELS } from './hydraulicValveCanonicalDictionary';
+import {
+  normalizeHydraulicManualOverrideDisplay,
+  normalizeHydraulicVoltageDisplay,
+} from './hydraulicValveAttributeDisplay';
+import {
+  compareCatalogFlowFields,
+  compareCatalogPressureFields,
+} from './compareCatalogTechnicalNumeric';
+import {
+  summarizeCenterPortStateBehavior,
   summarizeSpoolBehaviorForComparison,
 } from './hydraulicValveBehaviorDescriptions';
-import type { CanonicalField, HydraulicValveCanonicalProfile } from './hydraulicValveCanonicalTypes';
+import type {
+  CanonicalField,
+  CanonicalManualOverride,
+  HydraulicValveCanonicalProfile,
+} from './hydraulicValveCanonicalTypes';
 import { UNRESOLVED_VOLTAGE_CODES } from './normalizeHydraulicValveAttribute';
 
 export interface HydraulicValveCanonicalComparisonResult {
@@ -47,6 +77,23 @@ export interface HydraulicValveCanonicalComparisonResult {
     status: CompatibilityStatus;
     reasonTr?: string;
   };
+  connectorDynamicCheck?: {
+    source: string;
+    target: string;
+    status: CompatibilityStatus;
+    reasonTr?: string;
+  };
+  manualDynamicCheck?: {
+    source: string;
+    target: string;
+    status: CompatibilityStatus;
+    reasonTr?: string;
+  };
+  /** Both sides resolved center via matching catalog portState (no unknown Merkez tipi check). */
+  portStateCenterResolved?: boolean;
+  mountingIsoClassMatched?: boolean;
+  catalogPressureEvidencePresent?: boolean;
+  catalogFlowEvidencePresent?: boolean;
 }
 
 function isSameBrandSeries(source: HydraulicValveCanonicalProfile, target: HydraulicValveCanonicalProfile): boolean {
@@ -139,11 +186,147 @@ function compareCanonicalEnumField<T extends string>(options: {
   };
 }
 
+const MANUAL_OVERRIDE_PRESENT_VALUES: ReadonlySet<CanonicalManualOverride> = new Set([
+  'manual_override',
+  'protected_manual_override',
+  'concealed_manual_override',
+  'detent_manual_override',
+]);
+
+function manualOverrideDisplayForProfile(profile: HydraulicValveCanonicalProfile): string {
+  if (profile.manualOverride.displayValue) {
+    return profile.manualOverride.displayValue;
+  }
+  return (
+    normalizeHydraulicManualOverrideDisplay({
+      rawValue: profile.manualOverride.rawValue
+        ? String(profile.manualOverride.rawValue)
+        : null,
+      rawToken: profile.manualOverride.rawToken,
+    })?.displayValue ?? 'Belirsiz'
+  );
+}
+
+function manualOverridePresenceFromProfile(
+  profile: HydraulicValveCanonicalProfile
+): 'present' | 'absent' | 'unknown' {
+  const primary = manualOverrideDisplayForProfile(profile);
+  if (primary === 'Var') {
+    return 'present';
+  }
+  if (primary === 'Yok') {
+    return 'absent';
+  }
+  const value = profile.manualOverride.value;
+  if (!value || value === 'unknown') {
+    return 'unknown';
+  }
+  if (value === 'none') {
+    return 'absent';
+  }
+  if (MANUAL_OVERRIDE_PRESENT_VALUES.has(value)) {
+    return 'present';
+  }
+  return 'unknown';
+}
+
+function manualOverrideTypeDetail(profile: HydraulicValveCanonicalProfile): string | undefined {
+  return normalizeHydraulicManualOverrideDisplay({
+    rawValue: profile.manualOverride.rawValue
+      ? String(profile.manualOverride.rawValue)
+      : null,
+    rawToken: profile.manualOverride.rawToken,
+  })?.rawTokenLabel;
+}
+
+function compareManualOverrideFields(
+  source: HydraulicValveCanonicalProfile,
+  target: HydraulicValveCanonicalProfile,
+  crossBrand: boolean
+): { comparison: AttributeComparison; sentence: string | null } {
+  const label = FIELD_LABELS.manualOverride;
+  const sourceDisplay = manualOverrideDisplayForProfile(source);
+  const targetDisplay = manualOverrideDisplayForProfile(target);
+  const sourcePresence = manualOverridePresenceFromProfile(source);
+  const targetPresence = manualOverridePresenceFromProfile(target);
+
+  if (sourcePresence === 'unknown' || targetPresence === 'unknown') {
+    return {
+      comparison: {
+        label,
+        sourceDisplay,
+        targetDisplay,
+        status: 'unknownOrCheck',
+      },
+      sentence: 'Manuel kumanda katalogdan doğrulanmalıdır.',
+    };
+  }
+
+  if (sourcePresence === 'absent' && targetPresence === 'absent') {
+    return {
+      comparison: {
+        label,
+        sourceDisplay,
+        targetDisplay,
+        status: 'compatible',
+      },
+      sentence: 'Manuel kumanda yok (her iki tarafta).',
+    };
+  }
+
+  if (sourcePresence === 'absent' || targetPresence === 'absent') {
+    return {
+      comparison: {
+        label,
+        sourceDisplay,
+        targetDisplay,
+        status: 'different',
+        checkReasonTr:
+          'Bir üründe manuel kumanda varken diğerinde yok; sipariş kodu kontrol edilmelidir.',
+      },
+      sentence: `Manuel kumanda uyumsuz: ${sourceDisplay} / ${targetDisplay}`,
+    };
+  }
+
+  const sourceType = manualOverrideTypeDetail(source);
+  const targetType = manualOverrideTypeDetail(target);
+  const typeMismatch =
+    !crossBrand && Boolean(sourceType && targetType && sourceType !== targetType);
+
+  return {
+    comparison: {
+      label,
+      sourceDisplay,
+      targetDisplay,
+      status: typeMismatch ? 'unknownOrCheck' : 'compatible',
+      checkReasonTr: typeMismatch
+        ? `Manuel kumanda tipi farklı olabilir: ${sourceType} / ${targetType}`
+        : undefined,
+    },
+    sentence: typeMismatch ? null : `Manuel kumanda mevcut: ${sourceDisplay}`,
+  };
+}
+
 function connectorSnapshotFromProfileField(
   field: HydraulicValveCanonicalProfile['connectorType'],
   brand?: string,
   series?: string,
 ): ConnectorCanonicalSnapshot {
+  if (field.catalogEvidence?.displayCandidate?.trim()) {
+    return {
+      canonicalKey: field.value ?? 'unknown',
+      displayValue: field.catalogEvidence.displayCandidate.trim(),
+      connectorFamilyKey: field.connectorFamilyKey,
+      connectorStandardKey: field.connectorStandardKey,
+      connectorOptions: field.connectorOptions,
+      isGenericConnector: field.isGenericConnector,
+      requiresCatalogCheck: Boolean(
+        field.catalogEvidence.needsReview || field.requiresCatalogCheck
+      ),
+      resolved: true,
+    };
+  }
+
   if (field.connectorFamilyKey) {
     return {
       canonicalKey: field.value ?? 'unknown',
@@ -180,12 +363,75 @@ function connectorSnapshotFromProfileField(
 function compareConnectorFields(
   source: HydraulicValveCanonicalProfile,
   target: HydraulicValveCanonicalProfile
-): { comparison: AttributeComparison; sentence: string | null; warning?: string } {
-  const result = compareConnectorCanonicalSnapshots(
-    connectorSnapshotFromProfileField(source.connectorType, source.brand, source.series),
-    connectorSnapshotFromProfileField(target.connectorType, target.brand, target.series),
-    FIELD_LABELS.connectorType,
+): {
+  comparison: AttributeComparison;
+  sentence: string | null;
+  warning?: string;
+  checkReasonTr?: string;
+} {
+  const sourceSnapshot = connectorSnapshotFromProfileField(
+    source.connectorType,
+    source.brand,
+    source.series
   );
+  const targetSnapshot = connectorSnapshotFromProfileField(
+    target.connectorType,
+    target.brand,
+    target.series
+  );
+  const result = compareConnectorCanonicalSnapshots(
+    sourceSnapshot,
+    targetSnapshot,
+    FIELD_LABELS.connectorType
+  );
+
+  const sourceCatalog = source.connectorType.catalogEvidence?.displayCandidate?.trim();
+  const targetCatalog = target.connectorType.catalogEvidence?.displayCandidate?.trim();
+
+  if (sourceCatalog && targetCatalog) {
+    const sourceLabel = source.brand?.trim() || 'Kaynak';
+    const targetLabel = target.brand?.trim() || 'Hedef';
+    const evidenceDisplays = {
+      sourceDisplay: sourceCatalog,
+      targetDisplay: targetCatalog,
+    };
+    const physicalCheckReason =
+      `${sourceLabel}: ${sourceCatalog}. ` +
+      `${targetLabel}: ${targetCatalog}. ` +
+      'Fiziksel soket eşdeğerliği kontrol edilmelidir.';
+
+    if (
+      result.comparison.status === 'different' ||
+      (result.comparison.status === 'unknownOrCheck' &&
+        sourceSnapshot.connectorFamilyKey !== targetSnapshot.connectorFamilyKey)
+    ) {
+      return {
+        ...result,
+        comparison: {
+          ...result.comparison,
+          ...evidenceDisplays,
+          status: 'unknownOrCheck',
+          checkReasonTr: physicalCheckReason,
+        },
+        sentence:
+          'Konnektör tipleri katalog adayı olarak farklı ailelerde; fiziksel uyum doğrulanmalıdır.',
+        checkReasonTr: physicalCheckReason,
+      };
+    }
+
+    if (result.comparison.status === 'unknownOrCheck') {
+      return {
+        ...result,
+        comparison: {
+          ...result.comparison,
+          ...evidenceDisplays,
+          checkReasonTr: physicalCheckReason,
+        },
+        checkReasonTr: physicalCheckReason,
+      };
+    }
+  }
+
   return result;
 }
 
@@ -298,6 +544,14 @@ export function compareHydraulicValveCanonicalProfiles(
   });
   pushResult(result, mounting.comparison, mounting.sentence, 'critical');
 
+  if (
+    mounting.comparison.status === 'compatible' &&
+    source.mountingStandard.catalogEvidence?.isoCode?.includes('ISO 4401-03') &&
+    target.mountingStandard.catalogEvidence?.isoCode?.includes('ISO 4401-03')
+  ) {
+    result.mountingIsoClassMatched = true;
+  }
+
   const ways = compareCanonicalEnumField({
     sourceField: source.waysPositions,
     targetField: target.waysPositions,
@@ -311,25 +565,73 @@ export function compareHydraulicValveCanonicalProfiles(
   });
   pushResult(result, ways.comparison, ways.sentence, 'critical');
 
-  const centerRequiresCheck =
-    source.centerCondition.requiresCatalogCheck ||
-    target.centerCondition.requiresCatalogCheck ||
-    source.centerCondition.confidence === 'low' ||
-    target.centerCondition.confidence === 'low';
+  const sourceCenterPortDisplay = summarizeCenterPortStateBehavior(source);
+  const targetCenterPortDisplay = summarizeCenterPortStateBehavior(target);
+  const bothPortStateCenter =
+    hasCatalogPortStateEvidence(source.centerCondition) &&
+    hasCatalogPortStateEvidence(target.centerCondition);
 
-  const center = compareCanonicalEnumField({
-    sourceField: source.centerCondition,
-    targetField: target.centerCondition,
-    sourceValue: source.centerCondition.value,
-    targetValue: target.centerCondition.value,
-    compatibleMessage: (display) => `Merkez tipi aynı: ${display}`,
-    differentMessage: (sourceDisplay, targetDisplay) =>
-      `Merkez tipi farklı: ${sourceDisplay} / ${targetDisplay}`,
-    unknownMessage: 'Merkez tipi katalog sembolünden doğrulanmalıdır.',
-    crossBrand,
-    treatSameAsCheckWhenCrossBrand: centerRequiresCheck,
-  });
-  pushResult(result, center.comparison, center.sentence, 'critical');
+  let center: { comparison: AttributeComparison; sentence: string | null };
+
+  if (bothPortStateCenter) {
+    const sourcePs = source.centerCondition.catalogEvidence!.portState!;
+    const targetPs = target.centerCondition.catalogEvidence!.portState!;
+    const portMatch = portStatesMatch(sourcePs, targetPs);
+    const display =
+      sourceCenterPortDisplay ??
+      targetCenterPortDisplay ??
+      portStateBehaviorSummary(sourcePs) ??
+      'Port durumu katalog adayından çözümlendi';
+    const catalogReview =
+      Boolean(source.centerCondition.catalogEvidence?.needsReview) ||
+      Boolean(target.centerCondition.catalogEvidence?.needsReview);
+
+    center = {
+      comparison: {
+        label: FIELD_LABELS.centerCondition,
+        sourceDisplay: sourceCenterPortDisplay ?? display,
+        targetDisplay: targetCenterPortDisplay ?? display,
+        status: portMatch ? 'compatible' : 'different',
+      },
+      sentence: portMatch
+        ? catalogReview
+          ? 'Merkez tipi (port durumu) uyumlu görünüyor; katalog adayı doğrulanmalıdır.'
+          : `Merkez tipi aynı: ${display}`
+        : `Merkez tipi farklı: ${sourceCenterPortDisplay ?? display} / ${targetCenterPortDisplay ?? display}`,
+    };
+
+    if (portMatch) {
+      result.portStateCenterResolved = true;
+    }
+  } else {
+    const centerRequiresCheck =
+      source.centerCondition.requiresCatalogCheck ||
+      target.centerCondition.requiresCatalogCheck ||
+      source.centerCondition.confidence === 'low' ||
+      target.centerCondition.confidence === 'low';
+
+    center = compareCanonicalEnumField({
+      sourceField: source.centerCondition,
+      targetField: target.centerCondition,
+      sourceValue: source.centerCondition.value,
+      targetValue: target.centerCondition.value,
+      compatibleMessage: (display) => `Merkez tipi aynı: ${display}`,
+      differentMessage: (sourceDisplay, targetDisplay) =>
+        `Merkez tipi farklı: ${sourceDisplay} / ${targetDisplay}`,
+      unknownMessage: 'Merkez tipi katalog sembolünden doğrulanmalıdır.',
+      crossBrand,
+      treatSameAsCheckWhenCrossBrand: centerRequiresCheck,
+    });
+  }
+
+  const hideCenterInEquivalenceUi =
+    bothPortStateCenter &&
+    center.comparison.status === 'compatible' &&
+    result.portStateCenterResolved;
+
+  if (!hideCenterInEquivalenceUi) {
+    pushResult(result, center.comparison, center.sentence, 'critical');
+  }
 
   const centering = compareCanonicalEnumField({
     sourceField: source.centering,
@@ -355,10 +657,16 @@ export function compareHydraulicValveCanonicalProfiles(
     unknownMessage: 'Bobin voltajı katalogdan doğrulanmalıdır.',
     crossBrand,
   });
+  const bothVoltagesKnown =
+    !isUnknownCanonicalValue(source.coilVoltage.value) &&
+    !isUnknownCanonicalValue(target.coilVoltage.value);
+
   if (source.coilVoltage.requiresCatalogCheck || target.coilVoltage.requiresCatalogCheck) {
-    // If both sides canonically resolve to the same voltage, treat as compatible
-    // but still warn that the coil code should be verified from catalog.
+    // Known canonical mismatch stays "different"; catalog check only downgrades uncertain cases.
     if (voltage.comparison.status === 'compatible') {
+      pushResult(result, voltage.comparison, voltage.sentence, 'critical');
+      result.warnings.push('Bobin voltajı kodu katalogdan doğrulanmalıdır.');
+    } else if (voltage.comparison.status === 'different' && bothVoltagesKnown) {
       pushResult(result, voltage.comparison, voltage.sentence, 'critical');
       result.warnings.push('Bobin voltajı kodu katalogdan doğrulanmalıdır.');
     } else {
@@ -378,39 +686,70 @@ export function compareHydraulicValveCanonicalProfiles(
   }
 
   const connector = compareConnectorFields(source, target);
-  pushResult(result, connector.comparison, connector.sentence, 'important');
+  pushResult(
+    result,
+    {
+      ...connector.comparison,
+      checkReasonTr: connector.checkReasonTr ?? connector.comparison.checkReasonTr,
+    },
+    connector.sentence,
+    'important'
+  );
   if (connector.warning) {
     result.warnings.push(connector.warning);
   }
+  if (connector.comparison.status === 'unknownOrCheck') {
+    result.connectorDynamicCheck = {
+      source: connector.comparison.sourceDisplay,
+      target: connector.comparison.targetDisplay,
+      status: connector.comparison.status,
+      reasonTr:
+        connector.checkReasonTr ??
+        'Konnektör ve bobin bağlantısı seri ve üreticiye göre değişebilir.',
+    };
+  }
 
-  const manual = compareCanonicalEnumField({
-    sourceField: source.manualOverride,
-    targetField: target.manualOverride,
-    sourceValue: source.manualOverride.value,
-    targetValue: target.manualOverride.value,
-    compatibleMessage: (display) => `Manuel kumanda aynı: ${display}`,
-    differentMessage: (sourceDisplay, targetDisplay) =>
-      `Manuel kumanda farklı: ${sourceDisplay} / ${targetDisplay}`,
-    unknownMessage: 'Manuel kumanda katalogdan doğrulanmalıdır.',
-    crossBrand,
-  });
+  const manual = compareManualOverrideFields(source, target, crossBrand);
+  if (manual.comparison.status === 'unknownOrCheck') {
+    result.manualDynamicCheck = {
+      source: manual.comparison.sourceDisplay,
+      target: manual.comparison.targetDisplay,
+      status: manual.comparison.status,
+      reasonTr: manual.comparison.checkReasonTr,
+    };
+  }
   pushResult(result, manual.comparison, manual.sentence, 'important');
 
-  const pressure = compareOptionalNumericFields(
-    source.maxPressureBar,
-    target.maxPressureBar,
-    'Basınç ve debi değerleri katalogdan kontrol edilmelidir.',
-    'bar'
+  const pressure = compareCatalogPressureFields({
+    sourceField: source.maxPressureBar,
+    targetField: target.maxPressureBar,
+    label: FIELD_LABELS.maxPressureBar,
+  });
+  pushResult(
+    result,
+    { ...pressure.comparison, checkReasonTr: pressure.checkReasonTr },
+    pressure.sentence,
+    'important'
   );
-  pushResult(result, pressure.comparison, pressure.sentence, 'important');
 
-  const flow = compareOptionalNumericFields(
-    source.maxFlowLpm,
-    target.maxFlowLpm,
-    'Basınç ve debi değerleri katalogdan kontrol edilmelidir.',
-    'l/min'
+  const flow = compareCatalogFlowFields({
+    sourceField: source.maxFlowLpm,
+    targetField: target.maxFlowLpm,
+    label: FIELD_LABELS.maxFlowLpm,
+  });
+  pushResult(
+    result,
+    { ...flow.comparison, checkReasonTr: flow.checkReasonTr },
+    flow.sentence,
+    'important'
   );
-  pushResult(result, flow.comparison, flow.sentence, 'important');
+
+  result.catalogPressureEvidencePresent =
+    profileHasCatalogPressureEvidence(source.maxPressureBar) ||
+    profileHasCatalogPressureEvidence(target.maxPressureBar);
+  result.catalogFlowEvidencePresent =
+    profileHasCatalogFlowEvidence(source.maxFlowLpm) ||
+    profileHasCatalogFlowEvidence(target.maxFlowLpm);
 
   if (source.sealMaterial && target.sealMaterial) {
     const seal = compareCanonicalEnumField({
@@ -427,47 +766,104 @@ export function compareHydraulicValveCanonicalProfiles(
     pushResult(result, seal.comparison, seal.sentence, 'optional');
   }
 
-  const functionMatch = compareValveFunctionBehavior({
-    label: FIELD_LABELS.spoolFunctionCode,
-    source: {
-      manufacturer: source.brand ?? '',
-      series: source.series ?? '',
-      token: source.rawFunctionCode ?? null,
-    },
-    target: {
-      manufacturer: target.brand ?? '',
-      series: target.series ?? '',
-      token: target.rawFunctionCode ?? null,
-    },
-  });
+  const sourceSpoolDisplay =
+    sourceCenterPortDisplay ?? summarizeSpoolBehaviorForComparison(source);
+  const targetSpoolDisplay =
+    targetCenterPortDisplay ?? summarizeSpoolBehaviorForComparison(target);
 
-  const sourceSpoolDisplay = summarizeSpoolBehaviorForComparison(source);
-  const targetSpoolDisplay = summarizeSpoolBehaviorForComparison(target);
-
-  let spoolComparison = {
-    ...functionMatch.comparison,
-    label: FIELD_LABELS.spoolFunctionCode,
-    sourceDisplay: sourceSpoolDisplay,
-    targetDisplay: targetSpoolDisplay,
-  };
-  const sameBrandSeries = isSameBrandSeries(source, target);
-  const sourceToken = source.rawFunctionCode?.trim().toUpperCase();
-  const targetToken = target.rawFunctionCode?.trim().toUpperCase();
   const mountingMismatch =
     !isUnknownCanonicalValue(source.mountingStandard.value) &&
     !isUnknownCanonicalValue(target.mountingStandard.value) &&
     source.mountingStandard.value !== target.mountingStandard.value;
 
-  if (
-    sameBrandSeries &&
-    sourceToken &&
-    targetToken &&
-    sourceToken !== targetToken
-  ) {
+  const portStateSpool = compareSpoolBehaviorByCatalogPortState({
+    label: FIELD_LABELS.spoolFunctionCode,
+    sourceField: source.centerCondition,
+    targetField: target.centerCondition,
+    sourceDisplay: sourceSpoolDisplay,
+    targetDisplay: targetSpoolDisplay,
+  });
+
+  let spoolComparison: AttributeComparison;
+  let usedPortStateComparison = false;
+  let functionMatch: ReturnType<typeof compareValveFunctionBehavior> | null = null;
+
+  const resolveFunctionMatch = () =>
+    compareValveFunctionBehavior({
+      label: FIELD_LABELS.spoolFunctionCode,
+      source: {
+        manufacturer: source.brand ?? '',
+        series: source.series ?? '',
+        token: source.rawFunctionCode ?? null,
+      },
+      target: {
+        manufacturer: target.brand ?? '',
+        series: target.series ?? '',
+        token: target.rawFunctionCode ?? null,
+      },
+    });
+
+  const preferFunctionCheckOverPortState = (
+    match: ReturnType<typeof compareValveFunctionBehavior>
+  ): boolean => {
+    if (!crossBrand || !match.requiresCatalogCheck) {
+      return false;
+    }
+    if (match.comparison.status === 'different') {
+      return true;
+    }
+    return match.matchType === 'unknown';
+  };
+
+  if (portStateSpool.usedPortState) {
+    if (crossBrand) {
+      functionMatch = resolveFunctionMatch();
+    }
+    if (functionMatch && preferFunctionCheckOverPortState(functionMatch)) {
+      spoolComparison = {
+        ...functionMatch.comparison,
+        label: FIELD_LABELS.spoolFunctionCode,
+        sourceDisplay: sourceSpoolDisplay,
+        targetDisplay: targetSpoolDisplay,
+        status:
+          functionMatch.comparison.status === 'different'
+            ? 'unknownOrCheck'
+            : functionMatch.comparison.status,
+        checkReasonTr: functionMatch.statusMessageTr,
+      };
+      usedPortStateComparison = false;
+    } else {
+      spoolComparison = portStateSpool.comparison;
+      usedPortStateComparison = true;
+      if (portStateSpool.catalogReviewRequired) {
+        result.warnings.push(CATALOG_PORT_STATE_CANDIDATE_WARNING_TR);
+      }
+    }
+  } else {
+    functionMatch = resolveFunctionMatch();
+
     spoolComparison = {
-      ...spoolComparison,
-      status: 'different',
+      ...functionMatch.comparison,
+      label: FIELD_LABELS.spoolFunctionCode,
+      sourceDisplay: sourceSpoolDisplay,
+      targetDisplay: targetSpoolDisplay,
     };
+
+    const sameBrandSeries = isSameBrandSeries(source, target);
+    const sourceToken = source.rawFunctionCode?.trim().toUpperCase();
+    const targetToken = target.rawFunctionCode?.trim().toUpperCase();
+
+    if (
+      sameBrandSeries &&
+      sourceToken &&
+      targetToken &&
+      sourceToken !== targetToken
+    ) {
+      spoolComparison = {
+        ...spoolComparison,
+        status: 'different',
+      };
+    }
   }
 
   if (mountingMismatch && spoolComparison.status === 'compatible') {
@@ -484,18 +880,23 @@ export function compareHydraulicValveCanonicalProfiles(
     target.centering.requiresCatalogCheck ||
     source.waysPositions.requiresCatalogCheck ||
     target.waysPositions.requiresCatalogCheck ||
-    functionMatch.requiresCatalogCheck;
+    (functionMatch?.requiresCatalogCheck ?? false);
 
   let spoolSentence: string | null = null;
   if (spoolComparison.status === 'compatible') {
-    if (spoolRequiresCatalogCheck) {
+    if (usedPortStateComparison && portStateSpool.catalogReviewRequired) {
+      spoolSentence =
+        'Sürgü merkez davranışı (port durumları) uyumlu görünüyor; katalog adayı inceleme gerektirir.';
+    } else if (spoolRequiresCatalogCheck) {
       spoolSentence =
         'Sürgü davranışı aynı görünebilir, fakat katalog sembolüyle doğrulanmalıdır.';
     } else {
       spoolSentence = `Sürgü davranışı aynı: ${sourceSpoolDisplay}`;
     }
   } else if (spoolComparison.status === 'different') {
-    if (
+    if (usedPortStateComparison) {
+      spoolSentence = `Sürgü merkez davranışı (port durumları) farklı: ${sourceSpoolDisplay} / ${targetSpoolDisplay}`;
+    } else if (
       spoolRequiresCatalogCheck ||
       sourceSpoolDisplay.includes('doğrulanmalı') ||
       targetSpoolDisplay.includes('doğrulanmalı')
@@ -509,9 +910,21 @@ export function compareHydraulicValveCanonicalProfiles(
     spoolSentence = 'Sürgü merkez tipi katalog sembolünden doğrulanmalıdır.';
   }
 
+  if (
+    crossBrand &&
+    functionMatch?.requiresCatalogCheck &&
+    spoolComparison.status === 'different'
+  ) {
+    spoolComparison = {
+      ...spoolComparison,
+      status: 'unknownOrCheck',
+      checkReasonTr: functionMatch.statusMessageTr,
+    };
+  }
+
   pushResult(result, spoolComparison, spoolSentence, 'optional');
 
-  if (crossBrand) {
+  if (crossBrand && !usedPortStateComparison) {
     const sameCenter =
       !isUnknownCanonicalValue(source.centerCondition.value) &&
       !isUnknownCanonicalValue(target.centerCondition.value) &&
@@ -534,7 +947,7 @@ export function compareHydraulicValveCanonicalProfiles(
   }
 
   if (
-    functionMatch.requiresCatalogCheck &&
+    functionMatch?.requiresCatalogCheck &&
     functionMatch.statusMessageTr &&
     spoolComparison.status === 'different'
   ) {
@@ -549,11 +962,16 @@ export function compareHydraulicValveCanonicalProfiles(
       source: spoolComparisonEntry.sourceDisplay,
       target: spoolComparisonEntry.targetDisplay,
       status: spoolComparisonEntry.status,
-      reasonTr: result.crossBrandSimilarBehavior
-        ? 'Sürgü/fonksiyon davranışı benzer olabilir. Katalog sembolüyle doğrulanmalıdır.'
-        : spoolComparisonEntry.status === 'unknownOrCheck'
-          ? 'Sürgü/fonksiyon sembolü katalogdan kontrol edilmelidir.'
-          : undefined,
+      reasonTr:
+        spoolComparisonEntry.checkReasonTr ??
+        functionMatch?.statusMessageTr ??
+        (usedPortStateComparison && portStateSpool.catalogReviewRequired
+          ? CATALOG_PORT_STATE_CANDIDATE_WARNING_TR
+          : result.crossBrandSimilarBehavior
+            ? 'Sürgü/fonksiyon davranışı benzer olabilir. Katalog sembolüyle doğrulanmalıdır.'
+            : spoolComparisonEntry.status === 'unknownOrCheck'
+              ? 'Sürgü/fonksiyon sembolü katalogdan kontrol edilmelidir.'
+              : undefined),
     };
   }
 
@@ -569,7 +987,9 @@ function comparisonToCheckItem(comparison: AttributeComparison): CheckItem | nul
     field: comparison.label,
     sourceValue: comparison.sourceDisplay,
     targetValue: comparison.targetDisplay,
-    reasonTr: `${comparison.label} için yeterli kesin bilgi yok. Katalog veya şema ile doğrulanmalıdır.`,
+    reasonTr:
+      comparison.checkReasonTr ??
+      `${comparison.label} için yeterli kesin bilgi yok. Katalog veya şema ile doğrulanmalıdır.`,
     severity:
       comparison.label.includes('Montaj') ||
       comparison.label.includes('Merkez') ||
@@ -632,14 +1052,77 @@ export function canonicalComparisonToCompatibilityResult(options: {
 
   const voltageComparison = comparisons.find((c) => c.label === FIELD_LABELS.coilVoltage);
   const connectorComparison = comparisons.find((c) => c.label === FIELD_LABELS.connectorType);
+  const manualComparison = comparisons.find((c) => c.label === FIELD_LABELS.manualOverride);
   const spoolComparison = comparisons.find((c) => c.label === FIELD_LABELS.spoolFunctionCode);
+
+  const dynamicCheckFields = [
+    FIELD_LABELS.coilVoltage,
+    FIELD_LABELS.connectorType,
+    FIELD_LABELS.spoolFunctionCode,
+    FIELD_LABELS.manualOverride,
+    FIELD_LABELS.maxPressureBar,
+    FIELD_LABELS.maxFlowLpm,
+    'Sürgü sembolü / fonksiyon',
+  ] as const;
 
   const attributeChecks = comparisons
     .map((c) => comparisonToCheckItem(c))
     .filter((item): item is CheckItem => item !== null);
 
-  const checkItems = [
-    ...getHydraulicValveCheckItems(options.source, options.candidate, {
+  const attributeChecksForMerge = attributeChecks.filter((item) => {
+    if (dynamicCheckFields.includes(item.field as (typeof dynamicCheckFields)[number])) {
+      return false;
+    }
+    if (
+      options.canonical.portStateCenterResolved &&
+      (item.field === FIELD_LABELS.centerCondition ||
+        normalizeCheckFieldKey(item.field) === 'spool_center_behavior')
+    ) {
+      return false;
+    }
+    if (
+      options.canonical.catalogPressureEvidencePresent &&
+      normalizeCheckFieldKey(item.field) === 'basınç'
+    ) {
+      return false;
+    }
+    if (
+      options.canonical.catalogFlowEvidencePresent &&
+      normalizeCheckFieldKey(item.field) === 'debi'
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const attributeChecksForBaseCoverage = attributeChecks.filter((item) => {
+    if (dynamicCheckFields.includes(item.field as (typeof dynamicCheckFields)[number])) {
+      return false;
+    }
+    if (
+      options.canonical.portStateCenterResolved &&
+      (item.field === FIELD_LABELS.centerCondition ||
+        normalizeCheckFieldKey(item.field) === 'spool_center_behavior')
+    ) {
+      return false;
+    }
+    if (
+      options.canonical.catalogPressureEvidencePresent &&
+      normalizeCheckFieldKey(item.field) === 'basınç'
+    ) {
+      return false;
+    }
+    if (
+      options.canonical.catalogFlowEvidencePresent &&
+      normalizeCheckFieldKey(item.field) === 'debi'
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const baseChecks = filterBaseCheckItemsCoveredByCanonical(
+    getHydraulicValveCheckItems(options.source, options.candidate, {
       spool: options.canonical.spoolDynamicCheck,
       voltage: voltageComparison
         ? {
@@ -648,23 +1131,50 @@ export function canonicalComparisonToCompatibilityResult(options: {
             status: voltageComparison.status,
           }
         : undefined,
-      connector: connectorComparison
-        ? {
-            source: connectorComparison.sourceDisplay,
-            target: connectorComparison.targetDisplay,
-            status: connectorComparison.status,
-          }
-        : undefined,
+      connector:
+        options.canonical.connectorDynamicCheck ??
+        (connectorComparison
+          ? {
+              source: connectorComparison.sourceDisplay,
+              target: connectorComparison.targetDisplay,
+              status: connectorComparison.status,
+            }
+          : undefined),
+      manual:
+        options.canonical.manualDynamicCheck ??
+        (manualComparison?.status === 'unknownOrCheck'
+          ? {
+              source: manualComparison.sourceDisplay,
+              target: manualComparison.targetDisplay,
+              status: manualComparison.status,
+              reasonTr: manualComparison.checkReasonTr,
+            }
+          : undefined),
     }),
-    ...attributeChecks.filter(
-      (item) =>
-        ![
-          FIELD_LABELS.coilVoltage,
-          FIELD_LABELS.connectorType,
-          FIELD_LABELS.spoolFunctionCode,
-        ].includes(item.field)
-    ),
-  ];
+    attributeChecksForBaseCoverage
+  ).filter((item) => {
+    if (
+      options.canonical.mountingIsoClassMatched &&
+      normalizeCheckFieldKey(item.field) === 'montaj arayüzü'
+    ) {
+      return false;
+    }
+    if (
+      options.canonical.catalogPressureEvidencePresent &&
+      normalizeCheckFieldKey(item.field) === 'basınç'
+    ) {
+      return false;
+    }
+    if (
+      options.canonical.catalogFlowEvidencePresent &&
+      normalizeCheckFieldKey(item.field) === 'debi'
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const checkItems = dedupeCheckItemsByField([...baseChecks, ...attributeChecksForMerge]);
 
   const warningSet = new Set<string>([...HYDRAULIC_VALVE_WARNINGS, ...options.canonical.warnings]);
 
@@ -674,15 +1184,32 @@ export function canonicalComparisonToCompatibilityResult(options: {
     );
   }
 
+  const warnings = consolidateCatalogWarningsForUi([...warningSet]);
+
+  const metadata = deriveHydraulicCompatibilityMetadata({
+    comparisons,
+    scoredComparisons: options.canonical.scoredComparisons,
+    warnings,
+    requiresCatalogCheck: options.canonical.requiresCatalogCheck,
+  });
+
+  const summary = lookupEquivalenceSummary(
+    compatible.length,
+    different.length,
+    options.canonical
+  );
+  summary.riskLevel = deriveSummaryRiskLevelFromMetadata(metadata);
+
   return {
     candidate: options.candidate,
-    summary: lookupEquivalenceSummary(compatible.length, different.length, options.canonical),
+    summary,
     compatible,
     different,
     checkItems,
-    warnings: [...warningSet],
+    warnings,
     profileScoring: {
       scoredComparisons: options.canonical.scoredComparisons,
     },
+    metadata,
   };
 }

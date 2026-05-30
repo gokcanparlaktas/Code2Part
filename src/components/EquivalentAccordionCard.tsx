@@ -5,6 +5,8 @@ import {
   MATCH_PERCENTAGE_RING_SIZE,
   MatchPercentageRing,
 } from "@/components/common/MatchPercentageRing";
+import { CompatibilityMetadataBanner } from "@/components/CompatibilityMetadataBanner";
+import { buildLegacyMatchScoreFootnote } from "@/domain/presentation/formatCompatibilityMetadata";
 import { groupCheckItemsByImportance } from "@/domain/presentation/groupCheckItemsByImportance";
 import { calculateMatchPercentage } from "@/domain/scoring/calculateMatchPercentage";
 import type {
@@ -12,6 +14,10 @@ import type {
   CheckItem,
   CompatibilityResult,
 } from "@/types/compatibility";
+import {
+  equivalenceStatusTone,
+  formatEquivalenceStatusLabel,
+} from "@/domain/presentation/formatCompatibilityMetadata";
 import { formatCollapsedRiskHint } from "@/utils/formatRisk";
 
 import { RiskLevelBadge } from "./RiskLevelBadge";
@@ -24,10 +30,15 @@ interface EquivalentAccordionCardProps {
 }
 
 function CompatibleRow({ item }: { item: AttributeComparison }) {
+  const sameDisplay = item.sourceDisplay === item.targetDisplay;
+  const valueLine = sameDisplay
+    ? item.sourceDisplay
+    : `${item.sourceDisplay} → ${item.targetDisplay}`;
+
   return (
     <View style={styles.compatibleRow}>
       <Text style={styles.rowLabel}>{item.label}</Text>
-      <Text style={styles.rowValue}>{item.sourceDisplay}</Text>
+      <Text style={styles.rowValue}>{valueLine}</Text>
     </View>
   );
 }
@@ -126,8 +137,17 @@ export function EquivalentAccordionCard({
   const { candidate, summary } = result;
   const hasChecks = result.checkItems.length > 0;
   const modelCode = candidate.suggestedCode ?? "Model oluşturulamadı";
-  const riskHint = formatCollapsedRiskHint(summary.riskLevel, hasChecks);
+  const statusLabel = result.metadata
+    ? formatEquivalenceStatusLabel(result.metadata, { hasCheckItems: hasChecks })
+    : formatCollapsedRiskHint(summary.riskLevel, hasChecks);
+  const statusTone = result.metadata
+    ? equivalenceStatusTone(result.metadata)
+    : undefined;
   const matchPercentage = calculateMatchPercentage(result);
+  const legacyScoreFootnote = buildLegacyMatchScoreFootnote(
+    result.metadata,
+    matchPercentage.level
+  );
   const groupedChecks = groupCheckItemsByImportance(result.checkItems);
 
   return (
@@ -151,10 +171,22 @@ export function EquivalentAccordionCard({
               {modelCode}
             </Text>
             <Text style={styles.matchLevel}>{summary.matchLevelTr}</Text>
-            <Text style={styles.riskHint}>{riskHint}</Text>
+            {result.metadata ? (
+              <CompatibilityMetadataBanner
+                metadata={result.metadata}
+                compact
+                hasCheckItems={hasChecks}
+              />
+            ) : null}
+            <Text style={styles.riskHint}>{statusLabel}</Text>
           </View>
           <View style={styles.headerTrailing}>
-            <MatchPercentageRing match={matchPercentage} />
+            <View style={styles.ringColumn}>
+              <MatchPercentageRing match={matchPercentage} />
+              {legacyScoreFootnote ? (
+                <Text style={styles.legacyScoreFootnote}>{legacyScoreFootnote}</Text>
+              ) : null}
+            </View>
             <View style={styles.chevronAlign}>
               <Text style={styles.chevron}>{expanded ? "▼" : "▶"}</Text>
             </View>
@@ -165,9 +197,20 @@ export function EquivalentAccordionCard({
       {expanded ? (
         <View style={styles.body}>
           <View style={styles.riskBadgeRow}>
-            <RiskLevelBadge riskLevel={summary.riskLevel} />
+            <RiskLevelBadge
+              riskLevel={result.metadata ? undefined : summary.riskLevel}
+              label={result.metadata ? statusLabel : undefined}
+              tone={statusTone}
+            />
           </View>
           <Text style={styles.summaryText}>{summary.summaryTr}</Text>
+
+          {result.metadata ? (
+            <CompatibilityMetadataBanner
+              metadata={result.metadata}
+              hasCheckItems={hasChecks}
+            />
+          ) : null}
 
           <SectionBlock
             title="Uyumlu"
@@ -255,6 +298,17 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     flexDirection: "row",
     gap: 4,
+  },
+  ringColumn: {
+    alignItems: "center",
+    maxWidth: 112,
+  },
+  legacyScoreFootnote: {
+    color: "#64748B",
+    fontSize: 9,
+    lineHeight: 12,
+    marginTop: 4,
+    textAlign: "center",
   },
   chevronAlign: {
     height: MATCH_PERCENTAGE_RING_SIZE,

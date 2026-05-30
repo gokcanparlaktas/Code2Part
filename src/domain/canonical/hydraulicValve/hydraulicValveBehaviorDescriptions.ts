@@ -21,6 +21,24 @@ import {
   normalizeHydraulicManualOverrideDisplay,
   normalizeHydraulicVoltageDisplay,
 } from './hydraulicValveAttributeDisplay';
+import {
+  CATALOG_REVIEW_WARNING_TITLE_TR,
+} from '@/domain/presentation/formatCompatibilityMetadata';
+import {
+  catalogEvidenceDetailLines,
+  catalogPrimaryFromField,
+  isGenericPortStateFallback,
+  resolveCenterDisplayFromCatalogEvidence,
+} from '@/domain/presentation/formatCatalogFieldDisplay';
+import {
+  filterUserFacingDetailLines,
+  USER_EVIDENCE_FROM_CATALOG_TR,
+  USER_EVIDENCE_FROM_CODE_TR,
+  USER_EVIDENCE_FROM_SERIES_TR,
+  USER_EVIDENCE_FROM_TECHNICAL_CATALOG_TR,
+  userEvidenceLabelForField,
+} from '@/domain/presentation/formatUserFacingCatalogDisplay';
+import { FIELD_LABELS } from './hydraulicValveCanonicalDictionary';
 import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
 import {
   isUnknownCanonical,
@@ -34,6 +52,8 @@ export type HydraulicBehaviorDescription = {
   rawCode?: string;
   confidence: CanonicalConfidence;
   requiresCatalogCheck: boolean;
+  /** Clean source line for product detail UI (no internal review wording). */
+  userEvidenceTr?: string;
 };
 
 const CATALOG_WAYS_TR = 'Katalogdan doğrulanmalı';
@@ -122,12 +142,20 @@ export function getWaysPositionsBehaviorText(
   return waysPositions.replace('_', '/');
 }
 
+function catalogDetailLines(
+  options: Parameters<typeof catalogEvidenceDetailLines>[0]
+): string[] {
+  return filterUserFacingDetailLines(
+    catalogEvidenceDetailLines({ ...options, forUserDisplay: true })
+  );
+}
+
 export function formatBehaviorDescriptionForUi(description: HydraulicBehaviorDescription): string {
   const primary = description.primaryDescription;
-  const details = (description.details ?? [])
-    .filter(Boolean)
+  const details = filterUserFacingDetailLines(description.details ?? [])
     .filter((line) => line !== primary)
-    .filter((line) => !line.startsWith('Kod kanıtı:'));
+    .filter((line) => !line.startsWith('Kod kanıtı:'))
+    .filter((line) => line !== CATALOG_REVIEW_WARNING_TITLE_TR);
   return [primary, ...details].filter(Boolean).join('\n');
 }
 
@@ -149,14 +177,28 @@ function describeMounting(profile: HydraulicValveCanonicalProfile): HydraulicBeh
   if (!profile.mountingStandard.value || profile.mountingStandard.value === 'unknown') {
     return null;
   }
+  const fallback = getMountingStandardDisplay(profile.mountingStandard.value);
+  const primary = catalogPrimaryFromField(profile.mountingStandard, fallback);
+  const hasCatalog = Boolean(profile.mountingStandard.catalogEvidence);
+
   return {
     title: 'Montaj standardı',
-    primaryDescription: getMountingStandardDisplay(profile.mountingStandard.value),
-    details: profile.mountingStandard.rawValue
-      ? [rawCodeLabel(String(profile.mountingStandard.rawValue))].filter(Boolean) as string[]
-      : [],
+    primaryDescription: primary,
+    details: catalogDetailLines({
+      rawToken: profile.mountingStandard.rawValue
+        ? String(profile.mountingStandard.rawValue)
+        : undefined,
+      catalogEvidence: profile.mountingStandard.catalogEvidence,
+    }),
     confidence: profile.mountingStandard.confidence,
-    requiresCatalogCheck: Boolean(profile.mountingStandard.requiresCatalogCheck),
+    requiresCatalogCheck: Boolean(
+      profile.mountingStandard.requiresCatalogCheck ||
+        profile.mountingStandard.catalogEvidence?.needsReview
+    ),
+    userEvidenceTr: userEvidenceLabelForField({
+      hasCatalogEvidence: hasCatalog,
+      fromProductCode: profile.mountingStandard.evidence === 'code',
+    }),
   };
 }
 
@@ -223,11 +265,18 @@ function describeCenteringFromProfile(
     profile.centering.value && profile.centering.value !== 'unknown';
 
   if (hasCentering) {
+    const fromFunctionArrangement = Boolean(profile.rawFunctionCode?.trim());
+    const fromProductCode =
+      profile.centering.evidence === 'code' ||
+      centeringAttr?.evidence === 'code' ||
+      fromFunctionArrangement;
     return {
       title: 'Merkezleme',
       primaryDescription: getCenteringDisplay(profile.centering.value),
       details: [
-        ...(profile.centering.requiresCatalogCheck ? [CATALOG_CENTERING_TR] : []),
+        ...(profile.centering.requiresCatalogCheck && !fromProductCode
+          ? [CATALOG_CENTERING_TR]
+          : []),
         ...(profile.rawFunctionCode
           ? (() => {
               const parts = parseFunctionTokenParts(profile.rawFunctionCode);
@@ -235,8 +284,13 @@ function describeCenteringFromProfile(
             })()
           : []),
       ],
-      confidence: profile.centering.confidence,
-      requiresCatalogCheck: Boolean(profile.centering.requiresCatalogCheck),
+      confidence: fromProductCode ? 'medium' : profile.centering.confidence,
+      requiresCatalogCheck: fromProductCode
+        ? false
+        : Boolean(profile.centering.requiresCatalogCheck),
+      userEvidenceTr: fromProductCode
+        ? USER_EVIDENCE_FROM_CODE_TR
+        : USER_EVIDENCE_FROM_SERIES_TR,
     };
   }
 
@@ -252,33 +306,58 @@ function describeCenteringFromProfile(
 function describeCenterConditionFromProfile(
   profile: HydraulicValveCanonicalProfile
 ): HydraulicBehaviorDescription {
+  const catalog = profile.centerCondition.catalogEvidence;
+  const hasResolvedCatalogDisplay = Boolean(
+    catalog &&
+      (resolveCenterDisplayFromCatalogEvidence({
+        catalogEvidence: catalog,
+        centerConditionValue: profile.centerCondition.value,
+        getCenterConditionDisplay,
+        fallback: CATALOG_CENTER_CONDITION_TR,
+      }) !== CATALOG_CENTER_CONDITION_TR)
+  );
   const verified = canShowVerifiedValue({
     value: profile.centerCondition.value,
     confidence: profile.centerCondition.confidence,
     requiresCatalogCheck: profile.centerCondition.requiresCatalogCheck,
   });
+  const fallback = verified
+    ? getCenterConditionDisplay(profile.centerCondition.value)
+    : CATALOG_CENTER_CONDITION_TR;
+  const spoolToken = profile.rawSpoolSymbol;
+  const primaryDescription = resolveCenterDisplayFromCatalogEvidence({
+    catalogEvidence: catalog,
+    centerConditionValue: profile.centerCondition.value,
+    getCenterConditionDisplay,
+    fallback,
+  });
 
   return {
     title: 'Merkez tipi',
-    primaryDescription: verified
-      ? getCenterConditionDisplay(profile.centerCondition.value)
-      : CATALOG_CENTER_CONDITION_TR,
-    details: [
-      ...(verified ? [] : [CATALOG_CENTER_CONDITION_TR]),
-      ...(profile.rawFunctionCode &&
-      !isVickersSpoolFunctionToken(profile.rawFunctionCode)
-        ? (() => {
-            const parts = parseFunctionTokenParts(profile.rawFunctionCode);
-            return parts.centerType ? [rawCodeLabel(parts.centerType)!] : [];
-          })()
-        : []),
-    ],
+    primaryDescription,
+    details: catalogDetailLines({
+      rawToken:
+        spoolToken && !isVickersSpoolFunctionToken(spoolToken) ? spoolToken : undefined,
+      catalogEvidence: catalog,
+    }),
     confidence: profile.centerCondition.confidence,
-    requiresCatalogCheck: Boolean(profile.centerCondition.requiresCatalogCheck) || !verified,
+    requiresCatalogCheck:
+      Boolean(profile.centerCondition.requiresCatalogCheck || catalog?.needsReview) ||
+      (!verified && !hasResolvedCatalogDisplay),
+    userEvidenceTr: hasResolvedCatalogDisplay
+      ? USER_EVIDENCE_FROM_CATALOG_TR
+      : userEvidenceLabelForField({
+          placeholderPrimary: primaryDescription === CATALOG_CENTER_CONDITION_TR,
+        }),
   };
 }
 
 function describeSpoolSymbol(profile: HydraulicValveCanonicalProfile): HydraulicBehaviorDescription | null {
+  const centerSummary = summarizeCenterPortStateBehavior(profile);
+  if (centerSummary && !isGenericPortStateFallback(centerSummary)) {
+    return null;
+  }
+
   const manufacturer = profile.brand?.toLowerCase() ?? '';
   const series = profile.series?.toUpperCase() ?? '';
   const token = profile.rawSpoolSymbol ?? profile.rawFunctionCode;
@@ -297,6 +376,7 @@ function describeSpoolSymbol(profile: HydraulicValveCanonicalProfile): Hydraulic
     rawCode: String(token),
     confidence: 'unknown',
     requiresCatalogCheck: true,
+    userEvidenceTr: USER_EVIDENCE_FROM_SERIES_TR,
   };
 }
 
@@ -312,16 +392,28 @@ function describeCoilVoltage(
     return null;
   }
 
+  const primary = catalogPrimaryFromField(profile.coilVoltage, display.displayValue);
+
+  const hasCatalog = Boolean(profile.coilVoltage.catalogEvidence);
+  const fromCode =
+    profile.coilVoltage.evidence === 'code' || Boolean(display.rawToken?.trim());
+
   return {
     title: 'Bobin voltajı',
-    primaryDescription: display.displayValue,
-    details: [
-      ...(display.rawTokenLabel ? [display.rawTokenLabel] : []),
-      ...(display.note ? [display.note] : []),
-    ],
+    primaryDescription: primary,
+    details: catalogDetailLines({
+      rawToken: display.rawToken,
+      catalogEvidence: profile.coilVoltage.catalogEvidence,
+    }),
     rawCode: display.rawToken,
     confidence: profile.coilVoltage.confidence,
-    requiresCatalogCheck: Boolean(display.requiresCatalogCheck),
+    requiresCatalogCheck: Boolean(
+      display.requiresCatalogCheck || profile.coilVoltage.catalogEvidence?.needsReview
+    ),
+    userEvidenceTr: userEvidenceLabelForField({
+      hasCatalogEvidence: hasCatalog,
+      fromProductCode: fromCode,
+    }),
   };
 }
 
@@ -339,16 +431,29 @@ function describeConnector(
     return null;
   }
 
+  const primary =
+    profile.connectorType.catalogEvidence?.needsReview
+      ? display.displayValue
+      : catalogPrimaryFromField(profile.connectorType, display.displayValue);
+
+  const hasCatalog = Boolean(profile.connectorType.catalogEvidence);
+
   return {
     title: 'Konnektör tipi',
-    primaryDescription: display.displayValue,
-    details: [
-      ...(token ? [rawCodeLabel(String(token))].filter(Boolean) as string[] : []),
-      ...(display.note ? [display.note] : []),
-    ],
+    primaryDescription: primary,
+    details: catalogDetailLines({
+      rawToken: token,
+      catalogEvidence: profile.connectorType.catalogEvidence,
+    }),
     rawCode: token,
     confidence: profile.connectorType.confidence,
-    requiresCatalogCheck: Boolean(display.requiresCatalogCheck),
+    requiresCatalogCheck: Boolean(
+      display.requiresCatalogCheck || profile.connectorType.catalogEvidence?.needsReview
+    ),
+    userEvidenceTr: userEvidenceLabelForField({
+      hasCatalogEvidence: hasCatalog,
+      fromProductCode: profile.connectorType.evidence === 'code',
+    }),
   };
 }
 
@@ -363,13 +468,45 @@ function describeManualOverride(
     return null;
   }
 
+  const detailLines = filterUserFacingDetailLines([
+    ...(display.rawTokenLabel ? [display.rawTokenLabel] : []),
+    ...(display.rawToken ? [rawCodeLabel(display.rawToken)!] : []),
+  ]);
+
   return {
     title: 'Manuel kumanda',
     primaryDescription: display.displayValue,
-    details: display.rawTokenLabel ? [display.rawTokenLabel] : [],
+    details: detailLines,
     rawCode: display.rawToken,
     confidence: profile.manualOverride.confidence,
     requiresCatalogCheck: Boolean(display.requiresCatalogCheck),
+    userEvidenceTr: userEvidenceLabelForField({
+      hasCatalogEvidence: profile.manualOverride.evidence === 'series_table',
+      fromProductCode: profile.manualOverride.evidence === 'code',
+    }),
+  };
+}
+
+function describeTechnicalCatalogField(
+  profile: HydraulicValveCanonicalProfile,
+  field: HydraulicValveCanonicalProfile['maxPressureBar'],
+  title: string
+): HydraulicBehaviorDescription | null {
+  const catalog = field.catalogEvidence;
+  const display =
+    catalog?.displayCandidate?.trim() ??
+    (field.value != null ? `${field.value}` : null);
+  if (!display || !catalog) {
+    return null;
+  }
+
+  return {
+    title,
+    primaryDescription: display,
+    details: catalogDetailLines({ catalogEvidence: catalog }),
+    confidence: field.confidence,
+    requiresCatalogCheck: Boolean(field.requiresCatalogCheck || catalog.needsReview),
+    userEvidenceTr: USER_EVIDENCE_FROM_TECHNICAL_CATALOG_TR,
   };
 }
 
@@ -603,6 +740,24 @@ export function buildHydraulicValveBehaviorDescriptionsFromProfile(
     descriptions.push(manual);
   }
 
+  const maxPressure = describeTechnicalCatalogField(
+    profile,
+    profile.maxPressureBar,
+    FIELD_LABELS.maxPressureBar
+  );
+  if (maxPressure) {
+    descriptions.push(maxPressure);
+  }
+
+  const maxFlow = describeTechnicalCatalogField(
+    profile,
+    profile.maxFlowLpm,
+    FIELD_LABELS.maxFlowLpm
+  );
+  if (maxFlow) {
+    descriptions.push(maxFlow);
+  }
+
   if (vickersSpoolSpring) {
     descriptions.push(vickersSpoolSpring);
   }
@@ -625,9 +780,26 @@ export function buildHydraulicValveBehaviorDescriptionsFromProfile(
   return descriptions;
 }
 
+export function summarizeCenterPortStateBehavior(
+  profile: HydraulicValveCanonicalProfile
+): string | null {
+  const resolved = resolveCenterDisplayFromCatalogEvidence({
+    catalogEvidence: profile.centerCondition.catalogEvidence,
+    centerConditionValue: profile.centerCondition.value,
+    getCenterConditionDisplay,
+    fallback: '',
+  });
+  return resolved.trim() ? resolved : null;
+}
+
 export function summarizeSpoolBehaviorForComparison(
   profile: HydraulicValveCanonicalProfile
 ): string {
+  const portStateDisplay = summarizeCenterPortStateBehavior(profile);
+  if (portStateDisplay) {
+    return portStateDisplay;
+  }
+
   const inferFourWay = inferFourWayFamily(profile.brand, profile.series);
   const parts: string[] = [];
 

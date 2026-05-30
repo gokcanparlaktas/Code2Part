@@ -85,7 +85,7 @@ export function clampMatchPercentage(value: number): number {
 }
 
 export function resolveMatchPercentageLevel(percentage: number): MatchPercentageLevel {
-  if (percentage >= 80) {
+  if (percentage >= 70) {
     return 'high';
   }
   if (percentage >= 50) {

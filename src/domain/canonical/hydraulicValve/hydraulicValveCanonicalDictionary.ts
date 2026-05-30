@@ -235,7 +235,9 @@ export const MANUAL_OVERRIDE_DICTIONARY: Record<
   CanonicalDictionaryEntry
 > = {
   none: entry("none", "Yok", "important"),
-  manual_override: entry("manual_override", "Manuel kumanda", "important"),
+  manual_override: entry("manual_override", "Manuel kumanda", "important", {
+    aliases: ["DEFAULT", "BLANK", "C"],
+  }),
   protected_manual_override: entry(
     "protected_manual_override",
     "Korumalı manuel kumanda",

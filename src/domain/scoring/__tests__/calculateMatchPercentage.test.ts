@@ -81,8 +81,8 @@ describe('calculateMatchPercentage', () => {
     expect(resolveMatchPercentageLevel(0)).toBe('low');
     expect(resolveMatchPercentageLevel(49)).toBe('low');
     expect(resolveMatchPercentageLevel(50)).toBe('medium');
-    expect(resolveMatchPercentageLevel(79)).toBe('medium');
-    expect(resolveMatchPercentageLevel(80)).toBe('high');
+    expect(resolveMatchPercentageLevel(69)).toBe('medium');
+    expect(resolveMatchPercentageLevel(70)).toBe('high');
     expect(resolveMatchPercentageLevel(100)).toBe('high');
   });
 

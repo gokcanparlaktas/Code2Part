@@ -39,6 +39,7 @@ import {
   normalizeWaysPositions,
   UNRESOLVED_VOLTAGE_CODES,
 } from './normalizeHydraulicValveAttribute';
+import { enrichHydraulicProfileFromCatalogData } from './catalogDataProfileBridge';
 import { applyBehaviorDisplayToCanonicalProfile } from './hydraulicValveBehaviorDescriptions';
 import type {
   CanonicalCoilVoltage,
@@ -562,7 +563,7 @@ export function buildHydraulicValveCanonicalProfile(
 
   applyBehaviorDisplayToCanonicalProfile(profile, attributes);
 
-  return profile;
+  return enrichHydraulicProfileFromCatalogData(profile, options.identification);
 }
 
 export function buildHydraulicValveCanonicalProfileFromCandidate(options: {

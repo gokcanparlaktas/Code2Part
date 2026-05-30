@@ -7,8 +7,18 @@
     "icon": "./assets/images/icon.png",
     "scheme": "code2part",
     "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#0A1628"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "splash": {
+        "image": "./assets/splash.png",
+        "resizeMode": "cover",
+        "backgroundColor": "#0A1628"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +27,12 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.Code2Part"
+      "package": "com.anonymous.Code2Part",
+      "splash": {
+        "image": "./assets/splash.png",
+        "resizeMode": "cover",
+        "backgroundColor": "#0A1628"
+      }
     },
     "web": {
       "bundler": "metro",
@@ -29,13 +44,12 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/android-icon-background.png",
+          "image": "./assets/splash.png",
           "resizeMode": "cover",
           "backgroundColor": "#0A1628",
           "enableFullScreenImage_legacy": true
         }
-      ],
-      "./plugins/withAndroidFullscreenSplash.js"
+      ]
     ],
     "experiments": {
       "typedRoutes": true

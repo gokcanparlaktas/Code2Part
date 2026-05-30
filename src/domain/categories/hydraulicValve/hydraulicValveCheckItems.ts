@@ -7,11 +7,6 @@ const HYDRAULIC_VALVE_BASE_CHECK_ITEMS: Omit<
   'sourceValue' | 'targetValue'
 >[] = [
   {
-    field: 'Manuel kumanda',
-    reasonTr: 'Manuel kumanda veya mekanik kilit seçeneği kodda farklı ifade edilebilir.',
-    severity: 'medium',
-  },
-  {
     field: 'Conta malzemesi',
     reasonTr: 'Conta malzemesi ve sıvı uyumu katalogdan doğrulanmalıdır.',
     severity: 'medium',
@@ -47,7 +42,18 @@ export interface HydraulicValveDynamicCheckValues {
     reasonTr?: string;
   };
   voltage?: { source: string; target: string; status: 'unknownOrCheck' | 'different' | 'compatible' };
-  connector?: { source: string; target: string; status: 'unknownOrCheck' | 'different' | 'compatible' };
+  connector?: {
+    source: string;
+    target: string;
+    status: 'unknownOrCheck' | 'different' | 'compatible';
+    reasonTr?: string;
+  };
+  manual?: {
+    source: string;
+    target: string;
+    status: 'unknownOrCheck' | 'different' | 'compatible';
+    reasonTr?: string;
+  };
 }
 
 export function getHydraulicValveCheckItems(
@@ -87,7 +93,21 @@ export function getHydraulicValveCheckItems(
       field: 'Konnektör tipi',
       sourceValue: dynamic.connector.source,
       targetValue: dynamic.connector.target,
-      reasonTr: 'Konnektör ve bobin bağlantısı seri ve üreticiye göre değişebilir.',
+      reasonTr:
+        dynamic.connector.reasonTr ??
+        'Konnektör ve bobin bağlantısı seri ve üreticiye göre değişebilir.',
+      severity: 'medium',
+    });
+  }
+
+  if (dynamic.manual?.status === 'unknownOrCheck') {
+    checks.push({
+      field: 'Manuel kumanda',
+      sourceValue: dynamic.manual.source,
+      targetValue: dynamic.manual.target,
+      reasonTr:
+        dynamic.manual.reasonTr ??
+        'Manuel kumanda tipi veya varlığı katalogdan doğrulanmalıdır.',
       severity: 'medium',
     });
   }

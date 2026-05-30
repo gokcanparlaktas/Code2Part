@@ -85,6 +85,7 @@ function buildDisplay(options: {
   canonicalValue: string | number | boolean | null;
   displayValue: string;
   rawToken?: string;
+  rawTokenLabel?: string;
   sourceManufacturer?: string;
   confidence: CanonicalDisplayConfidence;
   requiresCatalogCheck?: boolean;
@@ -94,7 +95,7 @@ function buildDisplay(options: {
     canonicalValue: options.canonicalValue,
     displayValue: options.displayValue,
     rawToken: options.rawToken,
-    rawTokenLabel: rawTokenLabel(options.rawToken),
+    rawTokenLabel: options.rawTokenLabel ?? rawTokenLabel(options.rawToken),
     sourceManufacturer: options.sourceManufacturer,
     confidence: options.confidence,
     requiresCatalogCheck: options.requiresCatalogCheck,
@@ -169,6 +170,7 @@ export function normalizeManualOverrideDisplay(options: {
     canonicalValue: display.displayValue,
     displayValue: display.displayValue,
     rawToken: display.rawToken,
+    rawTokenLabel: display.rawTokenLabel,
     sourceManufacturer: options.sourceManufacturer,
     confidence: 'high',
     requiresCatalogCheck: display.requiresCatalogCheck,

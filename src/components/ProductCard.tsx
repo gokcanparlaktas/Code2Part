@@ -24,9 +24,7 @@ function DetailRow({ label, value, evidence, requiresCheck }: DetailRowProps) {
       <Text style={[styles.rowValue, requiresCheck && styles.uncertainValue]}>
         {value}
       </Text>
-      <Text style={styles.evidence}>
-        {requiresCheck ? 'Kontrol gerekli' : evidence}
-      </Text>
+      <Text style={styles.evidence}>{evidence}</Text>
     </View>
   );
 }
@@ -127,5 +125,10 @@ const styles = StyleSheet.create({
   evidence: {
     color: '#94A3B8',
     fontSize: 12,
+  },
+  reviewHint: {
+    color: '#B45309',
+    fontSize: 12,
+    fontWeight: '500',
   },
 });

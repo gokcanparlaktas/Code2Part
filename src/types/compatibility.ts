@@ -6,6 +6,21 @@ export type CheckSeverity = 'low' | 'medium' | 'high';
 
 export type RiskLevel = 'low' | 'medium' | 'high';
 
+/** Known-behavior alignment (independent of how complete the data is). */
+export type CompatibilityLevel = 'high' | 'medium' | 'low' | 'not_compatible';
+
+/** Trust in evidence backing the comparison. */
+export type ConfidenceLevel = 'high' | 'medium' | 'low';
+
+/** How much comparable data was available on both sides. */
+export type DataCompletenessLevel = 'high' | 'medium' | 'low';
+
+export interface CompatibilityMetadata {
+  compatibilityLevel: CompatibilityLevel;
+  confidenceLevel: ConfidenceLevel;
+  dataCompleteness: DataCompletenessLevel;
+}
+
 export type MatchLevelTr =
   | 'Yüksek uyumlu muadil adayı'
   | 'Mekanik muadil adayı'
@@ -18,6 +33,10 @@ export interface AttributeComparison {
   sourceDisplay: string;
   targetDisplay: string;
   status: CompatibilityStatus;
+  /** Evidence-based check text; avoids generic “yeterli kesin bilgi yok” when set. */
+  checkReasonTr?: string;
+  /** Review-gated catalog note shown under compatible rows (not a mismatch). */
+  reviewNoteTr?: string;
 }
 
 export interface ScoredAttributeComparison extends AttributeComparison {
@@ -62,4 +81,6 @@ export interface CompatibilityResult {
   warnings: string[];
   /** Universal profile comparisons used for match percentage scoring. */
   profileScoring?: ProfileScoringData;
+  /** Optional hydraulic (and future) comparison quality metadata. */
+  metadata?: CompatibilityMetadata;
 }

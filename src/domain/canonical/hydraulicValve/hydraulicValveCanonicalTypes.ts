@@ -1,5 +1,8 @@
+import type { CatalogFieldEvidence } from '@/domain/catalogData/types';
 import type { EvidenceLevel } from '@/types/product';
 import type { ConnectorFamilyKey, ConnectorOptionKey } from '@/types/canonicalAttribute';
+
+export type { CatalogFieldEvidence };
 
 export type HydraulicMountingStandard =
   | 'ISO_4401_03_CETOP_03_NG6_NFPA_D03'
@@ -91,6 +94,8 @@ export type CanonicalField<T> = {
   connectorOptions?: ConnectorOptionKey[];
   displayDetail?: string;
   isGenericConnector?: boolean;
+  /** Read-only catalog-data candidate evidence (Phase B); not final canonical truth. */
+  catalogEvidence?: CatalogFieldEvidence;
 };
 
 export type HydraulicValveCanonicalProfile = {

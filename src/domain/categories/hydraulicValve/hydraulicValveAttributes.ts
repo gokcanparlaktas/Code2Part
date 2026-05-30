@@ -2,9 +2,9 @@ import { extractHydraulicAttributes } from '@/domain/attributes/extractors/extra
 import { toPresentationAttribute } from '@/domain/attributes/extractors/attributeEvidence';
 import { normalizeProductCode } from '@/domain/attributes/extractors/attributeNormalization';
 import {
-  isRexrothWE6Code,
-  parseRexrothWE6,
-} from '@/domain/categories/hydraulicValve/manufacturers/rexroth/parseRexrothWE6';
+  isRexrothWECode,
+  parseRexrothWE,
+} from '@/domain/categories/hydraulicValve/manufacturers/rexroth/parseRexrothWE';
 import {
   isVickersDG4VCode,
   parseVickersDG4V,
@@ -13,6 +13,10 @@ import {
   isYukenDSGCode,
   parseYukenDSG,
 } from '@/domain/categories/hydraulicValve/manufacturers/yuken/parseYukenDSG';
+import {
+  isYukenDSHGCode,
+  parseYukenDSHG,
+} from '@/domain/categories/hydraulicValve/manufacturers/yuken/parseYukenDSHG';
 import type { ProductSeriesRecord } from '@/types/product';
 import type { TechnicalAttribute } from '@/types/technicalAttribute';
 
@@ -22,13 +26,16 @@ export function getHydraulicValveAttributes(options: {
   series?: ProductSeriesRecord | null;
 }): TechnicalAttribute[] {
   const normalized = normalizeProductCode(options.inputCode);
-  const isRexrothWE6 =
+  const isRexrothWE =
     options.series?.id === 'rexroth_4we6' ||
+    options.series?.id === 'rexroth_4we10' ||
+    options.series?.codePrefix.startsWith('3WE6') ||
     options.series?.codePrefix.startsWith('4WE6') ||
-    isRexrothWE6Code(normalized);
+    options.series?.codePrefix.startsWith('4WE10') ||
+    isRexrothWECode(normalized);
 
-  if (isRexrothWE6) {
-    const rexroth = parseRexrothWE6(options.inputCode);
+  if (isRexrothWE) {
+    const rexroth = parseRexrothWE(options.inputCode);
     if (rexroth) {
       return rexroth.map(toPresentationAttribute);
     }
@@ -44,6 +51,18 @@ export function getHydraulicValveAttributes(options: {
     const yuken = parseYukenDSG(options.inputCode);
     if (yuken) {
       return yuken.map(toPresentationAttribute);
+    }
+  }
+
+  const isYukenDSHG =
+    options.series?.id === 'yuken_dshg03' ||
+    options.series?.codePrefix.startsWith('DSHG-') ||
+    isYukenDSHGCode(normalized);
+
+  if (isYukenDSHG) {
+    const dshg = parseYukenDSHG(options.inputCode);
+    if (dshg) {
+      return dshg.map(toPresentationAttribute);
     }
   }
 

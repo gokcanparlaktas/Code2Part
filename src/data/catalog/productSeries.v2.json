@@ -3047,6 +3047,96 @@
     "verificationStatus": "manual_unverified",
     "sourceType": "manual",
     "sourceUrl": null,
+    "lastReviewedAt": "2026-05-29",
+    "notesTr": "Yuken DSHG pilot operated directional valve — minimal runtime recognition for DSHG-03.",
+    "id": "yuken_dshg03",
+    "brand": "Yuken",
+    "series": "DSHG-03",
+    "category": "CETOP 05 / NG10 pilot operated yön kontrol valfi",
+    "resolverCategory": "hydraulic_valve",
+    "productTypeLabel": "Hidrolik yön kontrol valfi (pilot kontrollü)",
+    "productCategoryLabel": "CETOP 05 / NG10 hidrolik pilot yön kontrol valfi",
+    "standardFamily": "CETOP 05 / NG10",
+    "technology": "Hidrolik",
+    "equivalenceGroupId": "hydraulic_cetop_05_ng10_valve",
+    "codePrefix": "DSHG-03",
+    "matchPrefixes": [
+      "DSHG-03",
+      "DSHG03"
+    ],
+    "confidenceWhenMatched": "medium",
+    "cetopNgLabel": "CETOP 05 / NG10",
+    "defaultCoilVoltageTr": "24 V DC (D24 tipik)",
+    "searchAliases": [
+      "Yuken",
+      "DSHG-03",
+      "DSHG03",
+      "dshg03",
+      "yuken dshg",
+      "yuken pilot valve"
+    ],
+    "exampleCodes": [
+      "DSHG-03-3C4-T-D24-14"
+    ],
+    "attributes": [
+      {
+        "key": "cetop_ng",
+        "labelTr": "CETOP / NG",
+        "valueType": "string",
+        "source": "series_table",
+        "defaultValue": "CETOP 05 / NG10"
+      },
+      {
+        "key": "function_token",
+        "labelTr": "Sürgü / fonksiyon",
+        "valueType": "string",
+        "source": "code"
+      },
+      {
+        "key": "voltage",
+        "labelTr": "Bobin voltajı",
+        "valueType": "string",
+        "source": "code"
+      }
+    ],
+    "knownTokens": [],
+    "voltageCodes": [
+      {
+        "code": "D24",
+        "labelTr": "24 V DC",
+        "confidence": "high",
+        "requiresCatalogCheck": false,
+        "matchPattern": "\\bD24\\b|-D24-"
+      }
+    ],
+    "functionMappingRefs": [],
+    "checkRuleRefs": [
+      {
+        "ruleId": "hydraulic_spool_function"
+      },
+      {
+        "ruleId": "hydraulic_coil_voltage"
+      },
+      {
+        "ruleId": "hydraulic_mounting_cetop"
+      }
+    ],
+    "parsingRules": [],
+    "codePatterns": {
+      "functionToken": [
+        {
+          "id": "yuken_dshg03-fn-3c",
+          "kind": "function_token",
+          "pattern": "\\b(3C\\d{1,2})\\b",
+          "captureGroup": 1
+        }
+      ]
+    }
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
     "lastReviewedAt": "2026-05-26",
     "notesTr": "Hidrolik valf MVP veri seti. Katalog doğrulaması gerekir. Demo v1 genişletmesi: örnek kodlar ve arama takma adları test amaçlıdır; sipariş öncesi üretici kataloğu ile doğrulanmalıdır.",
     "id": "vickers_dg4v5",

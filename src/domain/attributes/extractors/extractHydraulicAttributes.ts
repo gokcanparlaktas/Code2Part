@@ -6,9 +6,9 @@ import {
   getVoltageCodesForSeries,
 } from '@/domain/catalog/adapters/catalogV2Adapter';
 import {
-  isRexrothWE6Code,
-  parseRexrothWE6,
-} from '@/domain/categories/hydraulicValve/manufacturers/rexroth/parseRexrothWE6';
+  isRexrothWECode,
+  parseRexrothWE,
+} from '@/domain/categories/hydraulicValve/manufacturers/rexroth/parseRexrothWE';
 import {
   isVickersDG4VCode,
   parseVickersDG4V,
@@ -17,6 +17,10 @@ import {
   isYukenDSGCode,
   parseYukenDSG,
 } from '@/domain/categories/hydraulicValve/manufacturers/yuken/parseYukenDSG';
+import {
+  isYukenDSHGCode,
+  parseYukenDSHG,
+} from '@/domain/categories/hydraulicValve/manufacturers/yuken/parseYukenDSHG';
 import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
 import type { CatalogFunctionMapping, CatalogSeries } from '@/types/catalog';
 import type { TechnicalAttributeResult } from '@/types/technicalAttributeResult';
@@ -234,14 +238,29 @@ export function extractHydraulicAttributes(
   const normalized = normalizeProductCode(options.inputCode);
   const series = options.seriesId ? getCatalogSeriesById(options.seriesId) : undefined;
 
-  const useRexrothWE6Parser =
+  const useRexrothWEParser =
     series?.id === 'rexroth_4we6' ||
+    series?.id === 'rexroth_4we10' ||
+    series?.codePrefix.startsWith('3WE6') ||
     series?.codePrefix.startsWith('4WE6') ||
-    isRexrothWE6Code(normalized);
+    series?.codePrefix.startsWith('4WE10') ||
+    isRexrothWECode(normalized);
 
-  if (useRexrothWE6Parser) {
-    const rexrothAttrs = parseRexrothWE6(options.inputCode);
+  if (useRexrothWEParser) {
+    const rexrothAttrs = parseRexrothWE(options.inputCode);
     if (rexrothAttrs) {
+      if (series && !rexrothAttrs.some((attr) => attr.key === 'cetop_ng')) {
+        rexrothAttrs.push(
+          buildAttributeResult({
+            key: 'cetop_ng',
+            label: attributeDefLabel(series.attributes, 'cetop_ng', 'CETOP / NG'),
+            value: series.cetopNgLabel ?? series.standardFamily,
+            evidence: 'series_table',
+            confidence: 'high',
+            category: HYDRAULIC_VALVE_CATEGORY,
+          })
+        );
+      }
       return rexrothAttrs;
     }
   }
@@ -256,6 +275,18 @@ export function extractHydraulicAttributes(
     const yukenAttrs = parseYukenDSG(options.inputCode);
     if (yukenAttrs) {
       return yukenAttrs;
+    }
+  }
+
+  const useYukenDSHGParser =
+    series?.id === 'yuken_dshg03' ||
+    series?.codePrefix?.startsWith('DSHG-') ||
+    isYukenDSHGCode(normalized);
+
+  if (useYukenDSHGParser) {
+    const dshgAttrs = parseYukenDSHG(options.inputCode);
+    if (dshgAttrs) {
+      return dshgAttrs;
     }
   }
 

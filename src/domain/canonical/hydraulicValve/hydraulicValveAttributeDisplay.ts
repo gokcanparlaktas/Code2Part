@@ -60,9 +60,28 @@ const VOLTAGE_TOKEN_PRIORITY = [
   'DC48',
 ] as const;
 
-const MANUAL_OVERRIDE_TOKEN_DISPLAY: Record<string, string> = {
+const MANUAL_OVERRIDE_TOKEN_DETAIL: Record<string, string> = {
   N9: 'Gizli / korumalı manuel kumanda',
+  DEFAULT: 'Manuel override pimi',
+  BLANK: 'Manuel override pimi',
+  C: 'Buton + kilitleme somunu',
 };
+
+function manualOverrideUserPrimary(
+  value: ReturnType<typeof normalizeManualOverride>,
+  token?: string
+): string {
+  if (token && MANUAL_OVERRIDE_TOKEN_DETAIL[token]) {
+    return 'Var';
+  }
+  if (!value || value === 'unknown') {
+    return 'Belirsiz';
+  }
+  if (value === 'none') {
+    return 'Yok';
+  }
+  return 'Var';
+}
 
 const YUKEN_FUNCTION_DISPLAY: Record<string, string> = {};
 
@@ -371,29 +390,27 @@ export function normalizeHydraulicManualOverrideDisplay(options: {
   rawToken?: string | null;
 }): HydraulicAttributeDisplay | null {
   const token = compactToken(options.rawToken ?? '');
-  const mapped = token ? MANUAL_OVERRIDE_TOKEN_DISPLAY[token] : null;
-  if (mapped) {
-    return {
-      displayValue: mapped,
-      rawToken: token,
-      rawTokenLabel: rawTokenLabel(token),
-      requiresCatalogCheck: false,
-    };
-  }
+  const normalized = normalizeManualOverride(options);
+  const tokenDetail = token ? MANUAL_OVERRIDE_TOKEN_DETAIL[token] : undefined;
 
-  const canonical = getManualOverrideDisplay(normalizeManualOverride(options));
-  if (canonical !== 'Bilinmiyor') {
+  if (tokenDetail || (normalized && normalized !== 'unknown')) {
+    const primary = manualOverrideUserPrimary(normalized, token);
+    const detail =
+      tokenDetail ??
+      (normalized !== 'none' && normalized !== 'unknown'
+        ? getManualOverrideDisplay(normalized)
+        : undefined);
     return {
-      displayValue: canonical,
+      displayValue: primary,
       rawToken: token || undefined,
-      rawTokenLabel: token ? rawTokenLabel(token) : undefined,
+      rawTokenLabel: tokenDetail,
       requiresCatalogCheck: false,
     };
   }
 
   if (options.rawValue) {
     return {
-      displayValue: String(options.rawValue),
+      displayValue: 'Belirsiz',
       rawToken: token || undefined,
       rawTokenLabel: token ? rawTokenLabel(token) : undefined,
       requiresCatalogCheck: true,

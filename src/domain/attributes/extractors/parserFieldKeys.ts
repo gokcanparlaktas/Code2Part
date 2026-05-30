@@ -10,6 +10,8 @@ export const PARSER_KEYS = {
   spring_arrangement: 'spring_arrangement',
   tank_pressure_rating: 'tank_pressure_rating',
   design_series: 'design_series',
+  design_number: 'design_number',
+  pilot_drain_type: 'pilot_drain_type',
   mounting_standard: 'mounting_standard',
   manual_override: 'manual_override',
   switching_position_variant: 'switching_position_variant',

@@ -2,8 +2,10 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { CompatibilityWarningsList } from '@/components/CompatibilityWarningsList';
 import { DemoDisclaimerNote } from '@/components/DemoDisclaimerNote';
 import { EquivalentAccordionCard } from '@/components/EquivalentAccordionCard';
+import { collectEquivalencePageWarnings } from '@/domain/presentation/collectEquivalencePageWarnings';
 import { ReliabilityNote } from '@/components/ReliabilityNote';
 import { SourceProductSummary } from '@/components/SourceProductSummary';
 import { sortCompatibilityResultsByMatchPercentage } from '@/domain/presentation/sortCompatibilityResults';
@@ -45,6 +47,11 @@ function EquivalentsScreen() {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const limited = useMemo(
     () => filterVisibleEquivalentResults(compatibilityResults),
+    [compatibilityResults],
+  );
+
+  const pageWarnings = useMemo(
+    () => collectEquivalencePageWarnings(compatibilityResults),
     [compatibilityResults],
   );
 
@@ -127,6 +134,8 @@ function EquivalentsScreen() {
           ) : null}
         </View>
       )}
+
+      <CompatibilityWarningsList warnings={pageWarnings} />
 
       <DemoDisclaimerNote compact />
     </ScrollView>

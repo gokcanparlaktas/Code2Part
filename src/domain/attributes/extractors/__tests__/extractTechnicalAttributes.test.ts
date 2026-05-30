@@ -18,19 +18,22 @@ function resultMap(
 describe("extractTechnicalAttributes (catalog v2 driven)", () => {
   describe("hydraulic coil_rating (raw parser output)", () => {
     it.each([
-      ["4WE6E-7X/HG24N9K4", "HG24", "medium"],
-      ["4WE10E-3X/CG24N9K4", "CG24", "high"],
-      ["DSG-01-3C2-D24-N1-50", "D24", "high"],
-      ["DHI-0711-X 24DC", "24DC", "high"],
-    ])("extracts raw coil_rating token from %s", (code, token, confidence) => {
+      ["4WE6E-7X/HG24N9K4", "HG24", "G24", "medium"],
+      ["4WE10E-3X/CG24N9K4", "CG24", "G24", "medium"],
+      ["DSG-01-3C2-D24-N1-50", "D24", "D24", "high"],
+      ["DHI-0711-X 24DC", "24DC", "24DC", "high"],
+    ])(
+      "extracts raw coil_rating token from %s",
+      (code, value, sourceToken, confidence) => {
       const id = identifyProduct(code, normalizeCode(code));
       const map = resultMap(
         extractHydraulicAttributes({ inputCode: code, seriesId: id.seriesId }),
       );
-      expect(map.get("coil_rating")?.value).toBe(token);
-      expect(map.get("coil_rating")?.sourceToken).toBe(token);
+      expect(map.get("coil_rating")?.value).toBe(value);
+      expect(map.get("coil_rating")?.sourceToken).toBe(sourceToken);
       expect(map.get("coil_rating")?.confidence).toBe(confidence);
-    });
+    },
+    );
 
     it("H7 in DG4V code splits to coil_rating H (catalog check)", () => {
       const code = "DG4V-3-2A-M-U-H7-60";

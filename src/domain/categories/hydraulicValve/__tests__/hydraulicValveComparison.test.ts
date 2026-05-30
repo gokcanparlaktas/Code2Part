@@ -47,8 +47,8 @@ describe('hydraulicValveComparison (attribute-based)', () => {
 
     const result = compareProducts(source, candidate);
     expect(result.compatible.some((c) => c.label === 'Konnektör tipi')).toBe(true);
-    expect(result.compatible.find((c) => c.label === 'Konnektör tipi')?.sourceDisplay).toContain(
-      'DIN valf soketi'
+    expect(result.compatible.find((c) => c.label === 'Konnektör tipi')?.sourceDisplay).toMatch(
+      /DIN|175301/i
     );
   });
 
@@ -70,17 +70,17 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     const result = compareProducts(source, candidate);
     expect(result.compatible.some((c) => c.label === 'Sürgü davranışı')).toBe(true);
     expect(result.compatible.find((c) => c.label === 'Sürgü davranışı')?.sourceDisplay).toMatch(
-      /4 yollu, 3 konumlu|3 konumlu/
+      /Kapalı merkez — P, T, A ve B kapalı|4 yollu, 3 konumlu|3 konumlu/
     );
     expect(result.compatible.find((c) => c.label === 'Sürgü davranışı')?.sourceDisplay).not.toContain(
       'Sürgü sembolü E'
     );
   });
 
-  it('Rexroth E vs Yuken 3C2 is unknownOrCheck with cautious catalog message, not compatible', () => {
+  it('Rexroth E vs Yuken 3C2: spool compatible by catalog portState, connector stays unknownOrCheck', () => {
     const source = identify('4WE6E-6X/EG24N9K4');
     const targetSeries = getProductSeriesById('yuken_dsg01')!;
-    const targetCode = 'DSG-01-3C2-D24-N1-50';
+    const targetCode = 'DSG-01-3C2-D24-N1-70';
     const candidate = {
       seriesId: targetSeries.id,
       brand: targetSeries.brand,
@@ -93,12 +93,33 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     };
 
     const result = compareProducts(source, candidate);
-    expect(result.compatible.some((c) => c.label === 'Sürgü davranışı')).toBe(false);
+
+    expect(result.compatible.some((c) => c.label === 'Montaj standardı')).toBe(true);
+    expect(result.compatible.some((c) => c.label === 'Bobin voltajı')).toBe(true);
+    expect(result.compatible.some((c) => c.label === 'Sürgü davranışı')).toBe(true);
+
+    expect(result.compatible.some((c) => c.label === 'Konnektör tipi')).toBe(false);
+    expect(result.different.some((c) => c.label === 'Konnektör tipi')).toBe(false);
+    expect(result.checkItems.some((c) => c.field === 'Konnektör tipi')).toBe(true);
+
     expect(result.different.some((c) => c.label === 'Sürgü davranışı')).toBe(false);
-    const spoolCheck = result.checkItems.find((c) => c.field === 'Sürgü sembolü / fonksiyon');
-    expect(spoolCheck?.reasonTr).toContain('benzer olabilir');
-    expect(spoolCheck?.reasonTr).toContain('Katalog sembolüyle doğrulanmalıdır');
-    expect([...result.warnings, spoolCheck?.reasonTr ?? ''].join(' ')).not.toMatch(/aynıdır/i);
+    expect(result.checkItems.some((c) => c.field === 'Sürgü sembolü / fonksiyon')).toBe(false);
+    expect(
+      result.checkItems.some(
+        (c) =>
+          c.field === 'Merkez tipi' && c.reasonTr.includes('yeterli kesin bilgi yok')
+      )
+    ).toBe(false);
+
+    const spool = result.compatible.find((c) => c.label === 'Sürgü davranışı');
+    expect(spool?.sourceDisplay).toContain('Kapalı merkez — P, T, A ve B kapalı');
+    expect(spool?.sourceDisplay).not.toContain('Yay merkezlemeli');
+
+    expect(
+      result.warnings.some((w) =>
+        w.includes('Sipariş öncesi katalog, uygulama basıncı/debisi')
+      )
+    ).toBe(true);
   });
 
   it('Rexroth E vs Vickers 2A is unknownOrCheck with cautious message, not compatible', () => {

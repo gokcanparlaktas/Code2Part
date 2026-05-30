@@ -26,7 +26,10 @@ describe('parseYukenDSG', () => {
     const map = parserMap('DSG-01-3C2-D24-N1-70');
 
     expect(map.get('manufacturer')?.value).toBe('Yuken');
+    expect(map.get('family')?.value).toBe('DSG');
+    expect(map.get('source_family')?.value).toBe('DSG-01');
     expect(map.get('series')?.value).toBe('DSG-01');
+    expect(map.get('model_size')?.value).toBe('01');
     expect(map.get('mounting_standard')?.value).toBe('01');
     expect(map.get('function_code')?.value).toBe('3C2');
     expect(map.get('spool_symbol')?.value).toBe('2');
@@ -34,6 +37,7 @@ describe('parseYukenDSG', () => {
     expect(map.get('coil_rating')?.value).toBe('D24');
     expect(map.get('connector_type')?.value).toBe('N1');
     expect(map.get('design_series')?.value).toBe('70');
+    expect(map.get('design_number')?.value).toBe('70');
     expect(map.get('number_of_positions')?.value).toBe(3);
     expect(map.get('number_of_positions')?.requiresCatalogCheck).toBe(true);
   });
@@ -88,9 +92,24 @@ describe('parseYukenDSG', () => {
     expect(parserMap('DSG-01-3C2-D24-N1-70').get('connector_type')?.value).toBe('N1');
   });
 
+  it('default manual override when segment omitted (N1 is connector only)', () => {
+    const map = parserMap('DSG-01-3C2-D24-N1-70');
+    expect(map.get('manual_override')?.value).toBe('default');
+    expect(map.get('manual_override')?.sourceToken).toBe('default');
+    expect(map.get('connector_type')?.value).toBe('N1');
+  });
+
+  it('C manual override segment is separate from connector', () => {
+    const map = parserMap('DSG-01-3C2-D24-C-N1-70');
+    expect(map.get('manual_override')?.value).toBe('C');
+    expect(map.get('manual_override')?.sourceToken).toBe('C');
+    expect(map.get('connector_type')?.value).toBe('N1');
+  });
+
   it('isYukenDSGCode detects DSG model codes', () => {
     expect(isYukenDSGCode('DSG-01-3C2-D24-N1-70')).toBe(true);
     expect(isYukenDSGCode('4WE6E-7X/HG24N9K4')).toBe(false);
+    expect(isYukenDSGCode('DSHG-03-3C4-T-D24-14')).toBe(false);
   });
 
   it('3C2 vs 3C4 behavior comparison is different center', () => {
