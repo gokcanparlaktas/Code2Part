@@ -23,5 +23,6 @@ export async function identifyProductService(
   return mapIdentifyProductResponse({
     identification,
     catalogProvider,
+    inputCode: options.code,
   });
 }

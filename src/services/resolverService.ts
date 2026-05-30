@@ -3,8 +3,10 @@ import {
   prepareTwoProductCodeComparison,
 } from '@/domain/resolver/compareTwoProductCodes';
 import { compareProducts, resolveResolverCategory } from '@/domain/resolver/compareProducts';
+import { buildProductDetailRows } from '@/domain/presentation/buildProductDetailRows';
 import { resolveProductSearch } from '@/domain/resolver/resolveProductSearch';
 import { identifyProduct } from '@/domain/resolver/identifyProduct';
+import { collectRexrothWEParserWarnings } from '@/domain/resolver/collectRexrothWEParserDiagnostics';
 import { normalizeCode } from '@/domain/resolver/normalizeCode';
 import { PNEUMATIC_CYLINDER_CATEGORY } from '@/types/category';
 import type { CompatibilityResult } from '@/types/compatibility';
@@ -30,13 +32,22 @@ import {
   shouldFallbackToLocalResolverOnBackendError,
 } from './resolverConfig';
 
+function mapLocalProductDetailRows(inputCode: string, identification: ReturnType<typeof identifyProduct>) {
+  return buildProductDetailRows(identification).map((row) => ({
+    label: row.label,
+    value: row.value,
+    evidence: row.evidence,
+    requiresCheck: row.requiresCheck,
+  }));
+}
+
 function mapLocalIdentify(inputCode: string): ResolvedIdentifyProduct {
   const normalizedCode = normalizeCode(inputCode);
   const identification = identifyProduct(inputCode, normalizedCode);
   return {
     identification,
-    productDetailRows: [],
-    warnings: [],
+    productDetailRows: mapLocalProductDetailRows(inputCode, identification),
+    warnings: collectRexrothWEParserWarnings(inputCode, identification),
     source: 'local',
   };
 }
@@ -45,8 +56,8 @@ function mapLocalProductSearch(inputCode: string): ResolvedProductSearch {
   const resolved = resolveProductSearch(inputCode);
   return {
     identification: resolved.identification,
-    productDetailRows: [],
-    warnings: [],
+    productDetailRows: mapLocalProductDetailRows(inputCode, resolved.identification),
+    warnings: collectRexrothWEParserWarnings(inputCode, resolved.identification),
     source: 'local',
     compatibilityResults: resolved.compatibilityResults,
     hasEquivalents: resolved.hasEquivalents,

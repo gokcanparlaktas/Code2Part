@@ -22,6 +22,10 @@ export interface IdentifyProductResponseDto {
     requiresCheck: boolean;
   }>;
   warnings: string[];
+  parseCompleteness?: 'fully_parsed' | 'partial' | 'unknown';
+  unknownTokens?: string[];
+  unresolvedSegments?: string[];
+  parserNotes?: string[];
 }
 
 export interface CompareProductsResponseDto {

@@ -41,6 +41,7 @@ describe('parseRexrothWE (WE family)', () => {
       expect(map.get('spool_symbol')?.value).toBe('E');
       expect(map.get('component_series')?.value).toBe('6X');
       expect(map.get('design_series')?.value).toBe('6X');
+      expect(map.get('design_series_family')?.value).toBe('6X');
       expect(map.get('coil_rating')?.value).toBe('EG24');
       expect(map.get('coil_rating')?.sourceToken).toBe('G24');
       expect(map.get('manual_override')?.value).toBe('N9');
@@ -101,6 +102,41 @@ describe('parseRexrothWE (WE family)', () => {
       expect(map.get('component_series')?.value).toBe('6X');
       expect(map.get('coil_rating')?.sourceToken).toBe('G24');
       expect(map.get('connector_type')?.value).toBe('K4');
+    });
+  });
+
+  describe('nameplate and numeric design series', () => {
+    it('parses spaced 4WE6 J62 nameplate with raw design series 62', () => {
+      const map = parserMap('4WE 6 J62/EG24N9K4');
+      expect(map.get('series')?.value).toBe('4WE6');
+      expect(map.get('spool_symbol')?.value).toBe('J');
+      expect(map.get('design_series')?.value).toBe('62');
+      expect(map.get('design_series_family')?.value).toBe('6X');
+      expect(map.get('component_series')?.value).toBe('6X');
+      expect(map.get('coil_rating')?.value).toBe('EG24');
+      expect(map.get('connector_type')?.value).toBe('K4');
+      expect(map.get('parse_completeness')?.value).toBe('fully_parsed');
+    });
+
+    it('parses 3WE6 B61 nameplate', () => {
+      const map = parserMap('3WE6B61/EG24N9K4');
+      expect(map.get('series')?.value).toBe('3WE6');
+      expect(map.get('spool_symbol')?.value).toBe('B');
+      expect(map.get('design_series')?.value).toBe('61');
+      expect(map.get('design_series_family')?.value).toBe('6X');
+    });
+
+    it('parses hyphenated numeric design series', () => {
+      const map = parserMap('4WE6J-62/EG24N9K4');
+      expect(map.get('design_series')?.value).toBe('62');
+      expect(map.get('spool_symbol')?.value).toBe('J');
+    });
+
+    it('identifies nameplate code as full outcome with high confidence', () => {
+      const identification = identifyProduct('4WE 6 J62/EG24N9K4', normalizeCode('4WE 6 J62/EG24N9K4'));
+      expect(identification.outcome).toBe('full');
+      expect(identification.confidence).toBe('high');
+      expect(identification.seriesId).toBeTruthy();
     });
   });
 });

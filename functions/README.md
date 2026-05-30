@@ -28,6 +28,8 @@ npm run build
 
 Bundle output: `functions/lib/index.js` (includes shared backend/domain code).
 
+Runtime: Node.js 22 (Cloud Functions Gen 2, `europe-west3`).
+
 ## Local emulator
 
 From repo root, with `.env` credentials for Firestore (Admin SDK reads catalog server-side):

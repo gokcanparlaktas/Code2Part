@@ -148,10 +148,9 @@ function identifyHydraulicValveProduct(
   options?: { forceFullIdentification?: boolean }
 ): ProductIdentification {
   const hydraulicAttrs = parseHydraulicValveAttributes(normalizedCode, series);
+  const fullyParsedByGrammar = canFullyParseHydraulicProductCode(inputCode, series);
   const outcome =
-    options?.forceFullIdentification || canFullyParseHydraulicProductCode(inputCode, series)
-      ? 'full'
-      : 'series_only';
+    options?.forceFullIdentification || fullyParsedByGrammar ? 'full' : 'series_only';
 
   const identification: ProductIdentification = {
     inputCode,
@@ -178,9 +177,8 @@ function identifyHydraulicValveProduct(
   };
 
   const reliability = calculateProductReliability(identification);
-  identification.confidence = options?.forceFullIdentification
-    ? 'high'
-    : reliability.confidence;
+  identification.confidence =
+    options?.forceFullIdentification || fullyParsedByGrammar ? 'high' : reliability.confidence;
   return identification;
 }
 

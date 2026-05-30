@@ -32,9 +32,21 @@ import {
 } from '@/utils/productCodeRouteParam';
 import type { SuggestedProduct } from '@/types/suggestion';
 
+const PARTIAL_IDENTIFICATION_NOTICE_FALLBACK =
+  'Tam sipariş kodu doğrulanamadı. Gösterilen alanlar koddan veya seri bilgisinden çıkarılmıştır.';
+
 function ResultHeaderBadge({ identification }: { identification: ProductIdentification }) {
   if (identification.outcome === 'full') {
     return <ConfidenceBadge confidence="high" label="Tam eşleşme" variant="dark" />;
+  }
+  if (identification.outcome === 'series_only') {
+    return (
+      <ConfidenceBadge
+        confidence={identification.confidence}
+        label="Kısmi tanımlama"
+        variant="dark"
+      />
+    );
   }
   return <ConfidenceBadge confidence={identification.confidence} variant="dark" />;
 }
@@ -47,31 +59,40 @@ export default function ResultScreen() {
   const [alreadySaved, setAlreadySaved] = useState(false);
   const { loading, errorMessage, data } = useResolvedProductSearch(inputCode);
 
-  const { identification, hasEquivalents, isUnresolved, suggestions, productDetailRows } =
-    useMemo(() => {
-      if (!data) {
-        return {
-          identification: null,
-          hasEquivalents: false,
-          isUnresolved: false,
-          suggestions: [],
-          productDetailRows: [],
-        };
-      }
-
-      const unresolved =
-        data.identification.outcome === 'not_found' ||
-        data.identification.outcome === 'series_only';
-      const partialSuggestions = unresolved ? suggestProducts(inputCode) : [];
-
+  const {
+    identification,
+    hasEquivalents,
+    isNotFound,
+    isPartialIdentification,
+    suggestions,
+    productDetailRows,
+  } = useMemo(() => {
+    if (!data) {
       return {
-        identification: data.identification,
-        hasEquivalents: data.hasEquivalents,
-        isUnresolved: unresolved,
-        suggestions: partialSuggestions,
-        productDetailRows: data.productDetailRows,
+        identification: null,
+        hasEquivalents: false,
+        isNotFound: false,
+        isPartialIdentification: false,
+        suggestions: [],
+        productDetailRows: [],
       };
-    }, [data, inputCode]);
+    }
+
+    const notFound = data.identification.outcome === 'not_found';
+    const partial = data.identification.outcome === 'series_only';
+    const partialSuggestions = notFound || partial ? suggestProducts(inputCode) : [];
+
+    return {
+      identification: data.identification,
+      hasEquivalents: data.hasEquivalents,
+      isNotFound: notFound,
+      isPartialIdentification: partial,
+      suggestions: partialSuggestions,
+      productDetailRows: data.productDetailRows,
+    };
+  }, [data, inputCode]);
+
+  const canSaveUnresolved = isNotFound || isPartialIdentification;
 
   useEffect(() => {
     if (!inputCode || !identification) {
@@ -80,18 +101,20 @@ export default function ResultScreen() {
 
     void recordSearch(identification);
 
-    if (isUnresolved) {
+    if (canSaveUnresolved) {
       void isUnresolvedSaved(identification.normalizedCode).then(setAlreadySaved);
     }
-  }, [inputCode, identification, isUnresolved]);
+  }, [inputCode, identification, canSaveUnresolved]);
 
   const reliability = useMemo(
     () => (identification ? calculateProductReliability(identification) : null),
     [identification]
   );
 
+  const showHeaderBadge = identification && !isNotFound;
+
   const headerOptions = useMemo(() => {
-    if (!identification || isUnresolved) {
+    if (!showHeaderBadge || !identification) {
       return {
         title: 'Sonuç',
         headerRight: undefined,
@@ -106,7 +129,7 @@ export default function ResultScreen() {
         </View>
       ),
     };
-  }, [identification, isUnresolved]);
+  }, [identification, showHeaderBadge, styles.headerBadgeWrap]);
 
   const openEquivalents = () => {
     router.push(productCodeEquivalentsHref(inputCode));
@@ -134,6 +157,11 @@ export default function ResultScreen() {
   const renderState = (content: ReactNode) => (
     <View style={styles.stateContainer}>{content}</View>
   );
+
+  const partialNoticeText =
+    reliability?.seriesOnlyNoticeTr ??
+    reliability?.warningMessageTr ??
+    PARTIAL_IDENTIFICATION_NOTICE_FALLBACK;
 
   let body: ReactNode;
 
@@ -179,7 +207,7 @@ export default function ResultScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {isUnresolved ? (
+        {isNotFound ? (
           <>
             {suggestions.length > 0 ? (
               <>
@@ -204,6 +232,49 @@ export default function ResultScreen() {
               hasPartialSuggestions={suggestions.length > 0}
               onSave={handleSaveUnresolved}
             />
+          </>
+        ) : isPartialIdentification ? (
+          <>
+            <Text style={styles.pageTitle}>Koddan çıkarılanlar</Text>
+            <Text style={styles.partialIntro}>
+              Tam sipariş kodu doğrulanamadı. Aşağıda koddan ve seri bilgisinden çıkarılabilen
+              alanlar gösterilir; her satırın kaynağına dikkat edin.
+            </Text>
+            <ProductCard
+              identification={identification}
+              noticeText={partialNoticeText}
+              detailRows={productDetailRows}
+            />
+
+            {suggestions.length > 0 ? (
+              <PartialSuggestionsPanel
+                title="Olası tam kod örnekleri"
+                query={inputCode}
+                suggestions={suggestions}
+                onTrySuggestion={handleTrySuggestion}
+              />
+            ) : null}
+
+            <Text style={styles.noEquivalentsText}>
+              Tam kod doğrulanmadığı için muadil listesi gösterilmiyor. Sipariş öncesi alanları
+              kontrol edin veya tam kodu girin.
+            </Text>
+
+            {alreadySaved ? (
+              <View style={styles.savedBox}>
+                <Text style={styles.savedText}>Kod kaydedildi</Text>
+              </View>
+            ) : (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.secondaryButton,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={() => void handleSaveUnresolved()}
+              >
+                <Text style={styles.secondaryButtonText}>Bu kodu kaydet</Text>
+              </Pressable>
+            )}
           </>
         ) : (
           <>
@@ -247,89 +318,115 @@ const createStyles = (c: HomeColorPalette) =>
   StyleSheet.create({
     safe: {
       backgroundColor: c.bg,
-    flex: 1,
-  },
-  headerBadgeWrap: {
-    marginRight: 12,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    gap: 12,
-    paddingBottom: 32,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-  },
-  pageTitle: {
-    color: c.textPrimary,
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  stateContainer: {
-    alignItems: 'center',
-    flex: 1,
-    gap: 12,
-    justifyContent: 'center',
-    padding: 24,
-  },
-  loadingText: {
-    color: c.textMuted,
-    fontSize: 14,
-  },
-  partialIntro: {
-    color: c.textPrimary,
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  primaryButton: {
-    alignItems: 'center',
-    backgroundColor: c.accent,
-    borderRadius: 8,
-    paddingVertical: 14,
-  },
-  buttonPressed: {
-    opacity: 0.88,
-  },
-  primaryButtonText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  noEquivalentsText: {
-    color: c.textDim,
-    fontSize: 13,
-    textAlign: 'center',
-  },
-  emptyTitle: {
-    color: c.textPrimary,
-    fontSize: 20,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  errorTitle: {
-    color: c.red,
-    fontSize: 20,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  emptyText: {
-    color: c.textMuted,
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: 'center',
-  },
-  backButton: {
-    alignItems: 'center',
-    backgroundColor: c.accent,
-    borderRadius: 8,
-    marginTop: 8,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-  },
-  backButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-});
+      flex: 1,
+    },
+    headerBadgeWrap: {
+      marginRight: 12,
+    },
+    scroll: {
+      flex: 1,
+    },
+    content: {
+      gap: 12,
+      paddingBottom: 32,
+      paddingHorizontal: 16,
+      paddingTop: 12,
+    },
+    pageTitle: {
+      color: c.textPrimary,
+      fontSize: 18,
+      fontWeight: '600',
+    },
+    stateContainer: {
+      alignItems: 'center',
+      flex: 1,
+      gap: 12,
+      justifyContent: 'center',
+      padding: 24,
+    },
+    loadingText: {
+      color: c.textMuted,
+      fontSize: 14,
+    },
+    partialIntro: {
+      color: c.textPrimary,
+      fontSize: 13,
+      lineHeight: 19,
+    },
+    primaryButton: {
+      alignItems: 'center',
+      backgroundColor: c.accent,
+      borderRadius: 8,
+      paddingVertical: 14,
+    },
+    secondaryButton: {
+      alignItems: 'center',
+      borderColor: c.border,
+      borderRadius: 8,
+      borderWidth: 1,
+      paddingVertical: 14,
+    },
+    secondaryButtonText: {
+      color: c.textPrimary,
+      fontSize: 15,
+      fontWeight: '500',
+    },
+    buttonPressed: {
+      opacity: 0.88,
+    },
+    primaryButtonText: {
+      color: '#fff',
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    noEquivalentsText: {
+      color: c.textDim,
+      fontSize: 13,
+      lineHeight: 18,
+      textAlign: 'center',
+    },
+    savedBox: {
+      backgroundColor: c.greenBg,
+      borderColor: c.greenBorder,
+      borderRadius: 8,
+      borderWidth: 1,
+      padding: 12,
+    },
+    savedText: {
+      color: c.green,
+      fontSize: 13,
+      fontWeight: '600',
+      textAlign: 'center',
+    },
+    emptyTitle: {
+      color: c.textPrimary,
+      fontSize: 20,
+      fontWeight: '600',
+      textAlign: 'center',
+    },
+    errorTitle: {
+      color: c.red,
+      fontSize: 20,
+      fontWeight: '600',
+      textAlign: 'center',
+    },
+    emptyText: {
+      color: c.textMuted,
+      fontSize: 14,
+      lineHeight: 20,
+      textAlign: 'center',
+    },
+    backButton: {
+      alignItems: 'center',
+      backgroundColor: c.accent,
+      borderRadius: 8,
+      marginTop: 8,
+      paddingHorizontal: 18,
+      paddingVertical: 12,
+    },
+    backButtonText: {
+      color: '#fff',
+      fontSize: 14,
+      fontWeight: '500',
+    },
+  });

@@ -16,6 +16,16 @@ import {
   type RexrothWE6BaseSpoolSymbol,
   type RexrothWE6SwitchingPositionVariant,
 } from './rexrothWE6SpoolSemantics';
+import {
+  formatRexrothWEDesignSeriesDisplay,
+  parseRexrothWEDesignSeriesToken,
+} from './rexrothWEDesignSeries';
+import {
+  analyzePartialRexrothWE,
+  buildRexrothWEUserFacingParserMessages,
+  REXROTH_WE_FULLY_PARSED_NOTE_TR,
+  type RexrothWEParserDiagnostics,
+} from './rexrothWEParserDiagnostics';
 
 const CATALOG_SOURCE = 'Rexroth WE directional controls catalog';
 
@@ -38,6 +48,8 @@ export interface RexrothWEParsedCode {
   detentOption: boolean;
   invalidOfWithNonD: boolean;
   componentSeries: string;
+  rawDesignSeries: string | null;
+  componentSeriesFamily: string;
   solenoidType: string | null;
   voltageToken: string | null;
   manualOverrideToken: string | null;
@@ -66,12 +78,12 @@ function normalizeCoilRatingToken(voltageToken: string): string {
 
 /** True when normalized code looks like a Rexroth 3WE6 / 4WE6 / 4WE10 product code. */
 export function isRexrothWECode(normalized: string): boolean {
-  return /^(?:3WE6|4WE6|4WE10)(?:[ABCDEGHJY]|E[AB]|DOF)/.test(normalized);
+  return /^(?:3WE6|4WE6|4WE10)/.test(normalized);
 }
 
-/** @deprecated Use isRexrothWECode — true only for 4WE6 prefix. */
+/** True when code begins with 4WE6 and the next segment looks like a Rexroth WE6 header. */
 export function isRexrothWE6Code(normalized: string): boolean {
-  return /^4WE6(?:[ABCDEGHJY]|E[AB]|DOF)/.test(normalized);
+  return /^4WE6/.test(normalized);
 }
 
 function parseRe23164CoilSection(section: string): {
@@ -151,6 +163,8 @@ type HeaderMatch = {
   switchingPositionVariant: RexrothWE6SwitchingPositionVariant | null;
   headerDetent: boolean;
   componentSeries: string;
+  rawDesignSeries: string | null;
+  componentSeriesFamily: string;
   coilSection: string;
   format: RexrothWECodeFormat;
 };
@@ -175,59 +189,103 @@ function matchSeriesHeader(
     componentSeriesDigits: string;
   }
 ): HeaderMatch | null {
-  const { seriesPrefix } = config;
+  const { seriesPrefix, componentSeriesDigits } = config;
   const spool = SPOOL_LETTERS;
+  const designPatterns = [`[${componentSeriesDigits}]X`, `[${componentSeriesDigits}][0-9]`];
+  const separators = ['-?', ''];
 
-  const eaEb = new RegExp(
-    `^${seriesPrefix}E([AB])(?:-?)([${config.componentSeriesDigits}])X\\/(.+)$`
-  ).exec(normalized);
-  if (eaEb) {
-    const variant = eaEb[1].toLowerCase() as RexrothWE6SwitchingPositionVariant;
-    const componentDigit = eaEb[2];
+  function buildHeaderMatch(
+    spoolFields: Omit<
+      HeaderMatch,
+      | 'seriesPrefix'
+      | 'sourceFamily'
+      | 'nominalSize'
+      | 'numberOfMainPorts'
+      | 'componentSeries'
+      | 'rawDesignSeries'
+      | 'componentSeriesFamily'
+      | 'coilSection'
+      | 'format'
+    >,
+    designToken: string,
+    coilSection: string
+  ): HeaderMatch | null {
+    const parsedDesign = parseRexrothWEDesignSeriesToken(designToken, componentSeriesDigits);
+    if (!parsedDesign) {
+      return null;
+    }
+
     return {
       ...config,
-      baseSpoolSymbol: 'E',
-      functionToken: `E${eaEb[1]}`,
-      switchingPositionVariant: variant,
-      headerDetent: false,
-      componentSeries: `${componentDigit}X`,
-      coilSection: eaEb[3],
-      format: formatForComponentSeries(seriesPrefix, componentDigit),
+      ...spoolFields,
+      componentSeries: parsedDesign.componentSeriesFamily,
+      rawDesignSeries: parsedDesign.rawDesignSeries,
+      componentSeriesFamily: parsedDesign.componentSeriesFamily,
+      coilSection,
+      format: formatForComponentSeries(seriesPrefix, parsedDesign.formatDigit),
     };
   }
 
-  const dOfHeader = new RegExp(
-    `^${seriesPrefix}DOF(?:-?)([${config.componentSeriesDigits}])X\\/(.+)$`
-  ).exec(normalized);
-  if (dOfHeader) {
-    const componentDigit = dOfHeader[1];
-    return {
-      ...config,
-      baseSpoolSymbol: 'D',
-      functionToken: 'D',
-      switchingPositionVariant: null,
-      headerDetent: true,
-      componentSeries: `${componentDigit}X`,
-      coilSection: dOfHeader[2],
-      format: formatForComponentSeries(seriesPrefix, componentDigit),
-    };
-  }
+  for (const designPattern of designPatterns) {
+    for (const separator of separators) {
+      const eaEb = new RegExp(
+        `^${seriesPrefix}E([AB])(?:${separator})(${designPattern})\\/(.+)$`
+      ).exec(normalized);
+      if (eaEb) {
+        const variant = eaEb[1].toLowerCase() as RexrothWE6SwitchingPositionVariant;
+        const match = buildHeaderMatch(
+          {
+            baseSpoolSymbol: 'E',
+            functionToken: `E${eaEb[1]}`,
+            switchingPositionVariant: variant,
+            headerDetent: false,
+          },
+          eaEb[2],
+          eaEb[3]
+        );
+        if (match) {
+          return match;
+        }
+      }
 
-  const single = new RegExp(
-    `^${seriesPrefix}(${spool})(?:-?)([${config.componentSeriesDigits}])X\\/(.+)$`
-  ).exec(normalized);
-  if (single?.[1] && isRexrothWE6BaseSpoolSymbol(single[1])) {
-    const componentDigit = single[2];
-    return {
-      ...config,
-      baseSpoolSymbol: single[1],
-      functionToken: single[1],
-      switchingPositionVariant: null,
-      headerDetent: false,
-      componentSeries: `${componentDigit}X`,
-      coilSection: single[3],
-      format: formatForComponentSeries(seriesPrefix, componentDigit),
-    };
+      const dOfHeader = new RegExp(
+        `^${seriesPrefix}DOF(?:${separator})(${designPattern})\\/(.+)$`
+      ).exec(normalized);
+      if (dOfHeader) {
+        const match = buildHeaderMatch(
+          {
+            baseSpoolSymbol: 'D',
+            functionToken: 'D',
+            switchingPositionVariant: null,
+            headerDetent: true,
+          },
+          dOfHeader[1],
+          dOfHeader[2]
+        );
+        if (match) {
+          return match;
+        }
+      }
+
+      const single = new RegExp(
+        `^${seriesPrefix}(${spool})(?:${separator})(${designPattern})\\/(.+)$`
+      ).exec(normalized);
+      if (single?.[1] && isRexrothWE6BaseSpoolSymbol(single[1])) {
+        const match = buildHeaderMatch(
+          {
+            baseSpoolSymbol: single[1],
+            functionToken: single[1],
+            switchingPositionVariant: null,
+            headerDetent: false,
+          },
+          single[2],
+          single[3]
+        );
+        if (match) {
+          return match;
+        }
+      }
+    }
   }
 
   return null;
@@ -259,7 +317,46 @@ function matchWEHeader(normalized: string): HeaderMatch | null {
   );
 }
 
-export function parseRexrothWEProductCode(normalized: string): RexrothWEParsedCode | null {
+function normalizeRexrothWEInputCode(inputCode: string): string {
+  return normalizeProductCode(inputCode);
+}
+
+export function diagnoseRexrothWECode(inputCode: string): RexrothWEParserDiagnostics {
+  const normalized = normalizeRexrothWEInputCode(inputCode);
+  if (!normalized || !isRexrothWECode(normalized)) {
+    return {
+      parseCompleteness: 'unknown',
+      unknownTokens: [],
+      unresolvedSegments: [],
+      parserNotes: [],
+    };
+  }
+
+  if (parseRexrothWEProductCode(inputCode)) {
+    return {
+      parseCompleteness: 'fully_parsed',
+      unknownTokens: [],
+      unresolvedSegments: [],
+      parserNotes: [REXROTH_WE_FULLY_PARSED_NOTE_TR],
+    };
+  }
+
+  return analyzePartialRexrothWE(normalized);
+}
+
+export function parseRexrothWEWithDiagnostics(inputCode: string): {
+  attributes: TechnicalAttributeResult[] | null;
+  diagnostics: RexrothWEParserDiagnostics;
+} {
+  const diagnostics = diagnoseRexrothWECode(inputCode);
+  const attributes = parseRexrothWE(inputCode);
+  return { attributes, diagnostics };
+}
+
+export { buildRexrothWEUserFacingParserMessages, type RexrothWEParserDiagnostics };
+
+export function parseRexrothWEProductCode(inputCode: string): RexrothWEParsedCode | null {
+  const normalized = normalizeRexrothWEInputCode(inputCode);
   const header = matchWEHeader(normalized);
   if (!header) {
     return null;
@@ -291,7 +388,9 @@ export function parseRexrothWEProductCode(normalized: string): RexrothWEParsedCo
     switchingPositionVariant: header.switchingPositionVariant,
     detentOption: detentOption && header.baseSpoolSymbol === 'D',
     invalidOfWithNonD,
-    componentSeries: header.componentSeries,
+    componentSeries: header.componentSeriesFamily,
+    rawDesignSeries: header.rawDesignSeries,
+    componentSeriesFamily: header.componentSeriesFamily,
     solenoidType: coil.solenoidType,
     voltageToken: coil.voltageToken,
     manualOverrideToken: coil.manualOverrideToken,
@@ -335,33 +434,76 @@ function appendSpoolRawFields(
     }),
     buildAttributeResult({
       key: 'component_series',
-      label: 'Komponent serisi',
-      value: parsed.componentSeries,
+      label: 'Komponent serisi ailesi',
+      value: parsed.componentSeriesFamily,
       evidence: 'code',
       confidence: parsed.format === 're23164_7x' ? 'high' : 'medium',
       requiresCatalogCheck: parsed.format !== 're23164_7x',
-      sourceToken: parsed.componentSeries,
+      sourceToken: parsed.componentSeriesFamily,
       category: HYDRAULIC_VALVE_CATEGORY,
     }),
     buildAttributeResult({
       key: PARSER_KEYS.design_series,
-      label: 'Komponent serisi',
-      value: parsed.componentSeries,
+      label: 'Tasarım serisi',
+      value: parsed.rawDesignSeries ?? parsed.componentSeriesFamily,
+      normalizedValue: parsed.componentSeriesFamily,
       evidence: 'code',
       confidence: parsed.format === 're23164_7x' ? 'high' : 'medium',
       requiresCatalogCheck: parsed.format !== 're23164_7x',
-      sourceToken: parsed.componentSeries,
+      sourceToken: parsed.rawDesignSeries ?? parsed.componentSeriesFamily,
       category: HYDRAULIC_VALVE_CATEGORY,
-      note: 'design_series alias of component_series',
+      note: formatRexrothWEDesignSeriesDisplay(
+        parsed.rawDesignSeries,
+        parsed.componentSeriesFamily
+      ),
+    }),
+    buildAttributeResult({
+      key: 'design_series_family',
+      label: 'Tasarım serisi ailesi',
+      value: parsed.componentSeriesFamily,
+      evidence: 'code',
+      confidence: parsed.format === 're23164_7x' ? 'high' : 'medium',
+      requiresCatalogCheck: parsed.format !== 're23164_7x',
+      sourceToken: parsed.componentSeriesFamily,
+      category: HYDRAULIC_VALVE_CATEGORY,
     })
   );
 
-  if (semantics) {
+  if (parsed.rawDesignSeries) {
+    results.push(
+      buildAttributeResult({
+        key: 'raw_design_series',
+        label: 'Ham tasarım serisi kodu',
+        value: parsed.rawDesignSeries,
+        evidence: 'code',
+        confidence: 'high',
+        requiresCatalogCheck: false,
+        sourceToken: parsed.rawDesignSeries,
+        category: HYDRAULIC_VALVE_CATEGORY,
+      })
+    );
+  }
+
+  results.push(
+    buildAttributeResult({
+      key: 'parse_completeness',
+      label: 'Ayrıştırma durumu',
+      value: 'fully_parsed',
+      evidence: 'code',
+      confidence: 'high',
+      requiresCatalogCheck: false,
+      category: HYDRAULIC_VALVE_CATEGORY,
+      note: REXROTH_WE_FULLY_PARSED_NOTE_TR,
+    })
+  );
+
+  const semanticsBlock = semantics;
+  if (semanticsBlock) {
     results.push(
       buildAttributeResult({
         key: 'number_of_positions',
         label: 'Konum sayısı',
-        value: semantics.numberOfPositions,
+        value: semanticsBlock.numberOfPositions,
         evidence: 'code',
         confidence: 'medium',
         requiresCatalogCheck: true,
@@ -402,12 +544,12 @@ function appendSpoolRawFields(
 }
 
 export function parseRexrothWE(inputCode: string): TechnicalAttributeResult[] | null {
-  const normalized = normalizeProductCode(inputCode);
+  const normalized = normalizeRexrothWEInputCode(inputCode);
   if (!isRexrothWECode(normalized)) {
     return null;
   }
 
-  const parsed = parseRexrothWEProductCode(normalized);
+  const parsed = parseRexrothWEProductCode(inputCode);
   if (!parsed) {
     return null;
   }

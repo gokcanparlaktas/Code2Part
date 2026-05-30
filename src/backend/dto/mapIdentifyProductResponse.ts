@@ -6,6 +6,10 @@ import {
   USER_EVIDENCE_FROM_SERIES_TR,
 } from '@/domain/presentation/formatUserFacingCatalogDisplay';
 import { calculateProductReliability } from '@/domain/reliability/calculateProductReliability';
+import {
+  collectRexrothWEParserDiagnostics,
+  collectRexrothWEParserWarnings,
+} from '@/domain/resolver/collectRexrothWEParserDiagnostics';
 import type { ProductIdentification } from '@/types/product';
 import type { TechnicalAttribute } from '@/types/technicalAttribute';
 
@@ -36,6 +40,10 @@ export interface IdentifyProductResponseDto {
   technicalAttributes: IdentifyProductTechnicalAttributeDto[];
   productDetailRows: IdentifyProductDetailRowDto[];
   warnings: string[];
+  parseCompleteness?: 'fully_parsed' | 'partial' | 'unknown';
+  unknownTokens?: string[];
+  unresolvedSegments?: string[];
+  parserNotes?: string[];
 }
 
 function evidenceLabelForAttribute(attribute: TechnicalAttribute): string {
@@ -72,7 +80,10 @@ function mapTechnicalAttributes(
   }));
 }
 
-function collectIdentifyWarnings(identification: ProductIdentification): string[] {
+function collectIdentifyWarnings(
+  identification: ProductIdentification,
+  inputCode?: string
+): string[] {
   const warnings = new Set<string>();
   const reliability = calculateProductReliability(identification);
 
@@ -86,12 +97,19 @@ function collectIdentifyWarnings(identification: ProductIdentification): string[
     warnings.add(reliability.seriesOnlyNoticeTr);
   }
 
+  if (inputCode) {
+    for (const message of collectRexrothWEParserWarnings(inputCode, identification)) {
+      warnings.add(message);
+    }
+  }
+
   return [...warnings];
 }
 
 export function mapIdentifyProductResponse(options: {
   identification: ProductIdentification;
   catalogProvider?: CatalogDataProvider;
+  inputCode?: string;
 }): IdentifyProductResponseDto {
   const attributes = getTechnicalAttributes(options.identification);
   const productDetailRows = buildProductDetailRows(options.identification, {
@@ -112,8 +130,22 @@ export function mapIdentifyProductResponse(options: {
       evidence: row.evidence,
       requiresCheck: row.requiresCheck,
     })),
-    warnings: collectIdentifyWarnings(options.identification),
+    warnings: collectIdentifyWarnings(
+      options.identification,
+      options.inputCode ?? options.identification.inputCode
+    ),
   };
+
+  const parserDiagnostics = collectRexrothWEParserDiagnostics(
+    options.inputCode ?? options.identification.inputCode,
+    options.identification
+  );
+  if (parserDiagnostics) {
+    dto.parseCompleteness = parserDiagnostics.parseCompleteness;
+    dto.unknownTokens = parserDiagnostics.unknownTokens;
+    dto.unresolvedSegments = parserDiagnostics.unresolvedSegments;
+    dto.parserNotes = parserDiagnostics.parserNotes;
+  }
 
   assertNoForbiddenBackendResponseKeys(dto);
   return dto;

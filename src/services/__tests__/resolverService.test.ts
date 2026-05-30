@@ -70,6 +70,15 @@ describe('resolverService', () => {
     expect(findEquivalentsRemote).not.toHaveBeenCalled();
   });
 
+  it('fully identifies Rexroth nameplate codes after component series normalization', async () => {
+    const local = await findEquivalentsResolved('4WE 6 J62/EG24N9K4');
+
+    expect(local.identification.outcome).toBe('full');
+    expect(local.productDetailRows.length).toBeGreaterThan(0);
+    expect(local.productDetailRows.some((row) => row.label === 'Bobin voltajı')).toBe(true);
+    expect(local.hasEquivalents).toBe(true);
+  });
+
   it('uses remote equivalents flow in backend mode', async () => {
     process.env.EXPO_PUBLIC_RESOLVER_MODE = 'backend';
     process.env.EXPO_PUBLIC_RESOLVER_BACKEND_FALLBACK = 'false';
