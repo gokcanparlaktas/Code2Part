@@ -71,10 +71,22 @@ curl -s -X POST "http://127.0.0.1:5001/code2part-de0d0/europe-west3/equivalents"
 - Responses pass `assertNoForbiddenBackendResponseKeys` before send (no raw catalog payloads).
 - **Future:** Firebase App Check, Auth, rate limiting (see `RESOLVER_HTTP_SECURITY_NOTES` in code).
 
+## Runtime cost-safety limits
+
+Each function sets `maxInstances` and `concurrency` to reduce cost and traffic-spike exposure. This is **not** a strict requests-per-minute rate limit — excess load may queue, slow down, or receive HTTP 429/503 from Cloud Run scaling limits rather than a per-client quota.
+
+| Function | memory | timeout | maxInstances | concurrency |
+|----------|--------|---------|--------------|-------------|
+| `identify` | 256MiB | 20s | 1 | 10 |
+| `compare` | 256MiB | 30s | 1 | 5 |
+| `equivalents` | 256MiB | 30s | 1 | 5 |
+
+Real abuse protection (App Check, Auth, edge rate limiting) is planned for a later hardening phase.
+
 ## Deploy
 
-**Not enabled in Phase 3.** Deploy rules and functions only after explicit approval:
+Deploy functions after explicit approval:
 
 ```bash
-firebase deploy --only firestore:rules,functions
+firebase deploy --only functions --project code2part-de0d0
 ```

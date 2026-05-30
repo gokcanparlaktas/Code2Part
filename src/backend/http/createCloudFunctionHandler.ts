@@ -5,12 +5,16 @@ import {
 } from './resolverHttpHandlers';
 
 /**
- * Future hardening (not implemented in Phase 3):
+ * Future hardening (not implemented yet):
  * - Firebase App Check token verification
  * - Firebase Auth / anonymous auth
  * - Per-IP or per-user rate limiting (Cloud Armor / Redis / Firestore counters)
+ *
+ * Current cost-safety (Cloud Functions v2): maxInstances + concurrency per function.
+ * That limits scale-out and concurrent processing — not a strict requests-per-minute cap.
  */
 export const RESOLVER_HTTP_SECURITY_NOTES = [
+  'Cloud Functions maxInstances/concurrency limit cost and spike exposure (not per-minute rate limits).',
   'Enable Firebase App Check before public mobile release.',
   'Require Firebase Auth or signed API keys for production traffic.',
   'Add rate limiting at the edge or function middleware layer.',
