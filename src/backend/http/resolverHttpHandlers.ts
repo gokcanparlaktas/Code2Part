@@ -1,12 +1,13 @@
 import type { CatalogDataProvider } from '@/domain/catalogData/CatalogDataProvider';
-import type { CompareProductsResponseDto } from '@/backend/dto/mapCompareProductsResponse';
-import type { FindEquivalentsResponseDto } from '@/backend/dto/mapFindEquivalentsResponse';
-import type { IdentifyProductResponseDto } from '@/backend/dto/mapIdentifyProductResponse';
 import { getCachedFirestoreCatalogProvider } from '@/backend/catalog/cachedFirestoreCatalogProvider';
 import { compareProductsService } from '@/backend/services/compareProductsService';
 import { findEquivalentsService } from '@/backend/services/findEquivalentsService';
 import { identifyProductService } from '@/backend/services/identifyProductService';
 
+import {
+  logResolverInternalError,
+  type ResolverInternalErrorContext,
+} from './logResolverInternalError';
 import {
   resolverErrorResponse,
   sendResolverJsonResponse,
@@ -29,7 +30,10 @@ export interface ResolverHttpDeps {
 }
 
 export const defaultResolverHttpDeps: ResolverHttpDeps = {
-  getCatalogProvider: getCachedFirestoreCatalogProvider,
+  getCatalogProvider: () =>
+    getCachedFirestoreCatalogProvider({
+      projectId: process.env.GCLOUD_PROJECT ?? process.env.FIREBASE_PROJECT_ID,
+    }),
   identifyProductService,
   compareProductsService,
   findEquivalentsService,
@@ -47,22 +51,60 @@ function internalErrorResponse(): ResolverHttpResponse {
   return resolverErrorResponse(500, 'Internal resolver error', 'internal_error');
 }
 
+function readProviderContext(catalogProvider: CatalogDataProvider): ResolverInternalErrorContext {
+  const catalogVersion =
+    'catalogVersion' in catalogProvider &&
+    typeof catalogProvider.catalogVersion === 'string'
+      ? catalogProvider.catalogVersion
+      : null;
+
+  return {
+    providerSource: catalogProvider.constructor.name,
+    catalogVersion,
+  };
+}
+
+async function runResolverHttpRequest<T extends Record<string, unknown>>(
+  endpoint: ResolverHttpEndpoint,
+  body: unknown,
+  deps: ResolverHttpDeps,
+  execute: (catalogProvider: CatalogDataProvider) => Promise<T>
+): Promise<ResolverHttpResponse> {
+  let providerContext: ResolverInternalErrorContext = { providerSource: 'unknown' };
+
+  try {
+    const catalogProvider = await deps.getCatalogProvider();
+    providerContext = readProviderContext(catalogProvider);
+    const result = await execute(catalogProvider);
+    return sendResolverJsonResponse(200, dtoToRecord(result));
+  } catch (error) {
+    if (error instanceof ResolverRequestValidationError) {
+      return validationErrorResponse(error);
+    }
+
+    logResolverInternalError(endpoint, error, providerContext);
+    return internalErrorResponse();
+  }
+}
+
 export async function handleIdentifyHttpRequest(
   body: unknown,
   deps: ResolverHttpDeps = defaultResolverHttpDeps
 ): Promise<ResolverHttpResponse> {
   try {
     const input = validateIdentifyRequestBody(body);
-    const catalogProvider = await deps.getCatalogProvider();
-    const result: IdentifyProductResponseDto = await deps.identifyProductService({
-      code: input.code,
-      catalogProvider,
-    });
-    return sendResolverJsonResponse(200, dtoToRecord(result as unknown as Record<string, unknown>));
+    return runResolverHttpRequest('identify', body, deps, async (catalogProvider) =>
+      deps.identifyProductService({
+        code: input.code,
+        catalogProvider,
+      })
+    );
   } catch (error) {
     if (error instanceof ResolverRequestValidationError) {
       return validationErrorResponse(error);
     }
+
+    logResolverInternalError('identify', error);
     return internalErrorResponse();
   }
 }
@@ -73,17 +115,19 @@ export async function handleCompareHttpRequest(
 ): Promise<ResolverHttpResponse> {
   try {
     const input = validateCompareRequestBody(body);
-    const catalogProvider = await deps.getCatalogProvider();
-    const result: CompareProductsResponseDto = await deps.compareProductsService({
-      sourceCode: input.sourceCode,
-      candidateCode: input.candidateCode,
-      catalogProvider,
-    });
-    return sendResolverJsonResponse(200, dtoToRecord(result as unknown as Record<string, unknown>));
+    return runResolverHttpRequest('compare', body, deps, async (catalogProvider) =>
+      deps.compareProductsService({
+        sourceCode: input.sourceCode,
+        candidateCode: input.candidateCode,
+        catalogProvider,
+      })
+    );
   } catch (error) {
     if (error instanceof ResolverRequestValidationError) {
       return validationErrorResponse(error);
     }
+
+    logResolverInternalError('compare', error);
     return internalErrorResponse();
   }
 }
@@ -94,16 +138,18 @@ export async function handleEquivalentsHttpRequest(
 ): Promise<ResolverHttpResponse> {
   try {
     const input = validateEquivalentsRequestBody(body);
-    const catalogProvider = await deps.getCatalogProvider();
-    const result: FindEquivalentsResponseDto = await deps.findEquivalentsService({
-      code: input.code,
-      catalogProvider,
-    });
-    return sendResolverJsonResponse(200, dtoToRecord(result as unknown as Record<string, unknown>));
+    return runResolverHttpRequest('equivalents', body, deps, async (catalogProvider) =>
+      deps.findEquivalentsService({
+        code: input.code,
+        catalogProvider,
+      })
+    );
   } catch (error) {
     if (error instanceof ResolverRequestValidationError) {
       return validationErrorResponse(error);
     }
+
+    logResolverInternalError('equivalents', error);
     return internalErrorResponse();
   }
 }

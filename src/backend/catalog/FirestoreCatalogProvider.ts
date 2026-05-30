@@ -27,6 +27,8 @@ import {
   validatePayloadChecksum,
 } from '../../../scripts/catalog-data-firestore/verifyFirestoreCatalogReadback';
 
+import { logResolverCatalogProvider } from '@/backend/http/logResolverInternalError';
+
 export interface FirestoreCatalogProviderConfig {
   projectId?: string;
   serviceAccountPath?: string;
@@ -50,7 +52,16 @@ async function ensureFirebaseApp(config: FirestoreCatalogProviderConfig): Promis
     return;
   }
 
-  initializeApp(config.projectId ? { projectId: config.projectId } : undefined);
+  const projectId =
+    config.projectId ?? process.env.GCLOUD_PROJECT ?? process.env.FIREBASE_PROJECT_ID;
+
+  initializeApp(projectId ? { projectId } : undefined);
+}
+
+export async function ensureBackendFirebaseInitialized(
+  config: FirestoreCatalogProviderConfig = {}
+): Promise<void> {
+  await ensureFirebaseApp(config);
 }
 
 async function createFirestoreDb(config: FirestoreCatalogProviderConfig) {
@@ -119,15 +130,33 @@ export class FirestoreCatalogProvider implements CatalogDataProvider {
     this.catalogVersion = catalogVersion;
     const targets = buildRuntimeReadbackTargets(catalogVersion);
 
+    logResolverCatalogProvider('Loading runtime catalog documents', {
+      catalogVersion,
+      runtimeDocCount: targets.length,
+    });
+
+    let readCount = 0;
+
     for (const target of targets) {
       const snapshot = await db.doc(target.firestorePath).get();
       if (!snapshot.exists) {
+        logResolverCatalogProvider('Missing runtime catalog document', {
+          catalogVersion,
+          relativePath: target.relativePath,
+          encodedDocumentId: target.encodedDocumentId,
+          firestorePath: target.firestorePath,
+        });
         throw new Error(`Missing Firestore catalog document: ${target.relativePath}`);
       }
 
       const data = snapshot.data() as Record<string, unknown>;
       const extracted = extractCatalogPayloadFromFirestoreDoc(data);
       if (!validatePayloadChecksum(extracted.payload, extracted.checksumSha256)) {
+        logResolverCatalogProvider('Checksum mismatch for runtime catalog document', {
+          catalogVersion,
+          relativePath: target.relativePath,
+          encodedDocumentId: target.encodedDocumentId,
+        });
         throw new Error(`Checksum mismatch for ${target.relativePath}`);
       }
 
@@ -136,7 +165,14 @@ export class FirestoreCatalogProvider implements CatalogDataProvider {
         throw new Error(`Unhandled runtime catalog path: ${target.relativePath}`);
       }
       this.cache.set(cacheKey, extracted.payload);
+      readCount += 1;
     }
+
+    logResolverCatalogProvider('Runtime catalog documents loaded', {
+      catalogVersion,
+      runtimeDocCount: targets.length,
+      readCount,
+    });
 
     this.initialized = true;
   }

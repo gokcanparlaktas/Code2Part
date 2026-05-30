@@ -103,6 +103,8 @@ describe('resolver HTTP handlers with local catalog', () => {
 
 describe('resolver HTTP handlers with mocked services', () => {
   it('returns 500 when service throws', async () => {
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
     const deps: ResolverHttpDeps = {
       getCatalogProvider: async () => ({}) as CatalogDataProvider,
       identifyProductService: async () => {
@@ -115,6 +117,10 @@ describe('resolver HTTP handlers with mocked services', () => {
     const result = await handleIdentifyHttpRequest({ code: REXROTH_CODE }, deps);
     expect(result.status).toBe(500);
     expect(result.body.code).toBe('internal_error');
+    expect(result.body.error).toBe('Internal resolver error');
+    expect(errorSpy).toHaveBeenCalled();
+
+    errorSpy.mockRestore();
   });
 
   it('uses injected catalog provider', async () => {

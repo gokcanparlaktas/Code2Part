@@ -50,9 +50,9 @@ encodedDocumentId = relativePath without ".json", with "/" replaced by "__"
 
 ---
 
-### 2. Collection names — align with existing Firestore rules
+### 2. Collection names — align with proprietary catalog-data security
 
-Current production rules allow public read only under `/catalogData/{document=**}`.
+**Catalog-data is proprietary.** Client/public Firestore access is fully denied for all catalog collections. Only backend services using the Admin SDK (import CLI, Cloud Functions resolver) may read or write catalog documents — Admin SDK bypasses Firestore rules.
 
 **Use these collection names (not `catalog/` or `catalogMeta/`):**
 
@@ -70,13 +70,15 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /catalogData/{document=**} {
-      allow read: if true;
-      allow write: if false;
+      allow read, write: if false;
     }
 
     match /catalogDataMeta/{document=**} {
-      allow read: if true;
-      allow write: if false;
+      allow read, write: if false;
+    }
+
+    match /catalogDataReleases/{document=**} {
+      allow read, write: if false;
     }
 
     match /{document=**} {
@@ -86,8 +88,8 @@ service cloud.firestore {
 }
 ```
 
-- Client read: catalog payloads + active release pointer.
-- **Admin SDK import bypasses rules** — service account writes during CI/local import.
+- **Client/mobile:** no Firestore reads or writes on catalog collections. The mobile app must call resolver HTTP endpoints (`identify`, `compare`, `equivalents`), never Firestore directly.
+- **Backend:** Admin SDK import, verify CLI, and Cloud Functions use service account credentials and bypass rules.
 - Add `firestore.rules` + `firebase.json` emulator config in Phase 1 tooling (not app bundle).
 
 ---
