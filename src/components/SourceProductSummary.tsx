@@ -1,9 +1,9 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from "react-native";
 
-import type { ProductIdentification } from '@/types/product';
-import { homeMonoFont } from '@/theme/homePalettes';
-import type { HomeColorPalette } from '@/theme/homePalettes';
-import { useHomeStyles } from '@/theme/useHomeStyles';
+import type { HomeColorPalette } from "@/theme/homePalettes";
+import { homeMonoFont } from "@/theme/homePalettes";
+import { useHomeStyles } from "@/theme/useHomeStyles";
+import type { ProductIdentification } from "@/types/product";
 
 interface SourceProductSummaryProps {
   identification: ProductIdentification;
@@ -13,7 +13,7 @@ export function SourceProductSummary({
   identification,
 }: SourceProductSummaryProps) {
   const styles = useHomeStyles(createStyles);
-  const brand = identification.brand.value ?? 'Bilinmiyor';
+  const brand = identification.brand.value ?? "Bilinmiyor";
 
   return (
     <View style={styles.root}>
@@ -40,9 +40,9 @@ const createStyles = (c: HomeColorPalette) =>
     sectionTitle: {
       color: c.textMuted,
       fontSize: 11,
-      fontWeight: '500',
+      fontWeight: "500",
       letterSpacing: 1,
-      textTransform: 'uppercase',
+      textTransform: "uppercase",
     },
     codeBlock: {
       backgroundColor: c.cardBg,
@@ -54,7 +54,7 @@ const createStyles = (c: HomeColorPalette) =>
       paddingVertical: 12,
     },
     brandChip: {
-      alignSelf: 'flex-start',
+      alignSelf: "flex-start",
       backgroundColor: c.checkBlueBg,
       borderColor: c.checkBlueBorder,
       borderRadius: 5,
@@ -65,20 +65,20 @@ const createStyles = (c: HomeColorPalette) =>
     brandText: {
       color: c.brandBlue,
       fontSize: 12,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     codeLabel: {
       color: c.textMuted,
       fontSize: 11,
-      fontWeight: '500',
+      fontWeight: "500",
       letterSpacing: 1,
-      textTransform: 'uppercase',
+      textTransform: "uppercase",
     },
     code: {
       color: c.brandBlue,
       fontFamily: homeMonoFont,
       fontSize: 15,
-      fontWeight: '600',
+      fontWeight: "600",
       letterSpacing: 0.3,
     },
   });
