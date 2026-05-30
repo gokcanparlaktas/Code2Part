@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { colors, radius, spacing, typography, buttons } from '@/theme';
 import { formatNotFoundSearchTips } from '@/utils/notFoundSearchTips';
 
 interface UnresolvedResultCardProps {
@@ -41,9 +42,7 @@ export function UnresolvedResultCard({
   return (
     <View style={styles.card}>
       <Text style={styles.title}>
-        {hasPartialSuggestions
-          ? 'Tam ürün kodu tanınamadı'
-          : 'Ürün kodu tanınamadı'}
+        {hasPartialSuggestions ? 'Tam ürün kodu tanınamadı' : 'Ürün kodu tanınamadı'}
       </Text>
       <Text style={styles.body}>
         {hasPartialSuggestions
@@ -65,16 +64,12 @@ export function UnresolvedResultCard({
 
       <View style={styles.detailRow}>
         <Text style={styles.detailLabel}>Marka</Text>
-        <Text style={styles.detailValue}>
-          {brand ?? 'Marka bulunamadı'}
-        </Text>
+        <Text style={styles.detailValue}>{brand ?? 'Marka bulunamadı'}</Text>
       </View>
 
       <View style={styles.detailRow}>
         <Text style={styles.detailLabel}>Seri</Text>
-        <Text style={styles.detailValue}>
-          {series ?? 'Seri bulunamadı'}
-        </Text>
+        <Text style={styles.detailValue}>{series ?? 'Seri bulunamadı'}</Text>
       </View>
 
       {saved ? (
@@ -106,89 +101,82 @@ export function UnresolvedResultCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFF7ED',
-    borderColor: '#FDBA74',
-    borderRadius: 16,
+    backgroundColor: colors.background.card,
+    borderColor: colors.border.accentLight,
+    borderLeftColor: colors.accent.orange,
+    borderLeftWidth: 3,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    gap: 12,
-    padding: 20,
+    gap: spacing.md,
+    padding: spacing.xl,
   },
   title: {
-    color: '#9A3412',
-    fontSize: 20,
-    fontWeight: '800',
+    ...typography.h1,
+    color: colors.surface.text,
   },
   body: {
-    color: '#7C2D12',
-    fontSize: 15,
-    lineHeight: 22,
+    ...typography.body,
+    color: colors.surface.textSecondary,
   },
   detailBox: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    gap: 4,
-    padding: 12,
+    backgroundColor: colors.background.elevated,
+    borderColor: colors.border.default,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    gap: spacing.xs,
+    padding: spacing.md,
   },
   detailRow: {
-    gap: 4,
+    gap: spacing.xs,
   },
   detailLabel: {
-    color: '#64748B',
-    fontSize: 13,
-    fontWeight: '600',
+    ...typography.sectionTitle,
+    color: colors.surface.textMuted,
+    fontSize: 11,
   },
   detailValue: {
-    color: '#0F172A',
-    fontSize: 16,
+    ...typography.body,
+    color: colors.surface.text,
     fontWeight: '600',
   },
   saveButton: {
-    alignItems: 'center',
-    backgroundColor: '#1E40AF',
-    borderRadius: 12,
-    marginTop: 4,
-    paddingVertical: 14,
+    ...buttons.primary,
+    marginTop: spacing.xs,
   },
-  saveButtonDisabled: {
-    opacity: 0.7,
-  },
-  saveButtonPressed: {
-    opacity: 0.9,
-  },
-  saveButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  saveButtonDisabled: buttons.primaryDisabled,
+  saveButtonPressed: buttons.primaryPressed,
+  saveButtonText: buttons.primaryText,
   confirmBox: {
-    backgroundColor: '#DCFCE7',
-    borderRadius: 10,
-    padding: 12,
+    backgroundColor: colors.status.success.bg,
+    borderColor: colors.status.success.border,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    padding: spacing.md,
   },
   confirmText: {
-    color: '#166534',
-    fontSize: 15,
+    ...typography.bodySm,
+    color: colors.status.success.text,
     fontWeight: '700',
     textAlign: 'center',
   },
   originalHint: {
-    color: '#94A3B8',
-    fontSize: 13,
+    ...typography.caption,
+    color: colors.surface.textMuted,
   },
   tipsBox: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    gap: 6,
-    padding: 12,
+    backgroundColor: colors.background.elevated,
+    borderColor: colors.border.default,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    gap: spacing.xs,
+    padding: spacing.md,
   },
   tipsTitle: {
-    color: '#0F172A',
-    fontSize: 14,
-    fontWeight: '700',
+    ...typography.label,
+    color: colors.surface.text,
   },
   tipsText: {
-    color: '#475569',
-    fontSize: 14,
-    lineHeight: 22,
+    ...typography.bodySm,
+    color: colors.surface.textSecondary,
   },
 });

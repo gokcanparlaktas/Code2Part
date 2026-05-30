@@ -13,10 +13,31 @@ describe('dedupeCheckItems', () => {
     );
   });
 
-  it('keeps merkez tipi separate from sürgü behavior for check dedupe', () => {
+  it('maps all spool/center labels to merkez tipi for check dedupe', () => {
     expect(normalizeCheckFieldKey('Merkez tipi')).toBe('merkez tipi');
-    expect(normalizeCheckFieldKey('Sürgü davranışı')).toBe('spool_center_behavior');
-    expect(normalizeCheckFieldKey('Sürgü sembolü / fonksiyon')).toBe('spool_center_behavior');
+    expect(normalizeCheckFieldKey('Sürgü davranışı')).toBe('merkez tipi');
+    expect(normalizeCheckFieldKey('Sürgü sembolü / fonksiyon')).toBe('merkez tipi');
+  });
+
+  it('dedupes duplicate merkez tipi check items from different labels', () => {
+    const items: CheckItem[] = [
+      {
+        field: 'Merkez tipi',
+        sourceValue: 'E',
+        targetValue: '2A',
+        reasonTr: 'canonical',
+        severity: 'high',
+      },
+      {
+        field: 'Sürgü sembolü / fonksiyon',
+        sourceValue: 'E',
+        targetValue: '2A',
+        reasonTr: 'dynamic',
+        severity: 'high',
+      },
+    ];
+    expect(dedupeCheckItemsByField(items)).toHaveLength(1);
+    expect(dedupeCheckItemsByField(items)[0].field).toBe('Merkez tipi');
   });
 
   it('dedupes duplicate manual override check items', () => {

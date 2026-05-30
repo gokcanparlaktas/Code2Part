@@ -1,6 +1,12 @@
+import {
+  compareTwoProductCodes,
+  CompareTwoProductCodesError,
+} from '@/domain/resolver/compareTwoProductCodes';
 import { resolveProductSearch } from '@/domain/resolver/resolveProductSearch';
+import { resolveResolverCategory } from '@/domain/resolver/compareProducts';
 import { identifyProduct } from '@/domain/resolver/identifyProduct';
 import { normalizeCode } from '@/domain/resolver/normalizeCode';
+import { PNEUMATIC_CYLINDER_CATEGORY } from '@/types/category';
 import type { CompatibilityResult } from '@/types/compatibility';
 
 import {
@@ -79,6 +85,46 @@ export async function identifyProductResolved(code: string): Promise<ResolvedIde
     const dto = await identifyProductRemote(trimmed);
     return mapIdentifyProductDtoToResolved(dto, trimmed);
   }, () => mapLocalIdentify(trimmed));
+}
+
+function mapCompareTwoProductCodesError(error: unknown): never {
+  if (error instanceof CompareTwoProductCodesError) {
+    throw new ResolverApiError(error.message, 'validation');
+  }
+  throw error;
+}
+
+function shouldUseLocalTwoCodeCompare(sourceCode: string): boolean {
+  if (getResolverMode() === 'local') {
+    return true;
+  }
+
+  const source = identifyProduct(sourceCode, normalizeCode(sourceCode));
+  return resolveResolverCategory(source) === PNEUMATIC_CYLINDER_CATEGORY;
+}
+
+export async function compareTwoProductsResolved(
+  sourceCode: string,
+  candidateCode: string
+): Promise<CompatibilityResult> {
+  const source = sourceCode.trim();
+  const candidate = candidateCode.trim();
+  if (!source || !candidate) {
+    throw new ResolverApiError('Karşılaştırma için iki ürün kodu gerekli.', 'validation');
+  }
+
+  if (shouldUseLocalTwoCodeCompare(source)) {
+    try {
+      return compareTwoProductCodes(source, candidate);
+    } catch (error) {
+      mapCompareTwoProductCodesError(error);
+    }
+  }
+
+  return withOptionalLocalFallback(async () => {
+    const dto = await compareProductsRemote(source, candidate);
+    return mapCompareProductsDtoToCompatibilityResult(dto);
+  }, () => compareTwoProductCodes(source, candidate));
 }
 
 export async function compareProductsResolved(

@@ -1,10 +1,7 @@
 import type { CatalogDataProvider } from '@/domain/catalogData/CatalogDataProvider';
-import { compareHydraulicValves } from '@/domain/categories/hydraulicValve/hydraulicValveComparison';
-import { compareProducts, resolveResolverCategory } from '@/domain/resolver/compareProducts';
 import { findEquivalents } from '@/domain/resolver/findEquivalents';
 import { identifyProduct } from '@/domain/resolver/identifyProduct';
 import { normalizeCode } from '@/domain/resolver/normalizeCode';
-import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
 import { calculateMatchPercentage } from '@/domain/scoring/calculateMatchPercentage';
 
 import {
@@ -13,23 +10,12 @@ import {
   type FindEquivalentsResponseDto,
 } from '@/backend/dto/mapFindEquivalentsResponse';
 import { buildCandidateFromEquivalent } from '@/backend/services/buildCandidateFromCode';
+import { compareSourceToCandidate } from '@/backend/services/compareSourceToCandidate';
 import { ensureCatalogProviderInitialized } from '@/backend/services/ensureCatalogProviderInitialized';
 
 export interface FindEquivalentsServiceOptions {
   code: string;
   catalogProvider?: CatalogDataProvider;
-}
-
-function compareSourceToCandidate(
-  source: ReturnType<typeof identifyProduct>,
-  candidate: ReturnType<typeof buildCandidateFromEquivalent>,
-  catalogProvider: CatalogDataProvider
-) {
-  const category = resolveResolverCategory(source);
-  if (category === HYDRAULIC_VALVE_CATEGORY) {
-    return compareHydraulicValves(source, candidate, { catalogProvider });
-  }
-  return compareProducts(source, candidate);
 }
 
 export async function findEquivalentsService(

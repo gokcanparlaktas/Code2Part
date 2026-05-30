@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { filterGenericCompatibilityWarningsForUi } from '@/domain/presentation/filterGenericCompatibilityWarnings';
 import { formatCompatibilityWarningForUi } from '@/domain/presentation/formatCompatibilityMetadata';
+import { colors, radius, spacing, typography } from '@/theme';
 
 interface CompatibilityWarningsListProps {
   warnings: string[];
@@ -16,7 +17,7 @@ export function CompatibilityWarningsList({ warnings }: CompatibilityWarningsLis
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Uyarılar</Text>
+      <Text style={styles.sectionTitle}>Kontrol notları</Text>
       {visibleWarnings.map((warning) => {
         const formatted = formatCompatibilityWarningForUi(warning);
         return (
@@ -47,37 +48,35 @@ export function CompatibilityWarningsList({ warnings }: CompatibilityWarningsLis
 
 const styles = StyleSheet.create({
   section: {
-    gap: 10,
+    gap: spacing.sm,
   },
   sectionTitle: {
-    color: '#0F172A',
-    fontSize: 17,
-    fontWeight: '700',
+    ...typography.sectionTitle,
+    color: colors.surface.textMuted,
   },
   warningItem: {
-    backgroundColor: '#FFF7ED',
-    borderRadius: 10,
-    gap: 6,
-    padding: 12,
+    backgroundColor: colors.background.elevated,
+    borderColor: colors.border.default,
+    borderLeftColor: colors.match.medium,
+    borderLeftWidth: 3,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    gap: spacing.xs,
+    padding: spacing.md,
   },
   catalogReviewItem: {
-    backgroundColor: '#FFFBEB',
-    borderColor: '#FDE68A',
-    borderWidth: 1,
+    borderLeftColor: colors.accent.orange,
   },
   warningTitle: {
-    color: '#9A3412',
-    fontSize: 15,
+    ...typography.bodySm,
+    color: colors.surface.text,
     fontWeight: '700',
-    lineHeight: 22,
   },
   catalogReviewTitle: {
-    color: '#92400E',
+    color: colors.match.medium,
   },
   warningDetail: {
-    color: '#78350F',
-    fontSize: 14,
-    fontWeight: '500',
-    lineHeight: 20,
+    ...typography.bodySm,
+    color: colors.surface.textMuted,
   },
 });

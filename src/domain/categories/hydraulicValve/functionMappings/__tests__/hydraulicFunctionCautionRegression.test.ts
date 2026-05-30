@@ -55,7 +55,7 @@ describe("hydraulic function caution regression", () => {
       result.compatible.some((c) => c.label === "Sürgü / fonksiyon kodu"),
     ).toBe(false);
     const spoolCheck = result.checkItems.find(
-      (c) => c.field === "Sürgü sembolü / fonksiyon",
+      (c) => c.field === "Merkez tipi",
     );
     expect(spoolCheck?.reasonTr).toContain("katalogdan kontrol edilmelidir");
   });

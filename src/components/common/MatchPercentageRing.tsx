@@ -3,8 +3,9 @@ import Svg, { Circle } from 'react-native-svg';
 
 import type { MatchPercentageResult } from '@/domain/scoring/calculateMatchPercentage';
 import { getMatchPercentageLabel } from '@/domain/scoring/calculateMatchPercentage';
+import { colors, typography } from '@/theme';
 
-export const MATCH_PERCENTAGE_RING_SIZE = 48;
+export const MATCH_PERCENTAGE_RING_SIZE = 52;
 
 interface MatchPercentageRingProps {
   match: MatchPercentageResult;
@@ -17,7 +18,7 @@ export function MatchPercentageRing({
   size = MATCH_PERCENTAGE_RING_SIZE,
   showLabel = true,
 }: MatchPercentageRingProps) {
-  const strokeWidth = 5;
+  const strokeWidth = 4;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const progress = Math.max(0, Math.min(100, match.percentage));
@@ -35,7 +36,7 @@ export function MatchPercentageRing({
             cx={center}
             cy={center}
             r={radius}
-            stroke="#CBD5E1"
+            stroke={colors.match.track}
             strokeWidth={strokeWidth}
             fill="none"
           />
@@ -58,7 +59,7 @@ export function MatchPercentageRing({
               fill="none"
               strokeDasharray={`${circumference} ${circumference}`}
               strokeDashoffset={strokeDashoffset}
-              strokeLinecap="round"
+              strokeLinecap="butt"
               rotation={-90}
               origin={`${center}, ${center}`}
             />
@@ -109,14 +110,16 @@ const styles = StyleSheet.create({
     top: 0,
   },
   percentageText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     textAlign: 'center',
   },
   levelBelow: {
-    fontSize: 9,
+    ...typography.caption,
+    fontSize: 10,
     fontWeight: '700',
-    marginTop: 2,
+    marginTop: 3,
     textAlign: 'center',
+    textTransform: 'uppercase',
   },
 });

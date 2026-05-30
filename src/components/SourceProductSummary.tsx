@@ -1,13 +1,16 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from "react-native";
 
-import type { ProductIdentification } from '@/types/product';
-import { formatSourceSummary } from '@/utils/formatSourceSummary';
+import { colors, radius, spacing, typography } from "@/theme";
+import type { ProductIdentification } from "@/types/product";
+import { formatSourceSummary } from "@/utils/formatSourceSummary";
 
 interface SourceProductSummaryProps {
   identification: ProductIdentification;
 }
 
-export function SourceProductSummary({ identification }: SourceProductSummaryProps) {
+export function SourceProductSummary({
+  identification,
+}: SourceProductSummaryProps) {
   return (
     <View style={styles.card}>
       <Text style={styles.label}>Kaynak ürün</Text>
@@ -19,27 +22,28 @@ export function SourceProductSummary({ identification }: SourceProductSummaryPro
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#BFDBFE',
-    borderRadius: 12,
+    backgroundColor: 'rgba(249, 115, 22, 0.9)',
+    borderColor: colors.accent.orangeDark,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    gap: 6,
-    padding: 16,
+    gap: spacing.xs,
+    padding: spacing.lg,
   },
   label: {
-    color: '#64748B',
-    fontSize: 13,
-    fontWeight: '600',
+    ...typography.sectionTitle,
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontSize: 11,
   },
   summary: {
-    color: '#0F172A',
-    fontSize: 17,
-    fontWeight: '700',
+    ...typography.h2,
+    color: colors.text.inverse,
     lineHeight: 24,
   },
   code: {
-    color: '#1E40AF',
+    ...typography.code,
+    color: colors.navy[900],
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
+    marginTop: spacing.xs,
   },
 });

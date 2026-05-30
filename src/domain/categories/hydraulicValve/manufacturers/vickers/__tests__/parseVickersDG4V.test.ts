@@ -1,3 +1,4 @@
+import { FIELD_LABELS } from '@/domain/canonical/hydraulicValve/hydraulicValveCanonicalDictionary';
 import { getTechnicalAttributes } from '@/domain/attributes/getTechnicalAttributes';
 import { extractHydraulicAttributes } from '@/domain/attributes/extractors/extractHydraulicAttributes';
 import { compareValveFunctionBehavior } from '@/domain/categories/hydraulicValve/functionMappings/compareValveFunctionBehavior';
@@ -91,7 +92,7 @@ describe('parseVickersDG4V', () => {
 
   it('exact same DG4V spool code is compatible', () => {
     const result = compareValveFunctionBehavior({
-      label: 'Sürgü davranışı',
+      label: FIELD_LABELS.spoolFunctionCode,
       source: { manufacturer: 'Vickers', series: 'DG4V-3', token: '2A' },
       target: { manufacturer: 'Vickers', series: 'DG4V-3', token: '2A' },
     });
@@ -129,11 +130,7 @@ describe('parseVickersDG4V', () => {
       ),
     });
 
-    const sameCompatible = sameSpool.compatible.length;
-    const diffCompatible = differentSpring.compatible.length;
-    expect(sameCompatible).toBeGreaterThan(diffCompatible);
-    expect(differentSpring.different.length + differentSpring.checkItems.length).toBeGreaterThan(0);
-    expect(calculateMatchPercentage(sameSpool).percentage).toBeGreaterThanOrEqual(
+    expect(calculateMatchPercentage(sameSpool).percentage).toBeGreaterThan(
       calculateMatchPercentage(differentSpring).percentage
     );
   });

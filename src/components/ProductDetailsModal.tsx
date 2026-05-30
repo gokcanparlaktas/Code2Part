@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 
 import type { ProductDetailRowView } from '@/services/mapBackendResolverDtos';
+import { colors, radius, spacing, typography, buttons } from '@/theme';
 
 interface ProductDetailsModalProps {
   visible: boolean;
@@ -57,7 +58,9 @@ export function ProductDetailsModal({ visible, onClose, rows }: ProductDetailsMo
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.card}>
-          <Text style={styles.title}>Teknik özellikler</Text>
+          <View style={styles.titleBar}>
+            <Text style={styles.title}>Teknik özellikler</Text>
+          </View>
           <ScrollView
             style={styles.scroll}
             contentContainerStyle={styles.scrollContent}
@@ -82,76 +85,72 @@ export function ProductDetailsModal({ visible, onClose, rows }: ProductDetailsMo
 
 const styles = StyleSheet.create({
   backdrop: {
-    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    backgroundColor: 'rgba(10, 22, 40, 0.72)',
     flex: 1,
     justifyContent: 'flex-end',
   },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: colors.background.card,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
     maxHeight: '85%',
-    padding: 20,
-    paddingBottom: 28,
+    overflow: 'hidden',
+    paddingBottom: spacing.xxl,
+  },
+  titleBar: {
+    backgroundColor: colors.navy[900],
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
   },
   title: {
-    color: '#0F172A',
-    fontSize: 20,
-    fontWeight: '800',
-    marginBottom: 12,
+    ...typography.h1,
+    color: colors.text.inverse,
   },
   scroll: {
     maxHeight: 480,
   },
   scrollContent: {
-    gap: 10,
-    paddingBottom: 8,
+    gap: spacing.sm,
+    padding: spacing.xl,
+    paddingBottom: spacing.sm,
   },
   row: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    gap: 4,
-    padding: 14,
+    backgroundColor: colors.background.elevated,
+    borderColor: colors.border.default,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    gap: spacing.xs,
+    padding: spacing.md,
   },
   valueBlock: {
     gap: 3,
   },
   rowLabel: {
-    color: '#64748B',
-    fontSize: 13,
-    fontWeight: '600',
+    ...typography.sectionTitle,
+    color: colors.surface.textMuted,
+    fontSize: 11,
   },
   rowValue: {
-    color: '#0F172A',
-    fontSize: 16,
-    fontWeight: '800',
+    ...typography.h3,
+    color: colors.surface.text,
     lineHeight: 22,
   },
   secondaryValue: {
-    color: '#475569',
-    fontSize: 14,
-    fontWeight: '500',
-    lineHeight: 20,
+    ...typography.bodySm,
+    color: colors.surface.textSecondary,
   },
   evidence: {
-    color: '#64748B',
-    fontSize: 12,
+    ...typography.caption,
+    color: colors.surface.textMuted,
     fontWeight: '600',
     marginTop: 2,
   },
   button: {
-    alignItems: 'center',
-    backgroundColor: '#1E40AF',
-    borderRadius: 12,
-    marginTop: 16,
-    paddingVertical: 14,
+    ...buttons.primary,
+    marginHorizontal: spacing.xl,
+    marginTop: spacing.md,
+    paddingVertical: spacing.md,
   },
-  buttonPressed: {
-    opacity: 0.92,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  buttonPressed: buttons.primaryPressed,
+  buttonText: buttons.primaryText,
 });

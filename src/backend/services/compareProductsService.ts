@@ -1,10 +1,10 @@
 import type { CatalogDataProvider } from '@/domain/catalogData/CatalogDataProvider';
-import { compareHydraulicValves } from '@/domain/categories/hydraulicValve/hydraulicValveComparison';
 import { identifyProduct } from '@/domain/resolver/identifyProduct';
 import { normalizeCode } from '@/domain/resolver/normalizeCode';
 
 import { mapCompareProductsResponse, type CompareProductsResponseDto } from '@/backend/dto/mapCompareProductsResponse';
 import { buildCandidateFromCode } from '@/backend/services/buildCandidateFromCode';
+import { compareSourceToCandidate } from '@/backend/services/compareSourceToCandidate';
 import { ensureCatalogProviderInitialized } from '@/backend/services/ensureCatalogProviderInitialized';
 
 export interface CompareProductsServiceOptions {
@@ -22,7 +22,7 @@ export async function compareProductsService(
   const source = identifyProduct(options.sourceCode, sourceNormalized);
   const candidate = buildCandidateFromCode(options.candidateCode);
 
-  const result = compareHydraulicValves(source, candidate, { catalogProvider });
+  const result = compareSourceToCandidate(source, candidate, catalogProvider);
 
   return mapCompareProductsResponse({
     sourceCode: options.sourceCode,

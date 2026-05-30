@@ -278,7 +278,7 @@ export const FIELD_LABELS = {
   maxPressureBar: "Maks. basınç (A/B/P)",
   maxFlowLpm: "Maks. debi",
   sealMaterial: "Keçe / sızdırmazlık malzemesi",
-  spoolFunctionCode: "Sürgü davranışı",
+  spoolFunctionCode: "Merkez tipi",
 } as const;
 
 function buildAliasIndex<T extends string>(

@@ -98,9 +98,21 @@ function numericTokenMatchesCode(
     return { exact: true, matched: true, score: 18 };
   }
 
-  const boundaryPattern = new RegExp(`(^|[^0-9])${token}([^0-9]|$)`);
+  const boundaryPattern = new RegExp(`(^|[^0-9])${escapeRegex(token)}([^0-9]|$)`);
   if (boundaryPattern.test(codeCompact)) {
     return { exact: false, matched: true, score: 12 };
+  }
+
+  // Partial numeric segment while typing (e.g. "0" → "03" in DSHG-03).
+  if (
+    codeTokens.some(
+      (segment) =>
+        /^\d+$/.test(segment) &&
+        segment.startsWith(token) &&
+        segment.length > token.length
+    )
+  ) {
+    return { exact: false, matched: true, score: 9 };
   }
 
   return { exact: false, matched: false, score: 0 };

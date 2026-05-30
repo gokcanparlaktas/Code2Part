@@ -3,11 +3,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { EquivalentAccordionCard } from '@/components/EquivalentAccordionCard';
+import { EquivalencePageScoreNote } from '@/components/EquivalencePageScoreNote';
 import { SourceProductSummary } from '@/components/SourceProductSummary';
+import { collectEquivalencePageLegacyScoreFootnote } from '@/domain/presentation/collectEquivalencePageAlerts';
 import { sortCompatibilityResultsByMatchPercentage } from '@/domain/presentation/sortCompatibilityResults';
 import { useBackendCompareLoader } from '@/hooks/useBackendCompareLoader';
 import { useResolvedProductSearch } from '@/hooks/useResolvedProductSearch';
 import { isBackendResolverMode } from '@/services/resolverService';
+import { colors, radius, spacing, typography } from '@/theme';
 import {
   compatibilityResultKey,
   mergeCompatibilityResultDisplay,
@@ -46,6 +49,14 @@ export default function AllAlternativesScreen() {
 
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
+  const legacyScoreFootnote = useMemo(() => {
+    const displayed = compatibilityResults.map((result) => {
+      const rowKey = compatibilityResultKey(result);
+      return mergeCompatibilityResultDisplay(result, resolveDisplayResult(result, rowKey));
+    });
+    return collectEquivalencePageLegacyScoreFootnote(displayed);
+  }, [compatibilityResults, resolveDisplayResult]);
+
   useEffect(() => {
     if (!expandedKey || !isBackendResolverMode()) {
       return;
@@ -80,7 +91,7 @@ export default function AllAlternativesScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#1E40AF" />
+        <ActivityIndicator size="large" color={colors.navy[700]} />
         <Text style={styles.loadingText}>Alternatifler yükleniyor…</Text>
       </View>
     );
@@ -113,6 +124,10 @@ export default function AllAlternativesScreen() {
       showsVerticalScrollIndicator={false}
     >
       <SourceProductSummary identification={identification} />
+
+      {compatibilityResults.length > 0 ? (
+        <EquivalencePageScoreNote note={legacyScoreFootnote} />
+      ) : null}
 
       {compareErrorMessage ? (
         <View style={styles.compareErrorCard}>
@@ -148,7 +163,6 @@ export default function AllAlternativesScreen() {
           })}
         </View>
       )}
-
     </ScrollView>
   );
 }
@@ -158,62 +172,57 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    gap: 16,
-    padding: 20,
+    gap: spacing.lg,
+    padding: spacing.xl,
     paddingBottom: 40,
   },
-  pageSubtitle: {
-    color: '#64748B',
-    fontSize: 15,
-    lineHeight: 22,
-  },
   accordionList: {
-    gap: 12,
+    gap: spacing.md,
   },
   emptyCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 18,
+    backgroundColor: colors.background.card,
+    borderColor: colors.border.accentLight,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    padding: spacing.lg,
   },
   emptyText: {
-    color: '#334155',
-    fontSize: 15,
-    lineHeight: 22,
+    ...typography.body,
+    color: colors.surface.textMuted,
   },
   compareErrorCard: {
-    backgroundColor: '#FEF2F2',
-    borderColor: '#FECACA',
-    borderRadius: 12,
+    backgroundColor: colors.status.danger.bg,
+    borderColor: colors.status.danger.border,
+    borderLeftWidth: 3,
+    borderRadius: radius.md,
     borderWidth: 1,
-    padding: 12,
+    padding: spacing.md,
   },
   compareErrorText: {
-    color: '#991B1B',
-    fontSize: 14,
-    lineHeight: 20,
+    ...typography.bodySm,
+    color: colors.status.danger.text,
   },
   centered: {
     alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
-    padding: 20,
+    padding: spacing.xl,
   },
   loadingText: {
-    color: '#64748B',
-    fontSize: 15,
-    marginTop: 8,
+    ...typography.body,
+    color: colors.text.inverseMuted,
+    marginTop: spacing.sm,
     textAlign: 'center',
   },
   errorTitle: {
-    color: '#0F172A',
-    fontSize: 18,
-    fontWeight: '800',
-    marginBottom: 6,
+    ...typography.h1,
+    color: colors.text.inverse,
+    marginBottom: spacing.xs,
     textAlign: 'center',
   },
   errorMessage: {
-    color: '#64748B',
-    fontSize: 15,
+    ...typography.body,
+    color: colors.text.inverseMuted,
     lineHeight: 22,
     textAlign: 'center',
   },

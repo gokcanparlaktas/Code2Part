@@ -24,18 +24,14 @@ function comparePair() {
 }
 
 describe('equivalence comparison UI dedup', () => {
-  it('does not show Merkez tipi when Sürgü davranışı already shows same portState text', () => {
+  it('does not duplicate Merkez tipi when portState comparison already covers center behavior', () => {
     const result = comparePair();
 
-    const spool = result.compatible.find((c) => c.label === FIELD_LABELS.spoolFunctionCode);
-    expect(spool?.sourceDisplay).toContain('Kapalı merkez — P, T, A ve B kapalı');
-
-    expect(
-      result.compatible.some((c) => c.label === FIELD_LABELS.centerCondition)
-    ).toBe(false);
-    expect(result.different.some((c) => c.label === FIELD_LABELS.centerCondition)).toBe(
-      false
+    const merkezRows = result.compatible.filter(
+      (c) => c.label === FIELD_LABELS.spoolFunctionCode
     );
+    expect(merkezRows).toHaveLength(1);
+    expect(merkezRows[0]?.sourceDisplay).toContain('Kapalı merkez — P, T, A ve B kapalı');
   });
 
   it('does not add generic Basınç değeri check when catalog pressure exists', () => {

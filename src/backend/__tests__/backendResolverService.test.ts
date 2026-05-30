@@ -78,6 +78,34 @@ describe('backend compareProductsService PoC', () => {
     expect(mockFirestoreDto).toEqual(localDto);
   });
 
+  it('marks different bore and stroke for mismatched pneumatic cylinder sizes', async () => {
+    const dto = await compareProductsService({
+      sourceCode: 'DSBC-63-200-PPVA',
+      candidateCode: 'C96-40-80',
+      catalogProvider: new LocalCatalogDataProvider(),
+    });
+
+    expect(dto.different.some((row) => row.label === 'Çap (bore)')).toBe(true);
+    expect(dto.different.some((row) => row.label === 'Strok')).toBe(true);
+    expect(dto.unknownOrCheck.some((item) => item.field === 'Çap (bore)')).toBe(false);
+    expect(dto.unknownOrCheck.some((item) => item.field === 'Strok')).toBe(false);
+  });
+
+  it('same Rexroth E spool code appears in uyumlu via compareProductsService', async () => {
+    const dto = await compareProductsService({
+      sourceCode: '4WE6E-6X/EG24N9K4',
+      candidateCode: '4WE6E-6X/EG24K4',
+      catalogProvider: new LocalCatalogDataProvider(),
+    });
+
+    expect(dto.compatible.some((row) => row.label === FIELD_LABELS.spoolFunctionCode)).toBe(
+      true
+    );
+    expect(dto.unknownOrCheck.filter((item) => item.field === FIELD_LABELS.spoolFunctionCode)).toHaveLength(
+      0
+    );
+  });
+
   it('serialized compareProducts DTO contains none of the forbidden keys', async () => {
     const dto = await compareProductsService({
       sourceCode: REXROTH_CODE,

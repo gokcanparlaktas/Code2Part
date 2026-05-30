@@ -13,9 +13,9 @@ export interface MatchPercentageResult {
 }
 
 const LEVEL_COLORS: Record<MatchPercentageLevel, string> = {
-  low: '#DC2626',
-  medium: '#F59E0B',
-  high: '#16A34A',
+  low: '#C2410C',
+  medium: '#CA8A04',
+  high: '#059669',
 };
 
 const LEVEL_LABELS: Record<MatchPercentageLevel, string> = {

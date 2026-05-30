@@ -527,7 +527,7 @@ export function compareHydraulicValveCanonicalProfiles(
 
   if (requiresCatalogCheck) {
     result.warnings.push(
-      'Sürgü davranışı ve bobin seçenekleri katalog sembolleriyle doğrulanmalıdır.'
+      'Merkez tipi ve bobin seçenekleri katalog sembolleriyle doğrulanmalıdır.'
     );
   }
 
@@ -624,14 +624,7 @@ export function compareHydraulicValveCanonicalProfiles(
     });
   }
 
-  const hideCenterInEquivalenceUi =
-    bothPortStateCenter &&
-    center.comparison.status === 'compatible' &&
-    result.portStateCenterResolved;
-
-  if (!hideCenterInEquivalenceUi) {
-    pushResult(result, center.comparison, center.sentence, 'critical');
-  }
+  const hideCenterInEquivalenceUi = bothPortStateCenter;
 
   const centering = compareCanonicalEnumField({
     sourceField: source.centering,
@@ -867,10 +860,20 @@ export function compareHydraulicValveCanonicalProfiles(
   }
 
   if (mountingMismatch && spoolComparison.status === 'compatible') {
-    spoolComparison = {
-      ...spoolComparison,
-      status: 'unknownOrCheck',
-    };
+    const sameManufacturerExactFunctionToken =
+      source.brand?.trim().toLowerCase() === target.brand?.trim().toLowerCase() &&
+      Boolean(source.brand?.trim()) &&
+      source.rawFunctionCode?.trim().toUpperCase() ===
+        target.rawFunctionCode?.trim().toUpperCase() &&
+      Boolean(source.rawFunctionCode?.trim()) &&
+      functionMatch?.comparison.status === 'compatible';
+
+    if (!sameManufacturerExactFunctionToken) {
+      spoolComparison = {
+        ...spoolComparison,
+        status: 'unknownOrCheck',
+      };
+    }
   }
 
   const spoolRequiresCatalogCheck =
@@ -886,16 +889,16 @@ export function compareHydraulicValveCanonicalProfiles(
   if (spoolComparison.status === 'compatible') {
     if (usedPortStateComparison && portStateSpool.catalogReviewRequired) {
       spoolSentence =
-        'Sürgü merkez davranışı (port durumları) uyumlu görünüyor; katalog adayı inceleme gerektirir.';
+        'Merkez tipi (port durumları) uyumlu görünüyor; katalog adayı inceleme gerektirir.';
     } else if (spoolRequiresCatalogCheck) {
       spoolSentence =
-        'Sürgü davranışı aynı görünebilir, fakat katalog sembolüyle doğrulanmalıdır.';
+        'Merkez tipi aynı görünebilir, fakat katalog sembolüyle doğrulanmalıdır.';
     } else {
-      spoolSentence = `Sürgü davranışı aynı: ${sourceSpoolDisplay}`;
+      spoolSentence = `Merkez tipi aynı: ${sourceSpoolDisplay}`;
     }
   } else if (spoolComparison.status === 'different') {
     if (usedPortStateComparison) {
-      spoolSentence = `Sürgü merkez davranışı (port durumları) farklı: ${sourceSpoolDisplay} / ${targetSpoolDisplay}`;
+      spoolSentence = `Merkez tipi (port durumları) farklı: ${sourceSpoolDisplay} / ${targetSpoolDisplay}`;
     } else if (
       spoolRequiresCatalogCheck ||
       sourceSpoolDisplay.includes('doğrulanmalı') ||
@@ -904,10 +907,10 @@ export function compareHydraulicValveCanonicalProfiles(
       spoolSentence =
         'Merkez tipi iki üründe de doğrulanamadı. Katalog sembolleri kontrol edilmelidir.';
     } else {
-      spoolSentence = `Sürgü davranışı farklı: ${sourceSpoolDisplay} / ${targetSpoolDisplay}`;
+      spoolSentence = `Merkez tipi farklı: ${sourceSpoolDisplay} / ${targetSpoolDisplay}`;
     }
   } else {
-    spoolSentence = 'Sürgü merkez tipi katalog sembolünden doğrulanmalıdır.';
+    spoolSentence = 'Merkez tipi katalog sembolünden doğrulanmalıdır.';
   }
 
   if (
@@ -921,8 +924,6 @@ export function compareHydraulicValveCanonicalProfiles(
       checkReasonTr: functionMatch.statusMessageTr,
     };
   }
-
-  pushResult(result, spoolComparison, spoolSentence, 'optional');
 
   if (crossBrand && !usedPortStateComparison) {
     const sameCenter =
@@ -941,7 +942,7 @@ export function compareHydraulicValveCanonicalProfiles(
     if (sameCenter && sameWays && sameCentering) {
       result.crossBrandSimilarBehavior = true;
       result.warnings.push(
-        'Sürgü davranışı benzer olabilir. Katalog sembolüyle doğrulanmalıdır.'
+        'Merkez tipi benzer olabilir. Katalog sembolüyle doğrulanmalıdır.'
       );
     }
   }
@@ -954,24 +955,39 @@ export function compareHydraulicValveCanonicalProfiles(
     result.warnings.push(functionMatch.statusMessageTr);
   }
 
-  const spoolComparisonEntry = result.comparisons.find(
-    (c) => c.label === FIELD_LABELS.spoolFunctionCode
-  );
-  if (spoolComparisonEntry) {
+  const merkezStatusRank: Record<AttributeComparison['status'], number> = {
+    compatible: 0,
+    unknownOrCheck: 1,
+    different: 2,
+  };
+
+  let merkezUiComparison: AttributeComparison;
+  if (hideCenterInEquivalenceUi) {
+    merkezUiComparison = spoolComparison;
+    pushResult(result, spoolComparison, spoolSentence, 'optional');
+  } else {
+    const preferSpoolForMerkez =
+      merkezStatusRank[spoolComparison.status] > merkezStatusRank[center.comparison.status];
+    merkezUiComparison = preferSpoolForMerkez
+      ? { ...spoolComparison, label: FIELD_LABELS.centerCondition }
+      : center.comparison;
+    const merkezSentence = preferSpoolForMerkez ? spoolSentence : center.sentence;
+    pushResult(result, merkezUiComparison, merkezSentence, 'critical');
+  }
+
+  if (merkezUiComparison.status === 'unknownOrCheck') {
     result.spoolDynamicCheck = {
-      source: spoolComparisonEntry.sourceDisplay,
-      target: spoolComparisonEntry.targetDisplay,
-      status: spoolComparisonEntry.status,
+      source: merkezUiComparison.sourceDisplay,
+      target: merkezUiComparison.targetDisplay,
+      status: 'unknownOrCheck',
       reasonTr:
-        spoolComparisonEntry.checkReasonTr ??
+        merkezUiComparison.checkReasonTr ??
         functionMatch?.statusMessageTr ??
         (usedPortStateComparison && portStateSpool.catalogReviewRequired
           ? CATALOG_PORT_STATE_CANDIDATE_WARNING_TR
           : result.crossBrandSimilarBehavior
-            ? 'Sürgü/fonksiyon davranışı benzer olabilir. Katalog sembolüyle doğrulanmalıdır.'
-            : spoolComparisonEntry.status === 'unknownOrCheck'
-              ? 'Sürgü/fonksiyon sembolü katalogdan kontrol edilmelidir.'
-              : undefined),
+            ? 'Merkez tipi benzer olabilir. Katalog sembolüyle doğrulanmalıdır.'
+            : 'Merkez tipi katalog sembolünden doğrulanmalıdır.'),
     };
   }
 
@@ -1059,10 +1075,10 @@ export function canonicalComparisonToCompatibilityResult(options: {
     FIELD_LABELS.coilVoltage,
     FIELD_LABELS.connectorType,
     FIELD_LABELS.spoolFunctionCode,
+    FIELD_LABELS.centerCondition,
     FIELD_LABELS.manualOverride,
     FIELD_LABELS.maxPressureBar,
     FIELD_LABELS.maxFlowLpm,
-    'Sürgü sembolü / fonksiyon',
   ] as const;
 
   const attributeChecks = comparisons
@@ -1074,9 +1090,14 @@ export function canonicalComparisonToCompatibilityResult(options: {
       return false;
     }
     if (
+      options.canonical.spoolDynamicCheck?.status === 'unknownOrCheck' &&
+      normalizeCheckFieldKey(item.field) === 'merkez tipi'
+    ) {
+      return false;
+    }
+    if (
       options.canonical.portStateCenterResolved &&
-      (item.field === FIELD_LABELS.centerCondition ||
-        normalizeCheckFieldKey(item.field) === 'spool_center_behavior')
+      normalizeCheckFieldKey(item.field) === 'merkez tipi'
     ) {
       return false;
     }
@@ -1101,8 +1122,7 @@ export function canonicalComparisonToCompatibilityResult(options: {
     }
     if (
       options.canonical.portStateCenterResolved &&
-      (item.field === FIELD_LABELS.centerCondition ||
-        normalizeCheckFieldKey(item.field) === 'spool_center_behavior')
+      normalizeCheckFieldKey(item.field) === 'merkez tipi'
     ) {
       return false;
     }

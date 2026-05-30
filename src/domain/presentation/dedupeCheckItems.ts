@@ -18,15 +18,14 @@ export function normalizeCheckFieldKey(field: string): string {
   if (text.includes('montaj arayüz') || text.includes('montaj arayuz')) {
     return 'montaj arayüzü';
   }
-  if (text.includes('merkez tipi')) {
-    return 'merkez tipi';
-  }
   if (
+    text.includes('merkez tipi') ||
     text.includes('sürgü davranış') ||
     text.includes('sürgü sembol') ||
+    text.includes('sürgü / fonksiyon') ||
     text.includes('spool')
   ) {
-    return 'spool_center_behavior';
+    return 'merkez tipi';
   }
   return text;
 }

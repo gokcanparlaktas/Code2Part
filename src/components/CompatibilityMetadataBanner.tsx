@@ -5,6 +5,7 @@ import {
   formatCompatibilityMetadataLines,
 } from '@/domain/presentation/formatCompatibilityMetadata';
 import type { CompatibilityMetadata } from '@/types/compatibility';
+import { colors, radius, spacing, typography } from '@/theme';
 
 interface CompatibilityMetadataBannerProps {
   metadata: CompatibilityMetadata;
@@ -21,9 +22,7 @@ export function CompatibilityMetadataBanner({
   const footnote = buildCompatibilityMetadataFootnote(metadata, { hasCheckItems });
 
   if (compact) {
-    return (
-      <Text style={styles.compactLine}>{lines.join(' • ')}</Text>
-    );
+    return <Text style={styles.compactLine}>{lines.join(' · ')}</Text>;
   }
 
   return (
@@ -40,29 +39,28 @@ export function CompatibilityMetadataBanner({
 
 const styles = StyleSheet.create({
   banner: {
-    backgroundColor: '#F0F9FF',
-    borderColor: '#BAE6FD',
-    borderRadius: 12,
+    backgroundColor: colors.background.elevated,
+    borderColor: colors.border.default,
+    borderLeftColor: colors.accent.blue,
+    borderLeftWidth: 3,
+    borderRadius: radius.md,
     borderWidth: 1,
-    gap: 6,
-    padding: 12,
+    gap: spacing.xs,
+    padding: spacing.md,
   },
   line: {
-    color: '#0F172A',
-    fontSize: 15,
+    ...typography.bodySm,
+    color: colors.surface.text,
     fontWeight: '700',
   },
   footnote: {
-    color: '#475569',
-    fontSize: 14,
-    fontWeight: '500',
-    lineHeight: 20,
-    marginTop: 4,
+    ...typography.bodySm,
+    color: colors.surface.textMuted,
+    marginTop: spacing.xs,
   },
   compactLine: {
-    color: '#334155',
-    fontSize: 13,
+    ...typography.caption,
+    color: colors.surface.textSecondary,
     fontWeight: '600',
-    lineHeight: 18,
   },
 });

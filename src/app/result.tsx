@@ -13,10 +13,13 @@ import {
   recordSearch,
   saveUnresolvedSearch,
 } from '@/services/localSearchStore';
+import { colors, radius, spacing, typography, buttons } from '@/theme';
 import {
   decodeProductCodeFromRoute,
   productCodeEquivalentsHref,
+  productCodeResultHref,
 } from '@/utils/productCodeRouteParam';
+import type { SuggestedProduct } from '@/types/suggestion';
 
 export default function ResultScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
@@ -82,9 +85,17 @@ export default function ResultScreen() {
     setAlreadySaved(true);
   };
 
+  const handleTrySuggestion = (suggestion: SuggestedProduct) => {
+    const targetCode = suggestion.exampleCodeFormat?.trim();
+    if (!targetCode) {
+      return;
+    }
+    router.push(productCodeResultHref(targetCode));
+  };
+
   if (!inputCode) {
     return (
-      <View style={styles.emptyContainer}>
+      <View style={styles.stateContainer}>
         <Text style={styles.emptyTitle}>Ürün kodu girilmedi</Text>
         <Text style={styles.emptyText}>
           Ana ekrandan bir ürün kodu yazıp aramayı tekrar deneyin.
@@ -101,8 +112,8 @@ export default function ResultScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#1E40AF" />
+      <View style={styles.stateContainer}>
+        <ActivityIndicator size="large" color={colors.navy[700]} />
         <Text style={styles.loadingText}>Ürün kodu çözümleniyor…</Text>
       </View>
     );
@@ -110,7 +121,7 @@ export default function ResultScreen() {
 
   if (errorMessage || !identification || !reliability) {
     return (
-      <View style={styles.emptyContainer}>
+      <View style={styles.stateContainer}>
         <Text style={styles.errorTitle}>Sonuç alınamadı</Text>
         <Text style={styles.emptyText}>{errorMessage ?? 'Bilinmeyen hata'}</Text>
         <Pressable
@@ -141,6 +152,7 @@ export default function ResultScreen() {
                 title="Olası seriler"
                 query={inputCode}
                 suggestions={suggestions}
+                onTrySuggestion={handleTrySuggestion}
               />
             </>
           ) : null}
@@ -181,7 +193,6 @@ export default function ResultScreen() {
           )}
         </>
       )}
-
     </ScrollView>
   );
 }
@@ -191,88 +202,61 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    gap: 16,
-    padding: 20,
+    gap: spacing.lg,
+    padding: spacing.xl,
     paddingBottom: 40,
   },
-  loadingContainer: {
+  stateContainer: {
     alignItems: 'center',
     flex: 1,
-    gap: 12,
+    gap: spacing.md,
     justifyContent: 'center',
-    padding: 24,
+    padding: spacing.xxl,
   },
   loadingText: {
-    color: '#64748B',
-    fontSize: 16,
+    ...typography.body,
+    color: colors.text.inverseMuted,
   },
   partialIntro: {
-    color: '#0F172A',
-    fontSize: 16,
+    ...typography.body,
+    color: colors.text.inverse,
     fontWeight: '600',
-    lineHeight: 24,
   },
   primaryButton: {
-    alignItems: 'center',
-    backgroundColor: '#1E40AF',
-    borderRadius: 14,
-    paddingVertical: 16,
+    ...buttons.primary,
   },
-  buttonPressed: {
-    opacity: 0.9,
-  },
-  primaryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '700',
-  },
+  buttonPressed: buttons.primaryPressed,
+  primaryButtonText: buttons.primaryTextLg,
   noEquivalentsCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 18,
+    backgroundColor: colors.background.card,
+    borderColor: colors.border.accentLight,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    padding: spacing.lg,
   },
   noEquivalentsText: {
-    color: '#64748B',
-    fontSize: 15,
-    lineHeight: 22,
+    ...typography.body,
+    color: colors.surface.textMuted,
     textAlign: 'center',
   },
-  emptyContainer: {
-    flex: 1,
-    gap: 12,
-    justifyContent: 'center',
-    padding: 24,
-  },
   emptyTitle: {
-    color: '#0F172A',
-    fontSize: 18,
-    fontWeight: '700',
+    ...typography.h1,
+    color: colors.text.inverse,
     textAlign: 'center',
   },
   errorTitle: {
-    color: '#9A3412',
-    fontSize: 18,
-    fontWeight: '700',
+    ...typography.h1,
+    color: colors.status.danger.text,
     textAlign: 'center',
   },
   emptyText: {
-    color: '#64748B',
-    fontSize: 16,
-    lineHeight: 24,
+    ...typography.body,
+    color: colors.text.inverseMuted,
     textAlign: 'center',
   },
   backButton: {
-    alignItems: 'center',
-    alignSelf: 'center',
-    backgroundColor: '#1E40AF',
-    borderRadius: 12,
-    marginTop: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    ...buttons.primaryCompact,
+    marginTop: spacing.sm,
   },
-  backButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  backButtonText: buttons.primaryText,
 });

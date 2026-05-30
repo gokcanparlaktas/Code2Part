@@ -2,6 +2,8 @@ import type { CheckItem } from '@/types/compatibility';
 import type { EquivalentCandidate } from '@/types/compatibility';
 import type { ProductIdentification } from '@/types/product';
 
+import { FIELD_LABELS } from '@/domain/canonical/hydraulicValve/hydraulicValveCanonicalDictionary';
+
 const HYDRAULIC_VALVE_BASE_CHECK_ITEMS: Omit<
   CheckItem,
   'sourceValue' | 'targetValue'
@@ -67,12 +69,12 @@ export function getHydraulicValveCheckItems(
 
   if (dynamic.spool?.status === 'unknownOrCheck') {
     checks.push({
-      field: 'Sürgü sembolü / fonksiyon',
+      field: FIELD_LABELS.spoolFunctionCode,
       sourceValue: dynamic.spool.source,
       targetValue: dynamic.spool.target,
       reasonTr:
         dynamic.spool.reasonTr ??
-        'Sürgü tipi ve sembolü ürün kodundan her zaman net okunamaz. Hidrolik şemada doğrulanmalıdır.',
+        'Merkez tipi katalog sembolünden veya hidrolik şemadan doğrulanmalıdır.',
       severity: 'high',
     });
   }

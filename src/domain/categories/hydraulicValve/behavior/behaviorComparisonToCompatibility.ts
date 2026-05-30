@@ -13,6 +13,10 @@ import {
 } from '@/domain/categories/hydraulicValve/hydraulicValveCheckItems';
 import { formatAttributeValue } from '@/utils/formatConfidence';
 
+import {
+  dedupeCheckItemsByField,
+  normalizeCheckFieldKey,
+} from '@/domain/presentation/dedupeCheckItems';
 import type { HydraulicValveBehaviorComparisonResult } from './compareHydraulicValveBehaviorProfiles';
 
 function comparisonToCheckItem(comparison: AttributeComparison): CheckItem | null {
@@ -92,7 +96,7 @@ export function behaviorComparisonToCompatibilityResult(options: {
   const voltageComparison = comparisons.find((c) => c.label === 'Bobin voltajı');
   const connectorComparison = comparisons.find((c) => c.label === 'Konnektör kodu');
 
-  const checkItems = [
+  const checkItems = dedupeCheckItemsByField([
     ...getHydraulicValveCheckItems(options.source, options.candidate, {
       spool: options.behavior.spoolDynamicCheck,
       voltage: voltageComparison
@@ -112,9 +116,10 @@ export function behaviorComparisonToCompatibilityResult(options: {
     }),
     ...attributeChecks.filter(
       (item) =>
-        !['Bobin voltajı', 'Konnektör kodu', 'Sürgü / fonksiyon kodu'].includes(item.field)
+        !['Bobin voltajı', 'Konnektör kodu', 'Sürgü / fonksiyon kodu'].includes(item.field) &&
+        normalizeCheckFieldKey(item.field) !== 'merkez tipi'
     ),
-  ];
+  ]);
 
   const warningSet = new Set<string>([...HYDRAULIC_VALVE_WARNINGS, ...options.behavior.warnings]);
 

@@ -9,6 +9,7 @@ import {
   suggestTokenMatchedPneumaticCylinders,
 } from '@/domain/categories/pneumaticCylinder/pneumaticCylinderSuggestions';
 import { isEligibleTokenQuery, tokenizeForMatching } from '@/domain/categories/pneumaticCylinder/pneumaticCylinderTokenMatch';
+import { matchPercentageFromSuggestion } from '@/domain/scoring/suggestionMatchPercentage';
 import { HYDRAULIC_VALVE_CATEGORY, PNEUMATIC_CYLINDER_CATEGORY } from '@/types/category';
 import { computeHydraulicValveMissingFields } from '@/domain/categories/hydraulicValve/computeHydraulicValveMissingFields';
 import { identifyProduct } from './identifyProduct';
@@ -329,9 +330,15 @@ export function suggestProductsDetailed(
     }
   }
 
-  const sorted = [...merged.values()].sort(
-    (a, b) => suggestionSortScore(b) - suggestionSortScore(a)
-  );
+  const sorted = [...merged.values()].sort((a, b) => {
+    const percentageDiff =
+      matchPercentageFromSuggestion(rawInput, b).percentage -
+      matchPercentageFromSuggestion(rawInput, a).percentage;
+    if (percentageDiff !== 0) {
+      return percentageDiff;
+    }
+    return suggestionSortScore(b) - suggestionSortScore(a);
+  });
 
   return {
     suggestions: sorted.slice(0, cappedLimit),

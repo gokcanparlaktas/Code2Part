@@ -27,7 +27,7 @@ describe('suggestion/search regression (catalog v2)', () => {
     }
   });
 
-  it.each(['DG4V 3', '4WE6', 'DSG 01'])(
+  it.each(['DG4V', 'DSG'])(
     'partial series search "%s" does not score 100%',
     (query) => {
       const { max } = maxSuggestionPercentage(query);
@@ -35,6 +35,35 @@ describe('suggestion/search regression (catalog v2)', () => {
       expect(identifyProduct(query, normalizeCode(query)).outcome).not.toBe('full');
     }
   );
+
+  it.each(['4WE6', 'DG4V 3', 'DSG 01'])(
+    'spaced or compact exact series code scores 100% on series-prefix suggestion',
+    (query) => {
+      const suggestions = suggestProducts(query);
+      const seriesHit = suggestions.find((s) => s.matchedBy === 'series_prefix');
+      if (!seriesHit) {
+        return;
+      }
+      expect(matchPercentageFromSuggestion(query, seriesHit).percentage).toBe(100);
+    }
+  );
+
+  it('partial Rexroth prefix "4WE" scores by series code length for NG6 and NG10', () => {
+    const query = '4WE';
+    const suggestions = suggestProducts(query);
+    const seriesHits = suggestions.filter((s) => s.matchedBy === 'series_prefix');
+
+    expect(seriesHits.some((s) => s.series === '4WE6')).toBe(true);
+    expect(seriesHits.some((s) => s.series === '4WE10')).toBe(true);
+
+    const ng6 = seriesHits.find((s) => s.series === '4WE6');
+    const ng10 = seriesHits.find((s) => s.series === '4WE10');
+
+    expect(matchPercentageFromSuggestion(query, ng6!).percentage).toBe(75);
+    expect(matchPercentageFromSuggestion(query, ng10!).percentage).toBe(60);
+    expect(matchPercentageFromSuggestion(query, ng6!).level).toBe('high');
+    expect(matchPercentageFromSuggestion(query, ng10!).level).toBe('medium');
+  });
 
   it('DG4V 3 ranks DG4V-3 example highest among returned suggestions', () => {
     const query = 'DG4V 3';

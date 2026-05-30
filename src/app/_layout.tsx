@@ -8,6 +8,7 @@ import {
   acceptAppDisclaimer,
   hasAcceptedAppDisclaimer,
 } from '@/services/appDisclaimerStore';
+import { colors, typography } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -26,7 +27,7 @@ export default function RootLayout() {
         setAppReady(true);
       }
     }
-    prepare();
+    void prepare();
   }, []);
 
   const handleAcceptDisclaimer = useCallback(async () => {
@@ -46,20 +47,21 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider onLayout={onRootLayout}>
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
       <FirstLaunchDisclaimerModal
         visible={disclaimerVisible}
         onAccept={handleAcceptDisclaimer}
       />
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: '#F8FAFC' },
-          headerTintColor: '#0F172A',
-          headerTitleStyle: { fontWeight: '600' },
-          contentStyle: { backgroundColor: '#F1F5F9' },
+          headerStyle: { backgroundColor: colors.navy[900] },
+          headerTintColor: colors.text.inverse,
+          headerTitleStyle: { ...typography.h3, color: colors.text.inverse },
+          headerShadowVisible: false,
+          contentStyle: { backgroundColor: colors.background.screen },
         }}
       >
-        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="search" options={{ title: 'Ürün kodu ara' }} />
         <Stack.Screen name="result" options={{ title: 'Sonuç' }} />
         <Stack.Screen name="equivalents" options={{ title: 'Muadiller' }} />
@@ -70,3 +72,4 @@ export default function RootLayout() {
     </SafeAreaProvider>
   );
 }
+

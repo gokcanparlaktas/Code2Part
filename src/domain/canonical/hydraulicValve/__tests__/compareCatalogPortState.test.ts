@@ -1,3 +1,4 @@
+import { FIELD_LABELS } from '@/domain/canonical/hydraulicValve/hydraulicValveCanonicalDictionary';
 import { buildHydraulicValveCanonicalProfile } from '@/domain/canonical/hydraulicValve/buildHydraulicValveCanonicalProfile';
 import {
   compareSpoolBehaviorByCatalogPortState,
@@ -51,7 +52,7 @@ describe('compareCatalogPortState', () => {
 
   it('identical portState → compatible', () => {
     const result = compareSpoolBehaviorByCatalogPortState({
-      label: 'Sürgü davranışı',
+      label: FIELD_LABELS.spoolFunctionCode,
       sourceField: fieldWithPortState(closedCenter),
       targetField: fieldWithPortState(closedCenter),
       sourceDisplay: 'A',
@@ -63,7 +64,7 @@ describe('compareCatalogPortState', () => {
 
   it('different portState → different', () => {
     const result = compareSpoolBehaviorByCatalogPortState({
-      label: 'Sürgü davranışı',
+      label: FIELD_LABELS.spoolFunctionCode,
       sourceField: fieldWithPortState(closedCenter),
       targetField: fieldWithPortState(openCenter),
       sourceDisplay: 'A',
@@ -75,7 +76,7 @@ describe('compareCatalogPortState', () => {
 
   it('one missing portState → not used, unknownOrCheck placeholder', () => {
     const result = compareSpoolBehaviorByCatalogPortState({
-      label: 'Sürgü davranışı',
+      label: FIELD_LABELS.spoolFunctionCode,
       sourceField: fieldWithPortState(closedCenter),
       targetField: {
         label: 'Merkez tipi',
@@ -102,7 +103,7 @@ describe('compareCatalogPortState', () => {
       requiresCatalogCheck: true,
     };
     const result = compareSpoolBehaviorByCatalogPortState({
-      label: 'Sürgü davranışı',
+      label: FIELD_LABELS.spoolFunctionCode,
       sourceField: empty,
       targetField: empty,
       sourceDisplay: 'A',
@@ -114,7 +115,7 @@ describe('compareCatalogPortState', () => {
 
   it('needsReview on catalog evidence is flagged but does not block compatible', () => {
     const result = compareSpoolBehaviorByCatalogPortState({
-      label: 'Sürgü davranışı',
+      label: FIELD_LABELS.spoolFunctionCode,
       sourceField: fieldWithPortState(closedCenter, true),
       targetField: fieldWithPortState(closedCenter, true),
       sourceDisplay: 'A',
@@ -142,13 +143,15 @@ describe('compareHydraulicValveCanonicalProfiles portState integration', () => {
       'compatible'
     );
 
-    const spool = result.comparisons.find((c) => c.label === 'Sürgü davranışı');
+    const spool = result.comparisons.find((c) => c.label === FIELD_LABELS.spoolFunctionCode);
     expect(spool?.status).toBe('compatible');
     expect(spool?.sourceDisplay).toContain('Kapalı merkez — P, T, A ve B kapalı');
     expect(spool?.targetDisplay).toContain('Kapalı merkez — P, T, A ve B kapalı');
 
     expect(result.portStateCenterResolved).toBe(true);
-    expect(result.comparisons.find((c) => c.label === 'Merkez tipi')).toBeUndefined();
+    expect(
+      result.comparisons.filter((c) => c.label === FIELD_LABELS.spoolFunctionCode).length
+    ).toBe(1);
 
     expect(result.comparisons.find((c) => c.label === 'Konnektör tipi')?.status).toBe(
       'unknownOrCheck'
@@ -158,7 +161,7 @@ describe('compareHydraulicValveCanonicalProfiles portState integration', () => {
     expect(result.warnings.some((w) => w.includes('port durumları'))).toBe(true);
   });
 
-  it('NG6 vs NG10: mounting different downgrades spool to unknownOrCheck even when portStates match', () => {
+  it('NG6 vs NG10: same Rexroth E merkez tipi stays compatible when portStates match', () => {
     const ng6 = buildProfile('4WE6E-6X/EG24N9K4');
     const ng10 = buildProfile('4WE10E-3X/CG24N9K4');
     const result = compareHydraulicValveCanonicalProfiles(ng6, ng10);
@@ -166,8 +169,8 @@ describe('compareHydraulicValveCanonicalProfiles portState integration', () => {
     expect(result.comparisons.find((c) => c.label === 'Montaj standardı')?.status).toBe(
       'different'
     );
-    expect(result.comparisons.find((c) => c.label === 'Sürgü davranışı')?.status).toBe(
-      'unknownOrCheck'
+    expect(result.comparisons.find((c) => c.label === FIELD_LABELS.spoolFunctionCode)?.status).toBe(
+      'compatible'
     );
   });
 });

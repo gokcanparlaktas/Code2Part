@@ -10,12 +10,14 @@ import {
   View,
 } from 'react-native';
 
+import { AppLogo } from '@/components/AppLogo';
+import { HowItWorksHelp } from '@/components/HowItWorksHelp';
 import {
   DEFAULT_SUGGESTION_LIMIT,
   suggestProductsDetailed,
 } from '@/domain/resolver/suggestProducts';
 import type { SuggestedProduct } from '@/types/suggestion';
-
+import { colors, radius, spacing, typography, buttons } from '@/theme';
 import { productCodeResultHref } from '@/utils/productCodeRouteParam';
 
 import { PartialSuggestionsPanel } from './PartialSuggestionsPanel';
@@ -44,7 +46,7 @@ export function ProductCodeSearchCard() {
 
   const { suggestions, hasMoreResults } = suggestionResult;
 
-  const handleSelectSuggestion = (suggestion: SuggestedProduct) => {
+  const handleTrySuggestion = (suggestion: SuggestedProduct) => {
     const hasBoreOnly =
       suggestion.detectedAttributes.boreMm !== undefined &&
       suggestion.missingFields.includes('stroke');
@@ -81,192 +83,210 @@ export function ProductCodeSearchCard() {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.label}>Ürün kodu</Text>
-      <Text style={styles.hint}>
-        Festo, SMC, Parker, Aventics, AirTAC ve benzeri kodları buraya yazın
-      </Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Örn. DSBC-50-100-PPVA-N3"
-        placeholderTextColor="#64748B"
-        value={code}
-        onChangeText={(value) => {
-          setCode(value);
-          setStrokeHint(false);
-        }}
-        autoCapitalize="characters"
-        autoCorrect={false}
-        returnKeyType="search"
-        onSubmitEditing={handleSearch}
-        selectionColor="#1E40AF"
-        underlineColorAndroid="#1E40AF"
-      />
-
-      {suggestions.length > 0 ? (
-        <PartialSuggestionsPanel
-          title="Bunlar olabilir"
-          query={code}
-          suggestions={suggestions}
-          hasMoreResults={hasMoreResults}
-          onSelectSuggestion={handleSelectSuggestion}
-        />
-      ) : null}
-
-      {strokeHint ? (
-        <Text style={styles.strokeHint}>
-          Strok değerini de girerseniz ürün daha net tanımlanır.
-        </Text>
-      ) : null}
-
-      <Pressable
-        style={({ pressed }) => [
-          styles.button,
-          !code.trim() && styles.buttonDisabled,
-          pressed && code.trim() ? styles.buttonPressed : null,
-        ]}
-        onPress={handleSearch}
-        disabled={!code.trim() || isSearching}
-      >
-        {isSearching ? (
-          <ActivityIndicator color="#FFFFFF" />
-        ) : (
-          <Text style={styles.buttonText}>Tanımla ve karşılaştır</Text>
-        )}
-      </Pressable>
-
-      <Link href="/history" asChild>
-        <Pressable style={({ pressed }) => [styles.historyLink, pressed && styles.historyLinkPressed]}>
-          <Text style={styles.historyLinkText}>Son Aramalar</Text>
-        </Pressable>
-      </Link>
-
-      <Text style={styles.examplesTitle}>Hızlı örnekler</Text>
-      <View style={styles.examplesRow}>
-        {EXAMPLES.map((example) => (
-          <Pressable
-            key={example}
-            style={styles.exampleChip}
-            onPress={() => setCode(example)}
-          >
-            <Text style={styles.exampleText}>{example}</Text>
-          </Pressable>
-        ))}
+      <View style={styles.brandHeader}>
+        <View style={styles.brandHeaderRow}>
+          <View style={styles.brandLogoArea}>
+            <AppLogo size="lg" />
+          </View>
+          <HowItWorksHelp />
+        </View>
       </View>
 
+      <View style={styles.body}>
+        <View style={styles.fieldHeader}>
+          <Text style={styles.label}>Ürün kodu</Text>
+          <Text style={styles.hint}>
+            Festo, SMC, Parker, Rexroth, Eaton ve benzeri kodları girin
+          </Text>
+        </View>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Örn. DSBC-50-100-PPVA-N3"
+          placeholderTextColor={colors.text.inverseFaint}
+          value={code}
+          onChangeText={(value) => {
+            setCode(value);
+            setStrokeHint(false);
+          }}
+          autoCapitalize="characters"
+          autoCorrect={false}
+          returnKeyType="search"
+          onSubmitEditing={handleSearch}
+          selectionColor={colors.accent.blue}
+          underlineColorAndroid={colors.accent.blueDark}
+        />
+
+        {suggestions.length > 0 ? (
+          <PartialSuggestionsPanel
+            title="Bunlar olabilir"
+            query={code}
+            suggestions={suggestions}
+            hasMoreResults={hasMoreResults}
+            onTrySuggestion={handleTrySuggestion}
+          />
+        ) : null}
+
+        {strokeHint ? (
+          <Text style={styles.strokeHint}>
+            Strok değerini de girerseniz ürün daha net tanımlanır.
+          </Text>
+        ) : null}
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.button,
+            !code.trim() && styles.buttonDisabled,
+            pressed && code.trim() ? styles.buttonPressed : null,
+          ]}
+          onPress={handleSearch}
+          disabled={!code.trim() || isSearching}
+        >
+          {isSearching ? (
+            <ActivityIndicator color={colors.text.inverse} />
+          ) : (
+            <Text style={styles.buttonText}>Tanımla ve karşılaştır</Text>
+          )}
+        </Pressable>
+
+        <Link href="/history" asChild>
+          <Pressable
+            style={({ pressed }) => [styles.historyLink, pressed && styles.historyLinkPressed]}
+          >
+            <Text style={styles.historyLinkText}>Son Aramalar</Text>
+          </Pressable>
+        </Link>
+
+        <View style={styles.examplesSection}>
+          <Text style={styles.examplesTitle}>Hızlı örnekler</Text>
+          <View style={styles.examplesRow}>
+            {EXAMPLES.map((example) => (
+              <Pressable
+                key={example}
+                style={({ pressed }) => [styles.exampleChip, pressed && styles.exampleChipPressed]}
+                onPress={() => setCode(example)}
+              >
+                <Text style={styles.exampleText}>{example}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#CBD5E1',
-    borderRadius: 16,
+    backgroundColor: colors.background.card,
+    borderColor: colors.border.accentLight,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    gap: 12,
-    padding: 20,
-    ...Platform.select({
-      android: { elevation: 4 },
-      ios: {
-        shadowColor: '#0F172A',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-      },
-      default: {},
-    }),
+    overflow: 'hidden',
+  },
+  brandHeader: {
+    backgroundColor: colors.background.navy,
+    borderBottomColor: colors.border.default,
+    borderBottomWidth: 1,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
+  },
+  brandHeaderRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  brandLogoArea: {
+    flex: 1,
+    paddingRight: spacing.md,
+  },
+  body: {
+    backgroundColor: colors.background.card,
+    gap: spacing.md,
+    padding: spacing.xl,
+  },
+  fieldHeader: {
+    gap: spacing.xs,
   },
   label: {
-    color: '#0F172A',
-    fontSize: 18,
-    fontWeight: '700',
+    ...typography.h2,
+    color: colors.text.inverse,
   },
   hint: {
-    color: '#64748B',
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: -4,
+    ...typography.bodySm,
+    color: colors.text.inverseMuted,
   },
   strokeHint: {
-    color: '#1E40AF',
-    fontSize: 14,
+    ...typography.bodySm,
+    color: colors.accent.blueLight,
     fontWeight: '600',
-    lineHeight: 20,
   },
   input: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#1E40AF',
-    borderRadius: 12,
-    borderWidth: 2,
-    color: '#0F172A',
+    backgroundColor: colors.background.input,
+    borderColor: colors.border.default,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    color: colors.text.inverse,
     fontSize: 17,
     fontWeight: '600',
-    minHeight: 56,
-    paddingHorizontal: 16,
-    paddingVertical: Platform.OS === 'ios' ? 16 : 12,
-    ...Platform.select({
-      android: { elevation: 0 },
-      default: {},
-    }),
+    minHeight: 52,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: Platform.OS === 'ios' ? 14 : 10,
   },
   button: {
-    alignItems: 'center',
-    backgroundColor: '#1E40AF',
-    borderRadius: 12,
-    marginTop: 4,
-    paddingVertical: 16,
+    ...buttons.primary,
+    marginTop: spacing.xs,
   },
-  buttonDisabled: {
-    backgroundColor: '#94A3B8',
-  },
-  buttonPressed: {
-    opacity: 0.9,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  buttonDisabled: buttons.primaryDisabled,
+  buttonPressed: buttons.primaryPressed,
+  buttonText: buttons.primaryText,
   historyLink: {
-    alignItems: 'center',
     alignSelf: 'flex-start',
-    borderColor: '#CBD5E1',
-    borderRadius: 999,
+    borderColor: colors.border.default,
+    borderRadius: radius.sm,
     borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   historyLinkPressed: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: colors.background.elevated,
   },
   historyLinkText: {
-    color: '#1E40AF',
-    fontSize: 14,
-    fontWeight: '600',
+    color: colors.text.inverseMuted,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  examplesSection: {
+    borderTopColor: colors.border.subtle,
+    borderTopWidth: 1,
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+    paddingTop: spacing.md,
   },
   examplesTitle: {
-    color: '#475569',
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 4,
+    ...typography.sectionTitle,
+    color: colors.text.inverseFaint,
   },
   examplesRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: spacing.sm,
   },
   exampleChip: {
-    backgroundColor: '#E2E8F0',
-    borderColor: '#94A3B8',
-    borderRadius: 999,
+    backgroundColor: colors.background.elevated,
+    borderColor: colors.border.default,
+    borderRadius: radius.sm,
     borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  exampleChipPressed: {
+    backgroundColor: colors.navy[600],
+    borderColor: colors.border.strong,
   },
   exampleText: {
-    color: '#1E293B',
-    fontSize: 12,
+    ...typography.caption,
+    color: colors.text.inverseMuted,
     fontWeight: '600',
   },
 });

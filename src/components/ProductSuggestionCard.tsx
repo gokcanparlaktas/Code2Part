@@ -1,8 +1,13 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { MatchPercentageRing } from '@/components/common/MatchPercentageRing';
+import {
+  formatSuggestionMissingStatus,
+  isSeriesNameOnlySuggestion,
+} from '@/domain/presentation/suggestionDisplay';
 import { matchPercentageFromSuggestion } from '@/domain/scoring/suggestionMatchPercentage';
 import type { SuggestedProduct } from '@/types/suggestion';
+import { colors, radius, spacing, typography } from '@/theme';
 
 interface ProductSuggestionCardProps {
   query: string;
@@ -10,28 +15,10 @@ interface ProductSuggestionCardProps {
   onPress: () => void;
 }
 
-const MISSING_FIELD_LABELS: Record<SuggestedProduct['missingFields'][number], string> = {
-  bore: 'çap',
-  stroke: 'strok',
-  options: 'seçenekler',
-  spool_function: 'sürgü/fonksiyon',
-  coil_voltage: 'bobin voltajı',
-  connector: 'konnektör',
-  flow_pressure: 'basınç/debi',
-  manual_override: 'manuel kumanda',
-  seal_material: 'conta',
-};
-
-function formatMissing(fields: SuggestedProduct['missingFields']): string {
-  if (fields.length === 0) {
-    return 'Eksik alan yok';
-  }
-  return `Eksik: ${fields.map((f) => MISSING_FIELD_LABELS[f] ?? f).join(', ')}`;
-}
-
 export function ProductSuggestionCard({ query, suggestion, onPress }: ProductSuggestionCardProps) {
   const { detectedAttributes } = suggestion;
   const isExactCodeMatch = suggestion.matchedBy === 'exact_match';
+  const isSeriesFound = isSeriesNameOnlySuggestion(suggestion);
   const matchPercentage = matchPercentageFromSuggestion(query, suggestion);
   const modelCode = suggestion.exampleCodeFormat?.trim() ?? '';
 
@@ -42,12 +29,10 @@ export function ProductSuggestionCard({ query, suggestion, onPress }: ProductSug
     >
       <View style={styles.headerRow}>
         <View style={styles.headerText}>
-          <Text style={styles.title}>
-            {suggestion.brand}
-          </Text>
+          <Text style={styles.title}>{suggestion.brand}</Text>
           {modelCode ? (
             <Text style={styles.modelLine}>
-              <Text style={styles.modelLabel}>Model: </Text>
+              <Text style={styles.modelLabel}>Model </Text>
               {modelCode}
             </Text>
           ) : null}
@@ -66,25 +51,28 @@ export function ProductSuggestionCard({ query, suggestion, onPress }: ProductSug
       ) : null}
 
       {!isExactCodeMatch ? (
-        <Text style={styles.missing}>{formatMissing(suggestion.missingFields)}</Text>
+        <Text style={isSeriesFound ? styles.seriesFound : styles.missing}>
+          {formatSuggestionMissingStatus(suggestion)}
+        </Text>
       ) : null}
       <Text style={styles.hint}>{suggestion.suggestionTextTr}</Text>
+      <Text style={styles.detailHint}>Detay için dokunun</Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#F8FAFC',
-    borderColor: '#CBD5E1',
-    borderRadius: 12,
+    backgroundColor: colors.background.elevated,
+    borderColor: colors.border.default,
+    borderRadius: radius.md,
     borderWidth: 1,
-    gap: 6,
-    padding: 14,
+    gap: spacing.xs,
+    padding: spacing.md,
   },
   cardPressed: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#93C5FD',
+    backgroundColor: colors.navy[600],
+    borderColor: colors.accent.blue,
   },
   headerRow: {
     alignItems: 'flex-start',
@@ -93,40 +81,53 @@ const styles = StyleSheet.create({
   },
   headerText: {
     flex: 1,
-    paddingRight: 8,
+    paddingRight: spacing.sm,
   },
   title: {
-    color: '#0F172A',
-    fontSize: 16,
-    fontWeight: '700',
+    ...typography.h3,
+    color: colors.surface.text,
   },
   modelLine: {
-    color: '#1E40AF',
+    ...typography.code,
+    color: colors.accent.blueLight,
     fontSize: 13,
-    fontWeight: '600',
     marginTop: 2,
   },
   modelLabel: {
-    color: '#64748B',
+    color: colors.surface.textMuted,
+    fontFamily: undefined,
     fontWeight: '600',
   },
   meta: {
-    color: '#475569',
-    fontSize: 14,
+    ...typography.bodySm,
+    color: colors.surface.textSecondary,
   },
   detected: {
-    color: '#1E40AF',
-    fontSize: 14,
+    ...typography.bodySm,
+    color: colors.accent.blueLight,
     fontWeight: '600',
   },
   missing: {
-    color: '#B45309',
+    ...typography.caption,
+    color: colors.match.medium,
+    fontWeight: '600',
+  },
+  seriesFound: {
+    ...typography.caption,
+    color: colors.accent.greenBright,
     fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
   hint: {
-    color: '#64748B',
-    fontSize: 13,
-    lineHeight: 18,
+    ...typography.caption,
+    color: colors.surface.textMuted,
     marginTop: 2,
+  },
+  detailHint: {
+    ...typography.caption,
+    color: colors.accent.blueLight,
+    fontWeight: '600',
+    marginTop: spacing.xs,
   },
 });

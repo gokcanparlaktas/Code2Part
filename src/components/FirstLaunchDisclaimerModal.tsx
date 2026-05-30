@@ -11,6 +11,7 @@ import {
   APP_DISCLAIMER_ACCEPT_LABEL,
   APP_DISCLAIMER_PARAGRAPHS,
 } from '@/services/appDisclaimerContent';
+import { colors, radius, spacing, typography, buttons } from '@/theme';
 
 interface FirstLaunchDisclaimerModalProps {
   visible: boolean;
@@ -25,7 +26,9 @@ export function FirstLaunchDisclaimerModal({
     <Modal visible={visible} animationType="fade" transparent onRequestClose={() => {}}>
       <View style={styles.backdrop}>
         <View style={styles.card}>
-          <Text style={styles.title}>Önemli bilgilendirme</Text>
+          <View style={styles.titleBar}>
+            <Text style={styles.title}>Önemli bilgilendirme</Text>
+          </View>
           <ScrollView
             style={styles.scroll}
             contentContainerStyle={styles.scrollContent}
@@ -53,50 +56,50 @@ export function FirstLaunchDisclaimerModal({
 const styles = StyleSheet.create({
   backdrop: {
     alignItems: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    backgroundColor: 'rgba(10, 22, 40, 0.72)',
     flex: 1,
     justifyContent: 'center',
-    padding: 20,
+    padding: spacing.xl,
   },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
+    backgroundColor: colors.background.card,
+    borderColor: colors.border.subtle,
+    borderRadius: radius.lg,
+    borderWidth: 1,
     maxHeight: '85%',
     maxWidth: 520,
-    padding: 20,
+    overflow: 'hidden',
     width: '100%',
   },
+  titleBar: {
+    backgroundColor: colors.navy[900],
+    borderBottomColor: colors.border.navy,
+    borderBottomWidth: 1,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
+  },
   title: {
-    color: '#0F172A',
-    fontSize: 20,
-    fontWeight: '800',
-    marginBottom: 12,
+    ...typography.h1,
+    color: colors.text.inverse,
   },
   scroll: {
     maxHeight: 420,
   },
   scrollContent: {
-    gap: 14,
-    paddingBottom: 8,
+    gap: spacing.md,
+    padding: spacing.xl,
+    paddingBottom: spacing.sm,
   },
   paragraph: {
-    color: '#334155',
-    fontSize: 15,
-    lineHeight: 23,
+    ...typography.body,
+    color: colors.surface.textSecondary,
   },
   button: {
-    alignItems: 'center',
-    backgroundColor: '#1E40AF',
-    borderRadius: 12,
-    marginTop: 16,
-    paddingVertical: 14,
+    ...buttons.primary,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.xl,
+    paddingVertical: spacing.md,
   },
-  buttonPressed: {
-    opacity: 0.92,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  buttonPressed: buttons.primaryPressed,
+  buttonText: buttons.primaryText,
 });

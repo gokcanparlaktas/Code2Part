@@ -305,7 +305,7 @@ export function compareHydraulicValveBehaviorProfiles(
 
   if (requiresCatalogCheck) {
     result.warnings.push(
-      'Sürgü davranışı ve bobin seçenekleri katalog sembolleriyle doğrulanmalıdır.'
+      'Merkez tipi ve bobin seçenekleri katalog sembolleriyle doğrulanmalıdır.'
     );
   }
 
@@ -433,7 +433,7 @@ export function compareHydraulicValveBehaviorProfiles(
     if (sameCenter && samePositions && sameCentering) {
       result.crossBrandSimilarBehavior = true;
       result.warnings.push(
-        'Sürgü davranışı benzer olabilir. Katalog sembolüyle doğrulanmalıdır.'
+        'Merkez tipi benzer olabilir. Katalog sembolüyle doğrulanmalıdır.'
       );
     }
 

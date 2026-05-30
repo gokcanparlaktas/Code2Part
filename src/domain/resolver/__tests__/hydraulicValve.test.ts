@@ -89,8 +89,8 @@ describe("hydraulic_valve category", () => {
     // Generic plug-in vs specific DIN connector requires catalog check, not a hard mismatch
     expect(checkFields).toContain("Konnektör tipi");
     // Cross-manufacturer spool: compatible by catalog portState, with candidate review warning
-    expect(compatibleLabels).toContain("Sürgü davranışı");
-    expect(checkFields).not.toContain("Sürgü sembolü / fonksiyon");
+    expect(compatibleLabels).toContain("Merkez tipi");
+    expect(checkFields).not.toContain("Merkez tipi");
     expect(
       result.warnings.some((w) =>
         w.includes("Sipariş öncesi katalog, uygulama basıncı/debisi")

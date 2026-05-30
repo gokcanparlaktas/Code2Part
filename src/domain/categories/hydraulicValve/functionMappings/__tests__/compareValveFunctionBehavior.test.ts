@@ -1,3 +1,4 @@
+import { FIELD_LABELS } from '@/domain/canonical/hydraulicValve/hydraulicValveCanonicalDictionary';
 import { compareValveFunctionBehavior } from "@/domain/categories/hydraulicValve/functionMappings/compareValveFunctionBehavior";
 import { compareProducts } from "@/domain/resolver/compareProducts";
 import {
@@ -12,7 +13,7 @@ function compare(options: {
   target: { manufacturer: string; series: string; token: string };
 }) {
   return compareValveFunctionBehavior({
-    label: "Sürgü davranışı",
+    label: FIELD_LABELS.spoolFunctionCode,
     source: options.source,
     target: options.target,
   });
@@ -137,11 +138,11 @@ describe("compareValveFunctionBehavior", () => {
       calculateMatchPercentage(differentCenter).percentage;
 
     expect(
-      sameFunction.compatible.some((c) => c.label === "Sürgü davranışı"),
+      sameFunction.compatible.some((c) => c.label === FIELD_LABELS.spoolFunctionCode),
     ).toBe(true);
     expect(
       differentCenter.different.some(
-        (c) => c.label === "Sürgü davranışı",
+        (c) => c.label === FIELD_LABELS.spoolFunctionCode,
       ),
     ).toBe(true);
     expect(differentCenterScore).toBeLessThan(sameFunctionScore);
@@ -169,7 +170,7 @@ describe("compareValveFunctionBehavior", () => {
 
     expect(calculateMatchPercentage(result).percentage).toBeLessThan(100);
     expect(
-      result.compatible.some((c) => c.label === "Sürgü davranışı"),
+      result.compatible.some((c) => c.label === FIELD_LABELS.spoolFunctionCode),
     ).toBe(true);
     expect(
       result.warnings.some((w) =>

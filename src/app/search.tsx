@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet } from 'react-native';
 
 import { ProductCodeSearchCard } from '@/components/ProductCodeSearchCard';
+import { colors, spacing } from '@/theme';
 
 export default function SearchScreen() {
   return (
@@ -17,9 +18,9 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   scroll: {
     flex: 1,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: colors.background.screen,
   },
   content: {
-    padding: 20,
+    padding: spacing.xl,
   },
 });

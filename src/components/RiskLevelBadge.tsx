@@ -2,18 +2,19 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import type { RiskLevel } from '@/types/compatibility';
 import type { EquivalenceStatusTone } from '@/domain/presentation/formatCompatibilityMetadata';
+import { colors, radius, spacing, typography } from '@/theme';
 import { formatRiskLevel } from '@/utils/formatRisk';
 
-const COLORS: Record<RiskLevel, { bg: string; text: string }> = {
-  low: { bg: '#DCFCE7', text: '#166534' },
-  medium: { bg: '#FEF3C7', text: '#92400E' },
-  high: { bg: '#FEE2E2', text: '#991B1B' },
+const RISK_COLORS: Record<RiskLevel, { bg: string; text: string; border: string }> = {
+  low: colors.status.success,
+  medium: colors.status.warning,
+  high: colors.status.danger,
 };
 
-const TONE_COLORS: Record<EquivalenceStatusTone, { bg: string; text: string }> = {
-  positive: { bg: '#DCFCE7', text: '#166534' },
-  caution: { bg: '#FEF3C7', text: '#92400E' },
-  danger: { bg: '#FEE2E2', text: '#991B1B' },
+const TONE_COLORS: Record<EquivalenceStatusTone, { bg: string; text: string; border: string }> = {
+  positive: colors.status.success,
+  caution: colors.status.warning,
+  danger: colors.status.danger,
 };
 
 interface RiskLevelBadgeProps {
@@ -29,7 +30,7 @@ export function RiskLevelBadge({ riskLevel, label, tone }: RiskLevelBadgeProps) 
     label && tone
       ? TONE_COLORS[tone]
       : riskLevel
-        ? COLORS[riskLevel]
+        ? RISK_COLORS[riskLevel]
         : TONE_COLORS.caution;
 
   if (!displayLabel) {
@@ -37,7 +38,12 @@ export function RiskLevelBadge({ riskLevel, label, tone }: RiskLevelBadgeProps) 
   }
 
   return (
-    <View style={[styles.badge, { backgroundColor: palette.bg }]}>
+    <View
+      style={[
+        styles.badge,
+        { backgroundColor: palette.bg, borderColor: palette.border },
+      ]}
+    >
       <Text style={[styles.text, { color: palette.text }]}>{displayLabel}</Text>
     </View>
   );
@@ -46,12 +52,15 @@ export function RiskLevelBadge({ riskLevel, label, tone }: RiskLevelBadgeProps) 
 const styles = StyleSheet.create({
   badge: {
     alignSelf: 'flex-start',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
   },
   text: {
-    fontSize: 14,
+    ...typography.caption,
     fontWeight: '700',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
 });

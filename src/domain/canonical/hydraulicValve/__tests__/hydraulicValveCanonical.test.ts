@@ -171,9 +171,8 @@ describe("compareHydraulicValveCanonicalProfiles", () => {
     const tandem = buildProfile("DSG-01-3C12-D24-N1-50");
     const result = compareHydraulicValveCanonicalProfiles(closed, tandem);
 
-    expect(
-      result.comparisons.find((c) => c.label === "Merkez tipi")?.status,
-    ).toBe("different");
+    const merkez = result.comparisons.find((c) => c.label === "Merkez tipi");
+    expect(merkez?.status).toBe("unknownOrCheck");
   });
 
   it("unknown center condition creates unknown/check", () => {

@@ -102,18 +102,48 @@ describe('calculateSuggestionMatchPercentage', () => {
     expect(calculateSuggestionMatchPercentage(FULL_DSBC, FULL_DSBC).level).toBe('high');
   });
 
-  it('scores low for "ds" when suggestion only has prefix DSBC', () => {
+  it('scores partial series prefix against series code, not full catalog example', () => {
     const match = matchPercentageFromSuggestion(
       'ds',
       stubSuggestion({
         seriesId: 'festo_dsbc',
         series: 'DSBC',
         exampleCodeFormat: 'DSBC',
+        matchedBy: 'series_prefix',
       })
     );
-    expect(match.percentage).toBe(13);
-    expect(match.percentage).not.toBe(50);
-    expect(match.level).toBe('low');
+    expect(match.percentage).toBe(50);
+    expect(match.level).toBe('medium');
+  });
+
+  it('returns 100% for exact series code match', () => {
+    const match = matchPercentageFromSuggestion(
+      '4WE6',
+      stubSuggestion({
+        seriesId: 'rexroth_4we6',
+        series: '4WE6',
+        exampleCodeFormat: '4WE6',
+        matchedBy: 'series_prefix',
+        missingFields: [],
+      })
+    );
+    expect(match.percentage).toBe(100);
+    expect(match.level).toBe('high');
+  });
+
+  it('scores partial Rexroth series prefix by typed share of series code', () => {
+    const match = matchPercentageFromSuggestion(
+      '4WE',
+      stubSuggestion({
+        seriesId: 'rexroth_4we6',
+        series: '4WE6',
+        exampleCodeFormat: '4WE6',
+        matchedBy: 'series_prefix',
+        missingFields: [],
+      })
+    );
+    expect(match.percentage).toBe(75);
+    expect(match.level).toBe('high');
   });
 
   it('returns 100% when query equals suggestion example code', () => {

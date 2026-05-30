@@ -1,3 +1,4 @@
+import { FIELD_LABELS } from '@/domain/canonical/hydraulicValve/hydraulicValveCanonicalDictionary';
 import { getTechnicalAttributes } from '@/domain/attributes/getTechnicalAttributes';
 import { catalogSpoolPortStatesMatch } from '@/domain/canonical/hydraulicValve/catalogDataProfileBridge';
 import { buildHydraulicValveCanonicalProfile } from '@/domain/canonical/hydraulicValve/buildHydraulicValveCanonicalProfile';
@@ -110,7 +111,7 @@ describe('catalogDataProfileBridge (Phase B)', () => {
       expect(catalogSpoolPortStatesMatch(rexroth, yuken)).toBe(true);
 
       const result = compareHydraulicValveCanonicalProfiles(rexroth, yuken);
-      const spool = result.comparisons.find((c) => c.label === 'Sürgü davranışı');
+      const spool = result.comparisons.find((c) => c.label === FIELD_LABELS.spoolFunctionCode);
       expect(spool?.status).toBe('compatible');
     });
   });

@@ -294,6 +294,6 @@ describe('calculateMatchPercentage', () => {
           ],
         })
       ).color
-    ).toBe('#16A34A');
+    ).toBe('#059669');
   });
 });

@@ -1,15 +1,18 @@
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { getSuggestionReactKey, type SuggestedProduct } from '@/types/suggestion';
+import { colors, spacing, typography } from '@/theme';
 
 import { ProductSuggestionCard } from './ProductSuggestionCard';
+import { ProductSuggestionDetailsModal } from './ProductSuggestionDetailsModal';
 
 interface PartialSuggestionsPanelProps {
   title: string;
   query: string;
   suggestions: SuggestedProduct[];
   hasMoreResults?: boolean;
-  onSelectSuggestion?: (suggestion: SuggestedProduct) => void;
+  onTrySuggestion?: (suggestion: SuggestedProduct) => void;
 }
 
 export function PartialSuggestionsPanel({
@@ -17,8 +20,10 @@ export function PartialSuggestionsPanel({
   query,
   suggestions,
   hasMoreResults = false,
-  onSelectSuggestion,
+  onTrySuggestion,
 }: PartialSuggestionsPanelProps) {
+  const [selectedSuggestion, setSelectedSuggestion] = useState<SuggestedProduct | null>(null);
+
   if (suggestions.length === 0) {
     return null;
   }
@@ -32,7 +37,7 @@ export function PartialSuggestionsPanel({
             key={getSuggestionReactKey(suggestion)}
             query={query}
             suggestion={suggestion}
-            onPress={() => onSelectSuggestion?.(suggestion)}
+            onPress={() => setSelectedSuggestion(suggestion)}
           />
         ))}
       </View>
@@ -41,27 +46,39 @@ export function PartialSuggestionsPanel({
           Daha fazla sonuç var; aramayı daraltarak listeleyebilirsiniz.
         </Text>
       ) : null}
+
+      <ProductSuggestionDetailsModal
+        visible={selectedSuggestion !== null}
+        suggestion={selectedSuggestion}
+        query={query}
+        onClose={() => setSelectedSuggestion(null)}
+        onTry={
+          onTrySuggestion
+            ? (suggestion) => {
+                setSelectedSuggestion(null);
+                onTrySuggestion(suggestion);
+              }
+            : undefined
+        }
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   panel: {
-    gap: 12,
+    gap: spacing.md,
   },
   title: {
-    color: '#0F172A',
-    fontSize: 17,
-    fontWeight: '700',
-    lineHeight: 24,
+    ...typography.sectionTitle,
+    color: colors.surface.textMuted,
   },
   list: {
-    gap: 10,
+    gap: spacing.sm,
   },
   moreResultsHint: {
-    color: '#64748B',
-    fontSize: 13,
+    ...typography.caption,
+    color: colors.surface.textMuted,
     fontStyle: 'italic',
-    lineHeight: 18,
   },
 });
