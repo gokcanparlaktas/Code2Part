@@ -27,8 +27,11 @@
   "devDependencies": {
     "@types/jest": "29.5.14",
     "@types/react": "~19.1.0",
+    "dotenv": "^17.4.2",
+    "firebase-admin": "^13.4.0",
     "jest": "^29.7.0",
     "jest-expo": "~54.0.0",
+    "tsx": "^4.20.3",
     "typescript": "~5.9.2"
   },
   "scripts": {
@@ -40,7 +43,9 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "catalog-data:import": "tsx scripts/catalog-data-firestore/cli.ts",
+    "catalog-data:import:dry-run": "tsx scripts/catalog-data-firestore/cli.ts --dry-run"
   },
   "private": true,
   "overrides": {
