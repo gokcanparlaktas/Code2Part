@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 
-import { cert, deleteApp, getApps, initializeApp } from 'firebase-admin/app';
+import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
 import {
@@ -28,9 +28,34 @@ import {
 } from '../../../scripts/catalog-data-firestore/verifyFirestoreCatalogReadback';
 
 export interface FirestoreCatalogProviderConfig {
-  projectId: string;
-  serviceAccountPath: string;
+  projectId?: string;
+  serviceAccountPath?: string;
   catalogVersion?: string;
+}
+
+async function ensureFirebaseApp(config: FirestoreCatalogProviderConfig): Promise<void> {
+  if (getApps().length > 0) {
+    return;
+  }
+
+  if (config.serviceAccountPath) {
+    const serviceAccount = JSON.parse(
+      readFileSync(config.serviceAccountPath, 'utf8')
+    ) as { project_id?: string };
+
+    initializeApp({
+      credential: cert(serviceAccount),
+      projectId: config.projectId ?? serviceAccount.project_id,
+    });
+    return;
+  }
+
+  initializeApp(config.projectId ? { projectId: config.projectId } : undefined);
+}
+
+async function createFirestoreDb(config: FirestoreCatalogProviderConfig) {
+  await ensureFirebaseApp(config);
+  return getFirestore();
 }
 
 const RUNTIME_PAYLOAD_KEYS: Record<string, PayloadCacheKey> = {
@@ -58,23 +83,6 @@ type PayloadCacheKey =
   | 'yukenDshgParserSpec'
   | 'yukenDshgConnectorVoltage';
 
-async function createFirestoreDb(config: FirestoreCatalogProviderConfig) {
-  const serviceAccount = JSON.parse(
-    readFileSync(config.serviceAccountPath, 'utf8')
-  ) as { project_id?: string };
-
-  for (const app of getApps()) {
-    await deleteApp(app);
-  }
-
-  initializeApp({
-    credential: cert(serviceAccount),
-    projectId: config.projectId,
-  });
-
-  return getFirestore();
-}
-
 export class FirestoreCatalogProvider implements CatalogDataProvider {
   catalogVersion?: string;
 
@@ -82,6 +90,10 @@ export class FirestoreCatalogProvider implements CatalogDataProvider {
   private initialized = false;
 
   constructor(private readonly config: FirestoreCatalogProviderConfig) {}
+
+  isInitialized(): boolean {
+    return this.initialized;
+  }
 
   async initialize(): Promise<void> {
     if (this.initialized) {

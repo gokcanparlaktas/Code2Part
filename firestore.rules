@@ -3,18 +3,15 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /catalogData/{document=**} {
-      allow read: if true;
-      allow write: if false;
+      allow read, write: if false;
     }
 
     match /catalogDataMeta/{document=**} {
-      allow read: if true;
-      allow write: if false;
+      allow read, write: if false;
     }
 
     match /catalogDataReleases/{document=**} {
-      allow read: if true;
-      allow write: if false;
+      allow read, write: if false;
     }
 
     match /{document=**} {
