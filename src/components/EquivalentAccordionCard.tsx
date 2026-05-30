@@ -26,6 +26,7 @@ import { SeverityBadge } from "./SeverityBadge";
 interface EquivalentAccordionCardProps {
   result: CompatibilityResult;
   expanded: boolean;
+  loading?: boolean;
   onToggle: () => void;
 }
 
@@ -132,6 +133,7 @@ function CheckItemsGroup({
 export function EquivalentAccordionCard({
   result,
   expanded,
+  loading = false,
   onToggle,
 }: EquivalentAccordionCardProps) {
   const { candidate, summary } = result;
@@ -196,6 +198,9 @@ export function EquivalentAccordionCard({
 
       {expanded ? (
         <View style={styles.body}>
+          {loading ? (
+            <Text style={styles.loadingText}>Detaylı karşılaştırma yükleniyor…</Text>
+          ) : null}
           <View style={styles.riskBadgeRow}>
             <RiskLevelBadge
               riskLevel={result.metadata ? undefined : summary.riskLevel}
@@ -353,6 +358,11 @@ const styles = StyleSheet.create({
     color: "#475569",
     fontSize: 15,
     lineHeight: 22,
+  },
+  loadingText: {
+    color: "#64748B",
+    fontSize: 14,
+    fontStyle: "italic",
   },
   section: {
     gap: 10,

@@ -238,6 +238,16 @@ export function calculateRawMatchScore(result: CompatibilityResult): number {
 export function calculateMatchPercentage(
   result: CompatibilityResult
 ): MatchPercentageResult {
+  if (typeof result.serverMatchPercentage === 'number') {
+    const percentage = clampMatchPercentage(result.serverMatchPercentage);
+    const level = resolveMatchPercentageLevel(percentage);
+    return {
+      percentage,
+      level,
+      color: LEVEL_COLORS[level],
+    };
+  }
+
   const percentage = calculateRawMatchScore(result);
   const level = resolveMatchPercentageLevel(percentage);
 

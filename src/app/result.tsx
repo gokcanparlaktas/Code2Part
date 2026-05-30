@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { DemoDisclaimerNote } from '@/components/DemoDisclaimerNote';
 import { EvidenceDetails } from '@/components/EvidenceDetails';
@@ -11,8 +11,8 @@ import { PartialSuggestionsPanel } from '@/components/PartialSuggestionsPanel';
 import { TechnicalAttributesCard } from '@/components/TechnicalAttributesCard';
 import { UnresolvedResultCard } from '@/components/UnresolvedResultCard';
 import { calculateProductReliability } from '@/domain/reliability/calculateProductReliability';
-import { resolveProductSearch } from '@/domain/resolver/resolveProductSearch';
 import { suggestProducts } from '@/domain/resolver/suggestProducts';
+import { useResolvedProductSearch } from '@/hooks/useResolvedProductSearch';
 import {
   isUnresolvedSaved,
   recordSearch,
@@ -28,24 +28,38 @@ export default function ResultScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
   const inputCode = decodeProductCodeFromRoute(code);
   const [alreadySaved, setAlreadySaved] = useState(false);
+  const { loading, errorMessage, data } = useResolvedProductSearch(inputCode);
 
-  const { identification, hasEquivalents, isUnresolved, suggestions } = useMemo(() => {
-    const resolved = resolveProductSearch(inputCode);
-    const unresolved =
-      resolved.identification.outcome === 'not_found' ||
-      resolved.identification.outcome === 'series_only';
-    const partialSuggestions = unresolved ? suggestProducts(inputCode) : [];
+  const { identification, hasEquivalents, isUnresolved, suggestions, productDetailRows, source } =
+    useMemo(() => {
+      if (!data) {
+        return {
+          identification: null,
+          hasEquivalents: false,
+          isUnresolved: false,
+          suggestions: [],
+          productDetailRows: [],
+          source: 'local' as const,
+        };
+      }
 
-    return {
-      identification: resolved.identification,
-      hasEquivalents: resolved.hasEquivalents,
-      isUnresolved: unresolved,
-      suggestions: partialSuggestions,
-    };
-  }, [inputCode]);
+      const unresolved =
+        data.identification.outcome === 'not_found' ||
+        data.identification.outcome === 'series_only';
+      const partialSuggestions = unresolved ? suggestProducts(inputCode) : [];
+
+      return {
+        identification: data.identification,
+        hasEquivalents: data.hasEquivalents,
+        isUnresolved: unresolved,
+        suggestions: partialSuggestions,
+        productDetailRows: data.productDetailRows,
+        source: data.source,
+      };
+    }, [data, inputCode]);
 
   useEffect(() => {
-    if (!inputCode) {
+    if (!inputCode || !identification) {
       return;
     }
 
@@ -57,18 +71,25 @@ export default function ResultScreen() {
   }, [inputCode, identification, isUnresolved]);
 
   const reliability = useMemo(
-    () => calculateProductReliability(identification),
+    () => (identification ? calculateProductReliability(identification) : null),
     [identification]
   );
-  const showLowConfidence = !isUnresolved && reliability.isLowConfidence;
+  const showLowConfidence = Boolean(
+    reliability && !isUnresolved && reliability.isLowConfidence
+  );
   const showSeriesReliabilityNote =
-    !isUnresolved && isSeriesDataUnverified(identification.seriesId);
+    Boolean(identification) &&
+    !isUnresolved &&
+    isSeriesDataUnverified(identification!.seriesId);
 
   const openEquivalents = () => {
     router.push(productCodeEquivalentsHref(inputCode));
   };
 
   const handleSaveUnresolved = async () => {
+    if (!identification) {
+      return;
+    }
     await saveUnresolvedSearch(
       identification.inputCode,
       identification.normalizedCode
@@ -83,6 +104,30 @@ export default function ResultScreen() {
         <Text style={styles.emptyText}>
           Ana ekrandan bir ürün kodu yazıp aramayı tekrar deneyin.
         </Text>
+        <Pressable
+          style={({ pressed }) => [styles.backButton, pressed && styles.buttonPressed]}
+          onPress={() => router.replace('/')}
+        >
+          <Text style={styles.backButtonText}>Ana ekrana dön</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#1E40AF" />
+        <Text style={styles.loadingText}>Ürün kodu çözümleniyor…</Text>
+      </View>
+    );
+  }
+
+  if (errorMessage || !identification || !reliability) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.errorTitle}>Sonuç alınamadı</Text>
+        <Text style={styles.emptyText}>{errorMessage ?? 'Bilinmeyen hata'}</Text>
         <Pressable
           style={({ pressed }) => [styles.backButton, pressed && styles.buttonPressed]}
           onPress={() => router.replace('/')}
@@ -136,6 +181,7 @@ export default function ResultScreen() {
           <ProductCard
             identification={identification}
             noticeText={reliability.seriesOnlyNoticeTr}
+            detailRows={productDetailRows}
           />
 
           {showSeriesReliabilityNote ? (
@@ -144,8 +190,11 @@ export default function ResultScreen() {
 
           {identification.outcome === 'full' ? (
             <>
-              <TechnicalAttributesCard identification={identification} />
-              <EvidenceDetails identification={identification} />
+              <TechnicalAttributesCard
+                identification={identification}
+                detailRows={productDetailRows}
+              />
+              {source === 'local' ? <EvidenceDetails identification={identification} /> : null}
             </>
           ) : null}
 
@@ -182,6 +231,17 @@ const styles = StyleSheet.create({
     gap: 16,
     padding: 20,
     paddingBottom: 40,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+    justifyContent: 'center',
+    padding: 24,
+  },
+  loadingText: {
+    color: '#64748B',
+    fontSize: 16,
   },
   partialIntro: {
     color: '#0F172A',
@@ -222,6 +282,12 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     color: '#0F172A',
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  errorTitle: {
+    color: '#9A3412',
     fontSize: 18,
     fontWeight: '700',
     textAlign: 'center',

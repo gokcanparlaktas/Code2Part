@@ -83,4 +83,6 @@ export interface CompatibilityResult {
   profileScoring?: ProfileScoringData;
   /** Optional hydraulic (and future) comparison quality metadata. */
   metadata?: CompatibilityMetadata;
+  /** Backend-provided score; when set, UI uses this instead of recalculating. */
+  serverMatchPercentage?: number;
 }

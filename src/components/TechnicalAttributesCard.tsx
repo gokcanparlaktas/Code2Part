@@ -2,10 +2,12 @@ import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { buildProductDetailRows } from "@/domain/presentation/buildProductDetailRows";
+import type { ProductDetailRowView } from "@/services/mapBackendResolverDtos";
 import type { ProductIdentification } from "@/types/product";
 
 interface TechnicalAttributesCardProps {
   identification: ProductIdentification;
+  detailRows?: ProductDetailRowView[];
 }
 
 function DetailValueBlock({ value }: { value: string }) {
@@ -33,9 +35,16 @@ function DetailValueBlock({ value }: { value: string }) {
 
 export function TechnicalAttributesCard({
   identification,
+  detailRows,
 }: TechnicalAttributesCardProps) {
   const [expanded, setExpanded] = useState(false);
-  const rows = useMemo(() => buildProductDetailRows(identification), [identification]);
+  const rows = useMemo(
+    () =>
+      detailRows && detailRows.length > 0
+        ? detailRows
+        : buildProductDetailRows(identification),
+    [detailRows, identification]
+  );
 
   if (rows.length === 0) {
     return null;

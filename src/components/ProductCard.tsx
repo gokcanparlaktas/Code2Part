@@ -2,12 +2,14 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import type { ProductIdentification } from '@/types/product';
 import { buildProductDetailRows } from '@/domain/presentation/buildProductDetailRows';
+import type { ProductDetailRowView } from '@/services/mapBackendResolverDtos';
 import { ConfidenceBadge } from './ConfidenceBadge';
 
 interface ProductCardProps {
   identification: ProductIdentification;
   title?: string;
   noticeText?: string;
+  detailRows?: ProductDetailRowView[];
 }
 
 interface DetailRowProps {
@@ -33,8 +35,12 @@ export function ProductCard({
   identification,
   title = 'Tanımlanan ürün',
   noticeText,
+  detailRows,
 }: ProductCardProps) {
-  const rows: DetailRowProps[] = buildProductDetailRows(identification);
+  const rows: DetailRowProps[] =
+    detailRows && detailRows.length > 0
+      ? detailRows
+      : buildProductDetailRows(identification);
 
   return (
     <View style={styles.card}>
