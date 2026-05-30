@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CompatibilityComparisonSections } from '@/components/CompatibilityComparisonSections';
 import { CompatibilityMetadataChips } from '@/components/CompatibilityMetadataChips';
+import { formatCollapsedEquivalentCheckHint } from '@/domain/presentation/formatCollapsedEquivalentCheckHint';
 import { formatGenerationBadgeLabel } from '@/domain/presentation/formatGenerationBadgeLabel';
 import { calculateMatchPercentage } from '@/domain/scoring/calculateMatchPercentage';
 import type { CompatibilityResult } from '@/types/compatibility';
