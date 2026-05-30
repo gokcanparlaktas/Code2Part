@@ -1,8 +1,9 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, radius, spacing, typography } from "@/theme";
-import type { ProductIdentification } from "@/types/product";
-import { formatSourceSummary } from "@/utils/formatSourceSummary";
+import type { ProductIdentification } from '@/types/product';
+import { homeMonoFont } from '@/theme/homePalettes';
+import type { HomeColorPalette } from '@/theme/homePalettes';
+import { useHomeStyles } from '@/theme/useHomeStyles';
 
 interface SourceProductSummaryProps {
   identification: ProductIdentification;
@@ -11,39 +12,73 @@ interface SourceProductSummaryProps {
 export function SourceProductSummary({
   identification,
 }: SourceProductSummaryProps) {
+  const styles = useHomeStyles(createStyles);
+  const brand = identification.brand.value ?? 'Bilinmiyor';
+
   return (
-    <View style={styles.card}>
-      <Text style={styles.label}>Kaynak ürün</Text>
-      <Text style={styles.summary}>{formatSourceSummary(identification)}</Text>
-      <Text style={styles.code}>{identification.normalizedCode}</Text>
+    <View style={styles.root}>
+      <Text style={styles.sectionTitle}>Kaynak ürün</Text>
+
+      <View style={styles.codeBlock}>
+        <View style={styles.brandChip}>
+          <Text style={styles.brandText} numberOfLines={1}>
+            {brand}
+          </Text>
+        </View>
+        <Text style={styles.codeLabel}>Ürün kodu</Text>
+        <Text style={styles.code}>{identification.normalizedCode}</Text>
+      </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "rgba(249, 115, 22, 0.9)",
-    borderColor: colors.accent.orangeDark,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    gap: spacing.xs,
-    padding: spacing.lg,
-  },
-  label: {
-    ...typography.sectionTitle,
-    color: "rgba(255, 255, 255, 0.85)",
-    fontSize: 11,
-  },
-  summary: {
-    ...typography.h2,
-    color: colors.text.inverse,
-    lineHeight: 24,
-  },
-  code: {
-    ...typography.code,
-    color: colors.navy[900],
-    fontSize: 14,
-    fontWeight: "700",
-    marginTop: spacing.xs,
-  },
-});
+const createStyles = (c: HomeColorPalette) =>
+  StyleSheet.create({
+    root: {
+      gap: 10,
+    },
+    sectionTitle: {
+      color: c.textMuted,
+      fontSize: 11,
+      fontWeight: '500',
+      letterSpacing: 1,
+      textTransform: 'uppercase',
+    },
+    codeBlock: {
+      backgroundColor: c.cardBg,
+      borderColor: c.border,
+      borderRadius: 8,
+      borderWidth: 1,
+      gap: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+    },
+    brandChip: {
+      alignSelf: 'flex-start',
+      backgroundColor: c.checkBlueBg,
+      borderColor: c.checkBlueBorder,
+      borderRadius: 5,
+      borderWidth: 1,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+    },
+    brandText: {
+      color: c.brandBlue,
+      fontSize: 12,
+      fontWeight: '600',
+    },
+    codeLabel: {
+      color: c.textMuted,
+      fontSize: 11,
+      fontWeight: '500',
+      letterSpacing: 1,
+      textTransform: 'uppercase',
+    },
+    code: {
+      color: c.brandBlue,
+      fontFamily: homeMonoFont,
+      fontSize: 15,
+      fontWeight: '600',
+      letterSpacing: 0.3,
+    },
+  });

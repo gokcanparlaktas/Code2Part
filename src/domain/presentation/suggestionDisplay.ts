@@ -56,6 +56,23 @@ export function formatSuggestionMissingFields(fields: SuggestionMissingField[]):
     .join(', ');
 }
 
+export function formatSuggestionCardHint(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  const marker = 'eşleşiyor olabilir';
+  const index = trimmed.toLocaleLowerCase('tr-TR').indexOf(marker);
+  if (index === -1) {
+    return trimmed;
+  }
+
+  const end = index + marker.length;
+  const withPeriod = trimmed[end] === '.' ? end + 1 : end;
+  return trimmed.slice(0, withPeriod).trim();
+}
+
 export function formatSuggestionMissingStatus(suggestion: SuggestedProduct): string {
   if (isSeriesNameOnlySuggestion(suggestion)) {
     return 'Seri adı bulundu';

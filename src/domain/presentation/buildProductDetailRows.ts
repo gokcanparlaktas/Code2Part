@@ -21,6 +21,7 @@ import {
 import type { ProductIdentification, TechnicalAttribute as IdAttribute } from '@/types/product';
 import type { TechnicalAttribute } from '@/types/technicalAttribute';
 import {
+  formatProductCategoryDisplayValue,
   isInternalCatalogWording,
   USER_EVIDENCE_FROM_CODE_TR,
   USER_EVIDENCE_FROM_SERIES_TR,
@@ -41,6 +42,18 @@ const PLACEHOLDER_PRIMARIES = [
   'Port durumu katalog adayından çözümlendi',
   'Bilinmiyor',
 ] as const;
+
+function rowFromProductCategory(identification: ProductIdentification): ProductDetailRow {
+  const categoryValue = formatAttributeValue(identification.productCategory.value);
+  const typeValue = formatAttributeValue(identification.productType.value);
+
+  return {
+    label: 'Ürün kategorisi',
+    value: formatProductCategoryDisplayValue(categoryValue, typeValue),
+    evidence: formatEvidence(identification.productCategory.evidence),
+    requiresCheck: identification.productCategory.requiresCheck,
+  };
+}
 
 function rowFromIdentificationAttribute(
   label: string,
@@ -142,7 +155,7 @@ export function buildProductDetailRows(
     rowFromIdentificationAttribute('Marka', identification.brand),
     rowFromIdentificationAttribute('Seri', identification.series),
     rowFromIdentificationAttribute('Ürün tipi', identification.productType),
-    rowFromIdentificationAttribute('Ürün kategorisi', identification.productCategory),
+    rowFromProductCategory(identification),
   ];
 
   if (identification.resolverCategoryKey === HYDRAULIC_VALVE_CATEGORY) {

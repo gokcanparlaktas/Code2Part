@@ -116,7 +116,7 @@ describe('formatCompatibilityMetadata', () => {
         },
         'medium'
       )
-    ).toMatch(/Yüzde skoru kontrol gerektiren/i);
+    ).toMatch(/Uyum oranı.*kontrol gerektiren/i);
     expect(
       buildLegacyMatchScoreFootnote(
         {

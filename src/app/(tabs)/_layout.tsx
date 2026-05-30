@@ -2,29 +2,31 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, spacing, typography } from '@/theme';
+import { useTheme } from '@/theme/ThemeProvider';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
-  const tabBarHeight = 56 + insets.bottom;
+  const { homeColors } = useTheme();
+  const tabBarHeight = 52 + insets.bottom;
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.accent.orange,
-        tabBarInactiveTintColor: colors.text.inverseMuted,
+        tabBarActiveTintColor: homeColors.accent,
+        tabBarInactiveTintColor: homeColors.tabBarInactive,
         tabBarLabelStyle: {
-          ...typography.caption,
-          fontWeight: '600',
-          marginBottom: spacing.xs,
+          fontSize: 11,
+          fontWeight: '500',
+          marginBottom: 2,
         },
         tabBarStyle: {
-          backgroundColor: colors.navy[900],
-          borderTopColor: colors.border.subtle,
+          backgroundColor: homeColors.footerBg,
+          borderTopColor: homeColors.borderDark,
+          borderTopWidth: 1,
           height: tabBarHeight,
-          paddingBottom: Math.max(insets.bottom, spacing.sm),
-          paddingTop: spacing.xs,
+          paddingBottom: Math.max(insets.bottom, 6),
+          paddingTop: 8,
         },
       }}
     >
@@ -32,8 +34,8 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Tanımla',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="search-outline" size={size} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="search-outline" size={20} color={color} />
           ),
         }}
       />
@@ -41,8 +43,8 @@ export default function TabLayout() {
         name="compare"
         options={{
           title: 'Karşılaştır',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="git-compare-outline" size={size} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="git-compare-outline" size={20} color={color} />
           ),
         }}
       />

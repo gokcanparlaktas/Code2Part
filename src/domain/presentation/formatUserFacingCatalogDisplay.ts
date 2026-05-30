@@ -78,3 +78,41 @@ export function consolidateCatalogWarningsForUi(warnings: string[]): string[] {
   }
   return [...new Set(result)];
 }
+
+const PRODUCT_CATEGORY_TAIL_PATTERNS = [
+  /\s+hidrolik(?:\s+\w+)*\s+valfi\s*$/iu,
+  /\s+pnömatik\s+silindir\s*$/iu,
+] as const;
+
+/** Ürün tipi zaten ayrı satırda gösterildiğinde kategoriden tekrar eden kuyruk metnini keser. */
+export function formatProductCategoryDisplayValue(
+  productCategory: string,
+  productType: string
+): string {
+  const category = productCategory.trim();
+  const type = productType.trim();
+  if (!category || !type || category === 'Belirsiz') {
+    return category;
+  }
+
+  const categoryLower = category.toLocaleLowerCase('tr-TR');
+  const typeLower = type.toLocaleLowerCase('tr-TR');
+  if (categoryLower.endsWith(typeLower)) {
+    const trimmed = category
+      .slice(0, category.length - type.length)
+      .replace(/[\s\-–—/,]+$/, '')
+      .trim();
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+
+  for (const pattern of PRODUCT_CATEGORY_TAIL_PATTERNS) {
+    const trimmed = category.replace(pattern, '').trim();
+    if (trimmed && trimmed !== category) {
+      return trimmed;
+    }
+  }
+
+  return category;
+}

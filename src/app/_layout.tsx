@@ -8,9 +8,96 @@ import {
   acceptAppDisclaimer,
   hasAcceptedAppDisclaimer,
 } from '@/services/appDisclaimerStore';
+import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
+import { useHomeStyles } from '@/theme/useHomeStyles';
+import type { HomeColorPalette } from '@/theme/homePalettes';
 import { colors, typography } from '@/theme';
+import { StyleSheet } from 'react-native';
 
 SplashScreen.preventAutoHideAsync();
+
+function ThemedStack() {
+  const { homeColors, isDark } = useTheme();
+  const styles = useHomeStyles(createStackStyles);
+
+  return (
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <Stack
+        screenOptions={{
+          headerStyle: { backgroundColor: colors.navy[900] },
+          headerTintColor: colors.text.inverse,
+          headerTitleStyle: { ...typography.h3, color: colors.text.inverse },
+          headerShadowVisible: false,
+          contentStyle: { backgroundColor: colors.background.screen },
+        }}
+      >
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="search" options={{ title: 'Ürün kodu ara' }} />
+        <Stack.Screen
+          name="result"
+          options={{
+            title: 'Sonuç',
+            headerTitleAlign: 'left',
+            headerBackTitleVisible: false,
+            headerStyle: { backgroundColor: homeColors.bg },
+            headerTintColor: homeColors.textPrimary,
+            headerTitleStyle: {
+              fontSize: 17,
+              fontWeight: '600',
+              color: homeColors.headerTitle,
+            },
+            headerLeftContainerStyle: { paddingLeft: 4 },
+            headerTitleContainerStyle: { paddingLeft: 0 },
+            headerShadowVisible: false,
+            contentStyle: { backgroundColor: homeColors.bg },
+          }}
+        />
+        <Stack.Screen
+          name="equivalents"
+          options={{
+            title: 'Muadiller',
+            headerTitleAlign: 'left',
+            headerBackTitleVisible: false,
+            headerStyle: { backgroundColor: homeColors.bg },
+            headerTintColor: homeColors.textPrimary,
+            headerTitleStyle: styles.headerTitle,
+            headerLeftContainerStyle: { paddingLeft: 4 },
+            headerTitleContainerStyle: { paddingLeft: 0 },
+            headerShadowVisible: false,
+            contentStyle: { backgroundColor: homeColors.bg },
+          }}
+        />
+        <Stack.Screen
+          name="all-alternatives"
+          options={{
+            title: 'Tüm alternatifler',
+            headerTitleAlign: 'left',
+            headerBackTitleVisible: false,
+            headerStyle: { backgroundColor: homeColors.bg },
+            headerTintColor: homeColors.textPrimary,
+            headerTitleStyle: styles.headerTitle,
+            headerLeftContainerStyle: { paddingLeft: 4 },
+            headerTitleContainerStyle: { paddingLeft: 0 },
+            headerShadowVisible: false,
+            contentStyle: { backgroundColor: homeColors.bg },
+          }}
+        />
+        <Stack.Screen name="history" options={{ title: 'Son Aramalar' }} />
+        <Stack.Screen name="diagnostics" options={{ title: 'Veri Kontrolü' }} />
+      </Stack>
+    </>
+  );
+}
+
+const createStackStyles = (c: HomeColorPalette) =>
+  StyleSheet.create({
+    headerTitle: {
+      fontSize: 17,
+      fontWeight: '600',
+      color: c.headerTitle,
+    },
+  });
 
 export default function RootLayout() {
   const [appReady, setAppReady] = useState(false);
@@ -47,29 +134,13 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider onLayout={onRootLayout}>
-      <StatusBar style="light" />
-      <FirstLaunchDisclaimerModal
-        visible={disclaimerVisible}
-        onAccept={handleAcceptDisclaimer}
-      />
-      <Stack
-        screenOptions={{
-          headerStyle: { backgroundColor: colors.navy[900] },
-          headerTintColor: colors.text.inverse,
-          headerTitleStyle: { ...typography.h3, color: colors.text.inverse },
-          headerShadowVisible: false,
-          contentStyle: { backgroundColor: colors.background.screen },
-        }}
-      >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="search" options={{ title: 'Ürün kodu ara' }} />
-        <Stack.Screen name="result" options={{ title: 'Sonuç' }} />
-        <Stack.Screen name="equivalents" options={{ title: 'Muadiller' }} />
-        <Stack.Screen name="all-alternatives" options={{ title: 'Tüm Alternatifler' }} />
-        <Stack.Screen name="history" options={{ title: 'Son Aramalar' }} />
-        <Stack.Screen name="diagnostics" options={{ title: 'Veri Kontrolü' }} />
-      </Stack>
+      <ThemeProvider>
+        <FirstLaunchDisclaimerModal
+          visible={disclaimerVisible}
+          onAccept={handleAcceptDisclaimer}
+        />
+        <ThemedStack />
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }
-

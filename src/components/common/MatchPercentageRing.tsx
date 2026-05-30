@@ -11,12 +11,14 @@ interface MatchPercentageRingProps {
   match: MatchPercentageResult;
   size?: number;
   showLabel?: boolean;
+  trackColor?: string;
 }
 
 export function MatchPercentageRing({
   match,
   size = MATCH_PERCENTAGE_RING_SIZE,
   showLabel = true,
+  trackColor = colors.match.track,
 }: MatchPercentageRingProps) {
   const strokeWidth = 4;
   const radius = (size - strokeWidth) / 2;
@@ -36,7 +38,7 @@ export function MatchPercentageRing({
             cx={center}
             cy={center}
             r={radius}
-            stroke={colors.match.track}
+            stroke={trackColor}
             strokeWidth={strokeWidth}
             fill="none"
           />

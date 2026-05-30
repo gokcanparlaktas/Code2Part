@@ -5,12 +5,14 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-nat
 import { EquivalentAccordionCard } from '@/components/EquivalentAccordionCard';
 import { EquivalencePageScoreNote } from '@/components/EquivalencePageScoreNote';
 import { SourceProductSummary } from '@/components/SourceProductSummary';
-import { collectEquivalencePageLegacyScoreFootnote } from '@/domain/presentation/collectEquivalencePageAlerts';
+import { EQUIVALENCE_PAGE_SCORE_NOTE_TR } from '@/domain/presentation/formatCompatibilityMetadata';
 import { sortCompatibilityResultsByMatchPercentage } from '@/domain/presentation/sortCompatibilityResults';
 import { useBackendCompareLoader } from '@/hooks/useBackendCompareLoader';
 import { useResolvedProductSearch } from '@/hooks/useResolvedProductSearch';
 import { isBackendResolverMode } from '@/services/resolverService';
-import { colors, radius, spacing, typography } from '@/theme';
+import { useTheme } from '@/theme/ThemeProvider';
+import type { HomeColorPalette } from '@/theme/homePalettes';
+import { useHomeStyles } from '@/theme/useHomeStyles';
 import {
   compatibilityResultKey,
   mergeCompatibilityResultDisplay,
@@ -18,11 +20,12 @@ import {
 import { decodeProductCodeFromRoute } from '@/utils/productCodeRouteParam';
 
 export default function AllAlternativesScreen() {
+  const styles = useHomeStyles(createStyles);
+  const { homeColors } = useTheme();
   const { code } = useLocalSearchParams<{ code: string }>();
   const inputCode = decodeProductCodeFromRoute(code);
   const { loading, errorMessage, data } = useResolvedProductSearch(inputCode);
   const {
-    loadingKey,
     errorMessage: compareErrorMessage,
     loadCompare,
     resolveDisplayResult,
@@ -48,14 +51,6 @@ export default function AllAlternativesScreen() {
   }, [data]);
 
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
-
-  const legacyScoreFootnote = useMemo(() => {
-    const displayed = compatibilityResults.map((result) => {
-      const rowKey = compatibilityResultKey(result);
-      return mergeCompatibilityResultDisplay(result, resolveDisplayResult(result, rowKey));
-    });
-    return collectEquivalencePageLegacyScoreFootnote(displayed);
-  }, [compatibilityResults, resolveDisplayResult]);
 
   useEffect(() => {
     if (!expandedKey || !isBackendResolverMode()) {
@@ -91,7 +86,7 @@ export default function AllAlternativesScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.navy[700]} />
+        <ActivityIndicator size="large" color={homeColors.accent} />
         <Text style={styles.loadingText}>Alternatifler yükleniyor…</Text>
       </View>
     );
@@ -126,7 +121,7 @@ export default function AllAlternativesScreen() {
       <SourceProductSummary identification={identification} />
 
       {compatibilityResults.length > 0 ? (
-        <EquivalencePageScoreNote note={legacyScoreFootnote} />
+        <EquivalencePageScoreNote note={EQUIVALENCE_PAGE_SCORE_NOTE_TR} />
       ) : null}
 
       {compareErrorMessage ? (
@@ -142,88 +137,110 @@ export default function AllAlternativesScreen() {
           </Text>
         </View>
       ) : (
-        <View style={styles.accordionList}>
-          {compatibilityResults.map((result) => {
-            const rowKey = compatibilityResultKey(result);
-            const displayResult = mergeCompatibilityResultDisplay(
-              result,
-              resolveDisplayResult(result, rowKey)
-            );
-            return (
-              <EquivalentAccordionCard
-                key={rowKey}
-                result={displayResult}
-                expanded={expandedKey === rowKey}
-                loading={loadingKey === rowKey}
-                onToggle={() =>
-                  setExpandedKey((current) => (current === rowKey ? null : rowKey))
-                }
-              />
-            );
-          })}
-        </View>
+        <>
+          <Text style={styles.listTitle}>
+            Tüm alternatifler ({compatibilityResults.length})
+          </Text>
+          <View style={styles.accordionList}>
+            {compatibilityResults.map((result, index) => {
+              const rowKey = compatibilityResultKey(result);
+              const displayResult = mergeCompatibilityResultDisplay(
+                result,
+                resolveDisplayResult(result, rowKey)
+              );
+              return (
+                <EquivalentAccordionCard
+                  key={rowKey}
+                  result={displayResult}
+                  expanded={expandedKey === rowKey}
+                  isLast={index === compatibilityResults.length - 1}
+                  onToggle={() =>
+                    setExpandedKey((current) => (current === rowKey ? null : rowKey))
+                  }
+                />
+              );
+            })}
+          </View>
+        </>
       )}
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    gap: spacing.lg,
-    padding: spacing.xl,
-    paddingBottom: 40,
-  },
-  accordionList: {
-    gap: spacing.md,
-  },
-  emptyCard: {
-    backgroundColor: colors.background.card,
-    borderColor: colors.border.accentLight,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    padding: spacing.lg,
-  },
-  emptyText: {
-    ...typography.body,
-    color: colors.surface.textMuted,
-  },
-  compareErrorCard: {
-    backgroundColor: colors.status.danger.bg,
-    borderColor: colors.status.danger.border,
-    borderLeftWidth: 3,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    padding: spacing.md,
-  },
-  compareErrorText: {
-    ...typography.bodySm,
-    color: colors.status.danger.text,
-  },
-  centered: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-    padding: spacing.xl,
-  },
-  loadingText: {
-    ...typography.body,
-    color: colors.text.inverseMuted,
-    marginTop: spacing.sm,
-    textAlign: 'center',
-  },
-  errorTitle: {
-    ...typography.h1,
-    color: colors.text.inverse,
-    marginBottom: spacing.xs,
-    textAlign: 'center',
-  },
-  errorMessage: {
-    ...typography.body,
-    color: colors.text.inverseMuted,
-    lineHeight: 22,
-    textAlign: 'center',
-  },
-});
+const createStyles = (c: HomeColorPalette) =>
+  StyleSheet.create({
+    scroll: {
+      backgroundColor: c.bg,
+      flex: 1,
+    },
+    content: {
+      gap: 12,
+      paddingBottom: 32,
+      paddingHorizontal: 16,
+      paddingTop: 12,
+    },
+    listTitle: {
+      color: c.textMuted,
+      fontSize: 13,
+      fontWeight: '500',
+      letterSpacing: 1,
+      textTransform: 'uppercase',
+    },
+    accordionList: {
+      backgroundColor: c.cardBg,
+      borderColor: c.border,
+      borderRadius: 8,
+      borderWidth: 1,
+      overflow: 'hidden',
+      paddingHorizontal: 12,
+    },
+    emptyCard: {
+      backgroundColor: c.cardBg,
+      borderColor: c.border,
+      borderRadius: 8,
+      borderWidth: 1,
+      padding: 16,
+    },
+    emptyText: {
+      color: c.textMuted,
+      fontSize: 13,
+      textAlign: 'center',
+    },
+    compareErrorCard: {
+      backgroundColor: c.redBg,
+      borderColor: c.redBorder,
+      borderLeftWidth: 3,
+      borderRadius: 8,
+      borderWidth: 1,
+      padding: 12,
+    },
+    compareErrorText: {
+      color: c.red,
+      fontSize: 13,
+      lineHeight: 18,
+    },
+    centered: {
+      backgroundColor: c.bg,
+      flex: 1,
+      gap: 12,
+      justifyContent: 'center',
+      padding: 24,
+    },
+    loadingText: {
+      color: c.textMuted,
+      fontSize: 14,
+      textAlign: 'center',
+    },
+    errorTitle: {
+      color: c.textPrimary,
+      fontSize: 18,
+      fontWeight: '600',
+      textAlign: 'center',
+    },
+    errorMessage: {
+      color: c.textMuted,
+      fontSize: 14,
+      lineHeight: 20,
+      textAlign: 'center',
+    },
+  });

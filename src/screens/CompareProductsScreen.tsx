@@ -1,18 +1,22 @@
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppLogo } from '@/components/AppLogo';
 import { ProductCodeFieldWithSuggestions } from '@/components/ProductCodeFieldWithSuggestions';
 import { ProductCompareResultView } from '@/components/ProductCompareResultView';
+import { ThemeModeToggle } from '@/components/ThemeModeToggle';
 import type { CompatibilityResult } from '@/types/compatibility';
 import {
   compareTwoProductsResolved,
   mapResolverApiErrorMessage,
 } from '@/services/resolverService';
-import { colors, spacing, typography, buttons } from '@/theme';
+import type { HomeColorPalette } from '@/theme/homePalettes';
+import { useHomeStyles } from '@/theme/useHomeStyles';
+
+const ICON = require('../../assets/images/icon.png');
 
 export function CompareProductsScreen() {
+  const styles = useHomeStyles(createStyles);
   const [sourceCode, setSourceCode] = useState('');
   const [targetCode, setTargetCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -55,18 +59,30 @@ export function CompareProductsScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <AppLogo size="lg" />
-          <Text style={styles.subtitle}>
+        <View style={styles.root}>
+          <View style={styles.headerRow}>
+            <View style={styles.headerSide}>
+              <Image source={ICON} style={styles.logoIcon} accessibilityLabel="Code2Part logo" />
+            </View>
+            <Text style={styles.brandName}>
+              <Text style={styles.brandNamePrimary}>Code</Text>
+              <Text style={styles.brandNameBlue}>2</Text>
+              <Text style={styles.brandNameOrange}>Part</Text>
+            </Text>
+            <View style={styles.headerSideRight}>
+              <ThemeModeToggle compact />
+            </View>
+          </View>
+
+          <Text style={styles.description}>
             İki ürün kodunu girin; uyum yüzdesi ve farklı alanları birlikte görün.
           </Text>
-        </View>
 
-        <View style={styles.form}>
           <ProductCodeFieldWithSuggestions
+            variant="compare"
             label="Kaynak ürün kodu"
-            hint="Karşılaştırmanın referans alacağı ürün"
-            placeholder="Örn. DSBC-63-200-PPVA"
+            hint="Referans alınan ürün"
+            placeholder="DSBC-63-200-PPVA"
             value={sourceCode}
             onChange={setSourceCode}
             onSelectSuggestion={() => {}}
@@ -74,9 +90,10 @@ export function CompareProductsScreen() {
           />
 
           <ProductCodeFieldWithSuggestions
+            variant="compare"
             label="Hedef ürün kodu"
-            hint="Muadil veya alternatif olarak kontrol edilecek ürün"
-            placeholder="Örn. C96-40-80"
+            hint="Muadil veya alternatif ürün"
+            placeholder="C96-40-80"
             value={targetCode}
             onChange={setTargetCode}
             onSelectSuggestion={() => {}}
@@ -84,16 +101,25 @@ export function CompareProductsScreen() {
           />
 
           <Pressable
-            style={[styles.compareButton, !canCompare && styles.compareButtonDisabled]}
+            style={({ pressed }) => [
+              styles.compareButton,
+              !canCompare && styles.compareButtonDisabled,
+              pressed && canCompare ? styles.compareButtonPressed : null,
+            ]}
             onPress={() => void handleCompare()}
             disabled={!canCompare}
           >
             {loading ? (
-              <ActivityIndicator color={colors.text.inverse} />
+              <ActivityIndicator color="#fff" />
             ) : (
               <Text style={styles.compareButtonText}>Karşılaştır</Text>
             )}
           </Pressable>
+
+          <View style={styles.footerNoteWrap}>
+            <View style={styles.divider} />
+            <Text style={styles.footerNote}>Her iki kod da tanımlanabilir olmalıdır</Text>
+          </View>
 
           {error ? (
             <View style={styles.errorBox}>
@@ -114,54 +140,115 @@ export function CompareProductsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background.screen,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    padding: spacing.xl,
-    paddingBottom: spacing.xxxl,
-  },
-  header: {
-    alignItems: 'center',
-    gap: spacing.md,
-    marginBottom: spacing.xl,
-  },
-  subtitle: {
-    ...typography.bodySm,
-    color: colors.surface.textSecondary,
-    lineHeight: 20,
-    textAlign: 'center',
-  },
-  form: {
-    gap: spacing.xl,
-  },
-  compareButton: {
-    ...buttons.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 48,
-  },
-  compareButtonDisabled: {
-    opacity: 0.5,
-  },
-  compareButtonText: {
-    ...typography.button,
-    color: colors.text.inverse,
-  },
-  errorBox: {
-    backgroundColor: colors.compat.negative.header,
-    borderColor: colors.compat.negative.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    padding: spacing.md,
-  },
-  errorText: {
-    ...typography.bodySm,
-    color: colors.compat.negative.text,
-  },
-});
+const createStyles = (c: HomeColorPalette) =>
+  StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: c.bg,
+    },
+    scroll: {
+      flex: 1,
+    },
+    content: {
+      flexGrow: 1,
+      paddingBottom: 16,
+      paddingHorizontal: 16,
+      paddingTop: 12,
+    },
+    root: {
+      flex: 1,
+      gap: 16,
+    },
+    headerRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      marginBottom: 16,
+    },
+    headerSide: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: 44,
+    },
+    headerSideRight: {
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      minWidth: 44,
+      width: 44,
+    },
+    logoIcon: {
+      backgroundColor: c.cardBg,
+      borderColor: c.border,
+      borderRadius: 10,
+      borderWidth: 1,
+      height: 44,
+      resizeMode: 'cover',
+      width: 44,
+    },
+    brandName: {
+      flex: 1,
+      fontSize: 20,
+      fontWeight: '500',
+      textAlign: 'center',
+    },
+    brandNamePrimary: {
+      color: c.headerTitle,
+    },
+    brandNameBlue: {
+      color: c.brandAccentBlue,
+    },
+    brandNameOrange: {
+      color: c.accent,
+    },
+    description: {
+      color: c.textDim,
+      fontSize: 13,
+      lineHeight: 20,
+      marginBottom: 16,
+      textAlign: 'center',
+    },
+    compareButton: {
+      alignItems: 'center',
+      backgroundColor: c.accent,
+      borderRadius: 8,
+      marginBottom: 14,
+      marginTop: 10,
+      paddingVertical: 14,
+    },
+    compareButtonDisabled: {
+      opacity: 0.45,
+    },
+    compareButtonPressed: {
+      opacity: 0.88,
+    },
+    compareButtonText: {
+      color: '#fff',
+      fontSize: 15,
+      fontWeight: '500',
+    },
+    footerNoteWrap: {
+      gap: 8,
+      marginTop: 4,
+    },
+    divider: {
+      borderTopColor: c.border,
+      borderTopWidth: 1,
+    },
+    footerNote: {
+      color: c.footerText,
+      fontSize: 11,
+      textAlign: 'center',
+    },
+    errorBox: {
+      backgroundColor: c.redBg,
+      borderColor: c.redBorder,
+      borderRadius: 8,
+      borderWidth: 1,
+      marginTop: 12,
+      padding: 12,
+    },
+    errorText: {
+      color: c.red,
+      fontSize: 13,
+      lineHeight: 18,
+    },
+  });

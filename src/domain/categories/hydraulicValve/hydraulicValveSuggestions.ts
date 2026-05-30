@@ -34,10 +34,7 @@ function buildHydraulicSuggestionTextTr(
   brand: string,
   series: string
 ): string {
-  return (
-    `Bu kod parçaları ${exampleCode} (${brand} ${series}) ile eşleşiyor olabilir. ` +
-    'Hidrolik valflerde sürgü, bobin voltajı ve konnektör mutlaka kontrol edilmelidir.'
-  );
+  return `Bu kod parçaları ${exampleCode} (${brand} ${series}) ile eşleşiyor olabilir.`;
 }
 
 export function suggestHydraulicValveProducts(

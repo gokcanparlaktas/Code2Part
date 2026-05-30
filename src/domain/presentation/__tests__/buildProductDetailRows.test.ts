@@ -95,6 +95,28 @@ describe('buildProductDetailRows', () => {
     expect(labels).toContain('Çap');
     expect(labels).toContain('Strok');
   });
+
+  it('product category omits repeated product type tail', () => {
+    const code = '4WE6E-6X/EG24N9K4';
+    const id = identifyProduct(code, normalizeCode(code));
+    const rows = buildProductDetailRows(id);
+
+    const productType = rows.find((r) => r.label === 'Ürün tipi');
+    const productCategory = rows.find((r) => r.label === 'Ürün kategorisi');
+
+    expect(productType?.value).toMatch(/Hidrolik yön kontrol valfi/i);
+    expect(productCategory?.value).toMatch(/CETOP 03|NG6/i);
+    expect(productCategory?.value).not.toMatch(/hidrolik yön kontrol valfi/i);
+  });
+
+  it('pneumatic product category omits repeated pnömatik silindir tail', () => {
+    const code = 'DSBC-50-100-PPVA-N3';
+    const id = identifyProduct(code, normalizeCode(code));
+    const rows = buildProductDetailRows(id);
+    const productCategory = rows.find((r) => r.label === 'Ürün kategorisi');
+
+    expect(productCategory?.value).toBe('ISO 15552');
+  });
 });
 
 describe('equivalence warnings (user-facing)', () => {

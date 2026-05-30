@@ -37,7 +37,7 @@ describe('collectEquivalencePageLegacyScoreFootnote', () => {
       }),
     ]);
 
-    expect(note).toContain('Yüzde skoru');
+    expect(note).toContain('Uyum oranı');
   });
 
   it('returns null when no candidate needs a footnote', () => {

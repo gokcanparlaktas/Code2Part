@@ -295,10 +295,7 @@ export function buildTokenMatchSuggestionTextTr(
   brand: string,
   series: string
 ): string {
-  return (
-    `Bu kod parçaları ${exampleCode} (${brand} ${series}) ile eşleşiyor olabilir. ` +
-    'Seri kesin değilse teknik değerleri kontrol edin.'
-  );
+  return `Bu kod parçaları ${exampleCode} (${brand} ${series}) ile eşleşiyor olabilir.`;
 }
 
 function confidenceFromTokenScore(score: number): SuggestionConfidence {

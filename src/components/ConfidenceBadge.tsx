@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import type { ConfidenceLevel } from '@/types/product';
+import { useTheme } from '@/theme/ThemeProvider';
 import { colors, radius, spacing, typography } from '@/theme';
 import { formatConfidence } from '@/utils/formatConfidence';
 
@@ -14,10 +16,44 @@ const PALETTE: Record<ConfidenceLevel, { bg: string; text: string; border: strin
 interface ConfidenceBadgeProps {
   confidence: ConfidenceLevel;
   label?: string;
+  variant?: 'default' | 'dark';
 }
 
-export function ConfidenceBadge({ confidence, label }: ConfidenceBadgeProps) {
-  const palette = PALETTE[confidence];
+export function ConfidenceBadge({
+  confidence,
+  label,
+  variant = 'default',
+}: ConfidenceBadgeProps) {
+  const { homeColors } = useTheme();
+
+  const darkPalette = useMemo(
+    (): Record<ConfidenceLevel, { bg: string; text: string; border: string }> => ({
+      high: {
+        bg: homeColors.greenBg,
+        text: homeColors.green,
+        border: homeColors.greenBorder,
+      },
+      medium: {
+        bg: homeColors.amberBg,
+        text: homeColors.amber,
+        border: homeColors.amberBorder,
+      },
+      low: {
+        bg: homeColors.redBg,
+        text: homeColors.red,
+        border: homeColors.redBorder,
+      },
+      unknown: {
+        bg: homeColors.inputBg,
+        text: homeColors.textMuted,
+        border: homeColors.border,
+      },
+    }),
+    [homeColors]
+  );
+
+  const palette =
+    variant === 'dark' ? darkPalette[confidence] : PALETTE[confidence];
 
   return (
     <View
@@ -43,6 +79,7 @@ const styles = StyleSheet.create({
   },
   text: {
     ...typography.caption,
+    fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.3,
     textTransform: 'uppercase',

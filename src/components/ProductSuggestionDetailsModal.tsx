@@ -1,17 +1,13 @@
-import {
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { BottomSheetModal } from '@/components/common/BottomSheetModal';
 import { MatchPercentageRing } from '@/components/common/MatchPercentageRing';
 import { buildSuggestionDetailRows } from '@/domain/presentation/buildSuggestionDetailRows';
 import { matchPercentageFromSuggestion } from '@/domain/scoring/suggestionMatchPercentage';
 import type { SuggestedProduct } from '@/types/suggestion';
-import { colors, radius, spacing, typography, buttons } from '@/theme';
+import { homeMonoFont } from '@/theme/homePalettes';
+import type { HomeColorPalette } from '@/theme/homePalettes';
+import { useHomeStyles } from '@/theme/useHomeStyles';
 
 interface ProductSuggestionDetailsModalProps {
   visible: boolean;
@@ -21,15 +17,6 @@ interface ProductSuggestionDetailsModalProps {
   onTry?: (suggestion: SuggestedProduct) => void;
 }
 
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={styles.rowValue}>{value}</Text>
-    </View>
-  );
-}
-
 export function ProductSuggestionDetailsModal({
   visible,
   suggestion,
@@ -37,6 +24,8 @@ export function ProductSuggestionDetailsModal({
   onClose,
   onTry,
 }: ProductSuggestionDetailsModalProps) {
+  const styles = useHomeStyles(createStyles);
+
   if (!suggestion) {
     return null;
   }
@@ -46,142 +35,141 @@ export function ProductSuggestionDetailsModal({
   const canTry = Boolean(onTry && suggestion.exampleCodeFormat.trim());
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <View style={styles.card}>
-          <View style={styles.titleBar}>
-            <View style={styles.titleBlock}>
-              <Text style={styles.title}>{suggestion.brand}</Text>
-              <Text style={styles.subtitle}>{suggestion.series}</Text>
-            </View>
-            <MatchPercentageRing match={matchPercentage} size={56} />
-          </View>
-
-          <ScrollView
-            style={styles.scroll}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {rows.map((row) => (
-              <DetailRow key={row.label} label={row.label} value={row.value} />
-            ))}
-          </ScrollView>
-
-          <View style={styles.actions}>
-            {canTry ? (
-              <Pressable
-                style={({ pressed }) => [styles.tryButton, pressed && buttons.primaryPressed]}
-                onPress={() => onTry?.(suggestion)}
-                accessibilityRole="button"
-              >
-                <Text style={styles.tryButtonText}>Bu kodu dene</Text>
-              </Pressable>
-            ) : null}
-            <Pressable
-              style={({ pressed }) => [
-                styles.closeButton,
-                pressed && styles.closeButtonPressed,
-              ]}
-              onPress={onClose}
-              accessibilityRole="button"
-            >
-              <Text style={styles.closeButtonText}>Kapat</Text>
-            </Pressable>
-          </View>
+    <BottomSheetModal visible={visible} onClose={onClose} sheetStyle={styles.sheet}>
+      <View style={styles.titleBar}>
+        <View style={styles.titleBlock}>
+          <Text style={styles.title}>{suggestion.brand}</Text>
+          <Text style={styles.subtitle}>{suggestion.series}</Text>
         </View>
+        <MatchPercentageRing match={matchPercentage} size={56} />
       </View>
-    </Modal>
+
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {rows.map((row) => (
+          <View key={row.label} style={styles.row}>
+            <Text style={styles.rowLabel}>{row.label}</Text>
+            <Text style={styles.rowValue}>{row.value}</Text>
+          </View>
+        ))}
+      </ScrollView>
+
+      <View style={styles.actions}>
+        {canTry ? (
+          <Pressable
+            style={({ pressed }) => [styles.tryButton, pressed && styles.tryButtonPressed]}
+            onPress={() => onTry?.(suggestion)}
+            accessibilityRole="button"
+          >
+            <Text style={styles.tryButtonText}>Bu kodu dene</Text>
+          </Pressable>
+        ) : null}
+        <Pressable
+          style={({ pressed }) => [styles.closeButton, pressed && styles.closeButtonPressed]}
+          onPress={onClose}
+          accessibilityRole="button"
+        >
+          <Text style={styles.closeButtonText}>Kapat</Text>
+        </Pressable>
+      </View>
+    </BottomSheetModal>
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    backgroundColor: 'rgba(10, 22, 40, 0.72)',
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  card: {
-    backgroundColor: colors.background.card,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    maxHeight: '85%',
-    overflow: 'hidden',
-    paddingBottom: spacing.xxl,
-  },
-  titleBar: {
-    alignItems: 'center',
-    backgroundColor: colors.background.elevated,
-    borderBottomColor: colors.border.default,
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    gap: spacing.md,
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.lg,
-  },
-  titleBlock: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  title: {
-    ...typography.h1,
-    color: colors.surface.text,
-  },
-  subtitle: {
-    ...typography.code,
-    color: colors.accent.blueLight,
-    fontSize: 14,
-  },
-  scroll: {
-    maxHeight: 420,
-  },
-  scrollContent: {
-    gap: spacing.sm,
-    padding: spacing.xl,
-    paddingBottom: spacing.sm,
-  },
-  row: {
-    backgroundColor: colors.background.elevated,
-    borderColor: colors.border.default,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    gap: spacing.xs,
-    padding: spacing.md,
-  },
-  rowLabel: {
-    ...typography.sectionTitle,
-    color: colors.surface.textMuted,
-    fontSize: 11,
-  },
-  rowValue: {
-    ...typography.bodySm,
-    color: colors.surface.text,
-    fontWeight: '600',
-    lineHeight: 20,
-  },
-  actions: {
-    gap: spacing.sm,
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.md,
-  },
-  tryButton: {
-    ...buttons.primary,
-    paddingVertical: spacing.md,
-  },
-  tryButtonText: buttons.primaryText,
-  closeButton: {
-    alignItems: 'center',
-    borderColor: colors.border.default,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    paddingVertical: spacing.md,
-  },
-  closeButtonPressed: {
-    backgroundColor: colors.background.elevated,
-  },
-  closeButtonText: {
-    ...typography.bodySm,
-    color: colors.surface.textSecondary,
-    fontWeight: '700',
-  },
-});
+const createStyles = (c: HomeColorPalette) =>
+  StyleSheet.create({
+    sheet: {
+      paddingBottom: 24,
+    },
+    titleBar: {
+      alignItems: 'center',
+      borderBottomColor: c.border,
+      borderBottomWidth: 1,
+      flexDirection: 'row',
+      gap: 12,
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+    },
+    titleBlock: {
+      flex: 1,
+      gap: 4,
+    },
+    title: {
+      color: c.brandBlue,
+      fontSize: 18,
+      fontWeight: '600',
+    },
+    subtitle: {
+      color: c.brandBlue,
+      fontFamily: homeMonoFont,
+      fontSize: 14,
+      fontWeight: '500',
+    },
+    scroll: {
+      maxHeight: 420,
+    },
+    scrollContent: {
+      gap: 8,
+      padding: 16,
+      paddingBottom: 8,
+    },
+    row: {
+      backgroundColor: c.cardBg,
+      borderColor: c.border,
+      borderRadius: 8,
+      borderWidth: 1,
+      gap: 4,
+      padding: 12,
+    },
+    rowLabel: {
+      color: c.textMuted,
+      fontSize: 11,
+      fontWeight: '500',
+      letterSpacing: 0.6,
+      textTransform: 'uppercase',
+    },
+    rowValue: {
+      color: c.textPrimary,
+      fontSize: 13,
+      fontWeight: '600',
+      lineHeight: 19,
+    },
+    actions: {
+      gap: 8,
+      paddingHorizontal: 16,
+      paddingTop: 8,
+    },
+    tryButton: {
+      alignItems: 'center',
+      backgroundColor: c.accent,
+      borderRadius: 8,
+      paddingVertical: 14,
+    },
+    tryButtonPressed: {
+      opacity: 0.88,
+    },
+    tryButtonText: {
+      color: '#fff',
+      fontSize: 15,
+      fontWeight: '500',
+    },
+    closeButton: {
+      alignItems: 'center',
+      borderColor: c.border,
+      borderRadius: 8,
+      borderWidth: 1,
+      paddingVertical: 14,
+    },
+    closeButtonPressed: {
+      opacity: 0.88,
+    },
+    closeButtonText: {
+      color: c.textMuted,
+      fontSize: 15,
+      fontWeight: '500',
+    },
+  });

@@ -1,12 +1,15 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, radius, spacing, typography } from '@/theme';
+import type { HomeColorPalette } from '@/theme/homePalettes';
+import { useHomeStyles } from '@/theme/useHomeStyles';
 
 interface EquivalencePageScoreNoteProps {
   note: string | null;
 }
 
 export function EquivalencePageScoreNote({ note }: EquivalencePageScoreNoteProps) {
+  const styles = useHomeStyles(createStyles);
+
   if (!note) {
     return null;
   }
@@ -19,23 +22,27 @@ export function EquivalencePageScoreNote({ note }: EquivalencePageScoreNoteProps
   );
 }
 
-const styles = StyleSheet.create({
-  noteCard: {
-    backgroundColor: 'rgba(202, 138, 4, 0.12)',
-    borderColor: 'rgba(202, 138, 4, 0.45)',
-    borderRadius: radius.md,
-    borderWidth: 1,
-    gap: spacing.xs,
-    padding: spacing.md,
-  },
-  noteTitle: {
-    ...typography.sectionTitle,
-    color: colors.match.medium,
-    fontSize: 11,
-  },
-  noteText: {
-    ...typography.bodySm,
-    color: colors.surface.textSecondary,
-    lineHeight: 20,
-  },
-});
+const createStyles = (c: HomeColorPalette) =>
+  StyleSheet.create({
+    noteCard: {
+      backgroundColor: c.amberBg,
+      borderColor: c.amberBorder,
+      borderLeftWidth: 3,
+      borderRadius: 8,
+      borderWidth: 1,
+      gap: 4,
+      padding: 12,
+    },
+    noteTitle: {
+      color: c.amber,
+      fontSize: 11,
+      fontWeight: '500',
+      letterSpacing: 0.8,
+      textTransform: 'uppercase',
+    },
+    noteText: {
+      color: c.amber,
+      fontSize: 12,
+      lineHeight: 18,
+    },
+  });

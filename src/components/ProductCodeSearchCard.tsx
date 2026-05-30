@@ -1,7 +1,9 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Platform,
   Pressable,
   StyleSheet,
@@ -10,18 +12,23 @@ import {
   View,
 } from 'react-native';
 
-import { AppLogo } from '@/components/AppLogo';
 import { HowItWorksHelp } from '@/components/HowItWorksHelp';
+import { ThemeModeToggle } from '@/components/ThemeModeToggle';
 import {
   DEFAULT_SUGGESTION_LIMIT,
   suggestProductsDetailed,
 } from '@/domain/resolver/suggestProducts';
 import type { SuggestedProduct } from '@/types/suggestion';
-import { colors, radius, spacing, typography, buttons } from '@/theme';
+import { homeMonoFont } from '@/theme/homePalettes';
+import type { HomeColorPalette } from '@/theme/homePalettes';
+import { useTheme } from '@/theme/ThemeProvider';
+import { useHomeStyles } from '@/theme/useHomeStyles';
 import { productCodeResultHref } from '@/utils/productCodeRouteParam';
 
 import { PartialSuggestionsPanel } from './PartialSuggestionsPanel';
 import { RecentSearchHistoryPanel } from './RecentSearchHistoryPanel';
+
+const ICON = require('../../assets/images/icon.png');
 
 const EXAMPLES = [
   '4WE6G-6X/EG24N9K4',
@@ -33,6 +40,8 @@ const EXAMPLES = [
 ];
 
 export function ProductCodeSearchCard() {
+  const styles = useHomeStyles(createStyles);
+  const { homeColors } = useTheme();
   const [code, setCode] = useState('');
   const [strokeHint, setStrokeHint] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -82,190 +91,311 @@ export function ProductCodeSearchCard() {
     setTimeout(() => setIsSearching(false), 400);
   };
 
+  const handleClear = () => {
+    setCode('');
+    setStrokeHint(false);
+  };
+
+  const trimmedCode = code.trim();
+  const showClearButton = code.length > 0;
+
   return (
-    <View style={styles.card}>
-      <View style={styles.brandHeader}>
-        <View style={styles.brandHeaderRow}>
-          <View style={styles.brandLogoArea}>
-            <AppLogo size="lg" />
-          </View>
-          <HowItWorksHelp />
+    <View style={styles.root}>
+      <View style={styles.headerRow}>
+        <View style={styles.headerSide}>
+          <Image source={ICON} style={styles.logoIcon} accessibilityLabel="Code2Part logo" />
+        </View>
+
+        <Text style={styles.brandName}>
+          <Text style={styles.brandNamePrimary}>Code</Text>
+          <Text style={styles.brandNameBlue}>2</Text>
+          <Text style={styles.brandNameOrange}>Part</Text>
+        </Text>
+
+        <View style={styles.headerSideRight}>
+          <HowItWorksHelp compact />
+          <ThemeModeToggle compact />
         </View>
       </View>
 
-      <View style={styles.body}>
-        <View style={styles.fieldHeader}>
-          <Text style={styles.label}>Ürün kodu</Text>
-          <Text style={styles.hint}>
-            Festo, SMC, Parker, Rexroth, Eaton ve benzeri kodları girin
-          </Text>
+      <View style={styles.fieldHeader}>
+        <Text style={styles.label}>Ürün kodu</Text>
+        <Text style={styles.hint}>
+          Aramak istediğiniz ürün kodunu giriniz; kod eksik olsa da tanımlama yapılabilir.
+        </Text>
+      </View>
+
+      <View style={styles.inputRow}>
+        <View style={styles.inputWrapper}>
+          <TextInput
+            style={[styles.input, showClearButton && styles.inputWithClear]}
+            placeholder="DSBC-50-100-PPVA-N3"
+            placeholderTextColor={homeColors.textDim}
+            value={code}
+            onChangeText={(value) => {
+              setCode(value);
+              setStrokeHint(false);
+            }}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            returnKeyType="search"
+            onSubmitEditing={handleSearch}
+            selectionColor={homeColors.accent}
+            underlineColorAndroid="transparent"
+          />
+
+          {showClearButton ? (
+            <Pressable
+              style={({ pressed }) => [styles.clearButton, pressed && styles.clearButtonPressed]}
+              onPress={handleClear}
+              accessibilityRole="button"
+              accessibilityLabel="Aramayı temizle"
+              hitSlop={8}
+            >
+              <Ionicons name="close-circle" size={18} color={homeColors.textMuted} />
+            </Pressable>
+          ) : null}
         </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Örn. DSBC-50-100-PPVA-N3"
-          placeholderTextColor={colors.text.inverseFaint}
-          value={code}
-          onChangeText={(value) => {
-            setCode(value);
-            setStrokeHint(false);
-          }}
-          autoCapitalize="characters"
-          autoCorrect={false}
-          returnKeyType="search"
-          onSubmitEditing={handleSearch}
-          selectionColor={colors.accent.blue}
-          underlineColorAndroid={colors.accent.blueDark}
-        />
-
-        {suggestions.length > 0 ? (
-          <PartialSuggestionsPanel
-            title="Bunlar olabilir"
-            query={code}
-            suggestions={suggestions}
-            hasMoreResults={hasMoreResults}
-            onTrySuggestion={handleTrySuggestion}
-          />
-        ) : null}
-
-        {strokeHint ? (
-          <Text style={styles.strokeHint}>
-            Strok değerini de girerseniz ürün daha net tanımlanır.
-          </Text>
-        ) : null}
-
-        <Pressable
-          style={({ pressed }) => [
-            styles.button,
-            !code.trim() && styles.buttonDisabled,
-            pressed && code.trim() ? styles.buttonPressed : null,
-          ]}
-          onPress={handleSearch}
-          disabled={!code.trim() || isSearching}
-        >
-          {isSearching ? (
-            <ActivityIndicator color={colors.text.inverse} />
-          ) : (
-            <Text style={styles.buttonText}>Tanımla ve karşılaştır</Text>
-          )}
+        <Pressable style={styles.cameraButton} onPress={() => {}}>
+          <Ionicons name="camera-outline" size={22} color={homeColors.textMuted} />
         </Pressable>
+      </View>
 
-        <View style={styles.examplesSection}>
-          <Text style={styles.examplesTitle}>Hızlı örnekler</Text>
-          <View style={styles.examplesRow}>
-            {EXAMPLES.map((example) => (
+      {suggestions.length > 0 ? (
+        <PartialSuggestionsPanel
+          title="Bunlar olabilir"
+          query={code}
+          suggestions={suggestions}
+          hasMoreResults={hasMoreResults}
+          onTrySuggestion={handleTrySuggestion}
+        />
+      ) : null}
+
+      {strokeHint ? (
+        <Text style={styles.strokeHint}>
+          Strok değerini de girerseniz ürün daha net tanımlanır.
+        </Text>
+      ) : null}
+
+      <Pressable
+        style={({ pressed }) => [
+          styles.button,
+          !trimmedCode && styles.buttonDisabled,
+          pressed && trimmedCode ? styles.buttonPressed : null,
+        ]}
+        onPress={handleSearch}
+        disabled={!trimmedCode || isSearching}
+      >
+        {isSearching ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Tanımla ve karşılaştır</Text>
+        )}
+      </Pressable>
+
+      <RecentSearchHistoryPanel limit={3} showDivider />
+
+      <View style={styles.examplesSection}>
+        <Text style={styles.examplesTitle}>Hızlı örnekler</Text>
+        <View style={styles.examplesRow}>
+          {EXAMPLES.map((example) => {
+            const isActive = trimmedCode === example;
+            return (
               <Pressable
                 key={example}
-                style={({ pressed }) => [styles.exampleChip, pressed && styles.exampleChipPressed]}
+                style={({ pressed }) => [
+                  styles.exampleChip,
+                  isActive && styles.exampleChipActive,
+                  pressed && styles.exampleChipPressed,
+                ]}
                 onPress={() => setCode(example)}
               >
-                <Text style={styles.exampleText}>{example}</Text>
+                <Text style={[styles.exampleText, isActive && styles.exampleTextActive]}>
+                  {example}
+                </Text>
               </Pressable>
-            ))}
-          </View>
+            );
+          })}
         </View>
-
-        <RecentSearchHistoryPanel limit={3} />
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.background.card,
-    borderColor: colors.border.accentLight,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  brandHeader: {
-    backgroundColor: colors.background.navy,
-    borderBottomColor: colors.border.default,
-    borderBottomWidth: 1,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.lg,
-  },
-  brandHeaderRow: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  brandLogoArea: {
-    flex: 1,
-    paddingRight: spacing.md,
-  },
-  body: {
-    backgroundColor: colors.background.card,
-    gap: spacing.md,
-    padding: spacing.xl,
-  },
-  fieldHeader: {
-    gap: spacing.xs,
-  },
-  label: {
-    ...typography.h2,
-    color: colors.text.inverse,
-  },
-  hint: {
-    ...typography.bodySm,
-    color: colors.text.inverseMuted,
-  },
-  strokeHint: {
-    ...typography.bodySm,
-    color: colors.accent.blueLight,
-    fontWeight: '600',
-  },
-  input: {
-    backgroundColor: colors.background.input,
-    borderColor: colors.border.default,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    color: colors.text.inverse,
-    fontSize: 17,
-    fontWeight: '600',
-    minHeight: 52,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: Platform.OS === 'ios' ? 14 : 10,
-  },
-  button: {
-    ...buttons.primary,
-    marginTop: spacing.xs,
-  },
-  buttonDisabled: buttons.primaryDisabled,
-  buttonPressed: buttons.primaryPressed,
-  buttonText: buttons.primaryText,
-  examplesSection: {
-    borderTopColor: colors.border.subtle,
-    borderTopWidth: 1,
-    gap: spacing.sm,
-    marginTop: spacing.xs,
-    paddingTop: spacing.md,
-  },
-  examplesTitle: {
-    ...typography.sectionTitle,
-    color: colors.text.inverseFaint,
-  },
-  examplesRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  exampleChip: {
-    backgroundColor: colors.background.elevated,
-    borderColor: colors.border.default,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  exampleChipPressed: {
-    backgroundColor: colors.navy[600],
-    borderColor: colors.border.strong,
-  },
-  exampleText: {
-    ...typography.caption,
-    color: colors.text.inverseMuted,
-    fontWeight: '600',
-  },
-});
+const createStyles = (c: HomeColorPalette) =>
+  StyleSheet.create({
+    root: {
+      flex: 1,
+      gap: 16,
+    },
+    headerRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      marginBottom: 20,
+    },
+    headerSide: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 0,
+      width: 44,
+    },
+    headerSideRight: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 8,
+      justifyContent: 'flex-end',
+      minWidth: 96,
+    },
+    logoIcon: {
+      borderColor: c.border,
+      borderRadius: 10,
+      borderWidth: 1,
+      height: 44,
+      padding: 0,
+      resizeMode: 'cover',
+      width: 44,
+    },
+    brandName: {
+      flex: 1,
+      fontSize: 20,
+      fontWeight: '500',
+      textAlign: 'center',
+    },
+    brandNamePrimary: {
+      color: c.headerTitle,
+    },
+    brandNameBlue: {
+      color: c.brandAccentBlue,
+    },
+    brandNameOrange: {
+      color: c.accent,
+    },
+    fieldHeader: {
+      marginBottom: 12,
+    },
+    label: {
+      color: c.textMuted,
+      fontSize: 13,
+      fontWeight: '500',
+      letterSpacing: 1,
+      textTransform: 'uppercase',
+    },
+    hint: {
+      color: c.textDim,
+      fontSize: 13,
+      marginTop: 4,
+    },
+    inputRow: {
+      alignItems: 'stretch',
+      flexDirection: 'row',
+      gap: 8,
+    },
+    inputWrapper: {
+      flex: 1,
+      justifyContent: 'center',
+      position: 'relative',
+    },
+    input: {
+      backgroundColor: c.inputBg,
+      borderColor: c.border,
+      borderRadius: 8,
+      borderWidth: 1,
+      color: c.textPrimary,
+      fontFamily: homeMonoFont,
+      fontSize: 15,
+      letterSpacing: 0.3,
+      minHeight: 48,
+      paddingHorizontal: 14,
+      paddingVertical: Platform.OS === 'ios' ? 13 : 11,
+      width: '100%',
+    },
+    inputWithClear: {
+      paddingRight: 38,
+    },
+    clearButton: {
+      alignItems: 'center',
+      bottom: 0,
+      justifyContent: 'center',
+      position: 'absolute',
+      right: 10,
+      top: 0,
+      width: 28,
+    },
+    clearButtonPressed: {
+      opacity: 0.7,
+    },
+    cameraButton: {
+      alignItems: 'center',
+      backgroundColor: c.inputBg,
+      borderColor: c.border,
+      borderRadius: 8,
+      borderWidth: 1,
+      justifyContent: 'center',
+      minHeight: 48,
+      minWidth: 48,
+      paddingHorizontal: 12,
+    },
+    strokeHint: {
+      color: c.textMuted,
+      fontSize: 13,
+      marginTop: 10,
+    },
+    button: {
+      alignItems: 'center',
+      backgroundColor: c.accent,
+      borderRadius: 8,
+      marginTop: 10,
+      paddingVertical: 14,
+    },
+    buttonDisabled: {
+      opacity: 0.45,
+    },
+    buttonPressed: {
+      opacity: 0.88,
+    },
+    buttonText: {
+      color: '#fff',
+      fontSize: 15,
+      fontWeight: '500',
+    },
+    examplesSection: {
+      gap: 10,
+      marginTop: 18,
+    },
+    examplesTitle: {
+      color: c.textMuted,
+      fontSize: 13,
+      fontWeight: '500',
+      letterSpacing: 1,
+      textTransform: 'uppercase',
+    },
+    examplesRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 7,
+    },
+    exampleChip: {
+      backgroundColor: c.inputBg,
+      borderColor: c.border,
+      borderRadius: 6,
+      borderWidth: 1,
+      paddingHorizontal: 11,
+      paddingVertical: 6,
+    },
+    exampleChipActive: {
+      borderColor: c.accent,
+    },
+    exampleChipPressed: {
+      opacity: 0.85,
+    },
+    exampleText: {
+      color: c.textDim,
+      fontFamily: homeMonoFont,
+      fontSize: 12,
+      fontWeight: '500',
+    },
+    exampleTextActive: {
+      color: c.accent,
+    },
+  });

@@ -5,76 +5,68 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { getSearchHistory } from '@/services/localSearchStore';
 import type { SearchHistoryEntry } from '@/types/searchHistory';
-import { colors, radius, spacing, typography } from '@/theme';
+import { homeMonoFont } from '@/theme/homePalettes';
+import type { HomeColorPalette } from '@/theme/homePalettes';
+import { useTheme } from '@/theme/ThemeProvider';
+import { useHomeStyles } from '@/theme/useHomeStyles';
 import { productCodeResultHref } from '@/utils/productCodeRouteParam';
 
 const DEFAULT_LIMIT = 3;
 
 interface RecentSearchHistoryPanelProps {
   limit?: number;
+  showDivider?: boolean;
 }
 
-function formatSearchHistorySubtitle(entry: SearchHistoryEntry): string | null {
-  const brand = entry.brand?.trim();
-  const productType = entry.productType?.trim() || entry.series?.trim();
-
-  if (brand && productType) {
-    return `${brand} - ${productType}`;
-  }
-  if (brand) {
-    return brand;
-  }
-  if (productType) {
-    return productType;
-  }
-  return null;
-}
+type PanelStyles = ReturnType<typeof createStyles>;
 
 function RecentSearchRow({
   entry,
   isLast,
+  isLatest,
+  styles,
 }: {
   entry: SearchHistoryEntry;
   isLast: boolean;
+  isLatest: boolean;
+  styles: PanelStyles;
 }) {
-  const subtitle = formatSearchHistorySubtitle(entry);
+  const { homeColors } = useTheme();
+  const brand = entry.brand?.trim();
 
   return (
-    <View style={styles.rowWrapper}>
-      <Pressable
-        style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-        onPress={() => router.push(productCodeResultHref(entry.originalInput))}
-      >
-        <View style={styles.iconBox}>
-          <Ionicons name="document-text-outline" size={20} color={colors.accent.orange} />
-        </View>
+    <Pressable
+      style={({ pressed }) => [
+        styles.row,
+        !isLast && styles.rowBorder,
+        pressed && styles.rowPressed,
+      ]}
+      onPress={() => router.push(productCodeResultHref(entry.originalInput))}
+    >
+      <View style={[styles.dot, isLatest && styles.dotLatest]} />
 
-        <View style={styles.rowText}>
-          <Text style={styles.rowCode} numberOfLines={1}>
-            {entry.originalInput}
+      <Text style={styles.rowCode} numberOfLines={1}>
+        {entry.originalInput}
+      </Text>
+
+      {brand ? (
+        <View style={styles.brandBadge}>
+          <Text style={styles.brandText} numberOfLines={1}>
+            {brand}
           </Text>
-          {subtitle ? (
-            <Text style={styles.rowMeta} numberOfLines={1}>
-              {subtitle}
-            </Text>
-          ) : null}
         </View>
+      ) : null}
 
-        <Ionicons
-          name="chevron-forward"
-          size={18}
-          color={colors.text.inverseFaint}
-          style={styles.chevron}
-        />
-      </Pressable>
-      {!isLast ? <View style={styles.divider} /> : null}
-    </View>
+      <Ionicons name="chevron-forward" size={14} color={homeColors.border} />
+    </Pressable>
   );
 }
 
 export function RecentSearchHistoryPanel({
   limit = DEFAULT_LIMIT,
+  showDivider = false,
 }: RecentSearchHistoryPanelProps) {
+  const styles = useHomeStyles(createStyles);
   const [searches, setSearches] = useState<SearchHistoryEntry[]>([]);
 
   const loadRecentSearches = useCallback(() => {
@@ -93,11 +85,13 @@ export function RecentSearchHistoryPanel({
 
   return (
     <View style={styles.section}>
+      {showDivider ? <View style={styles.divider} /> : null}
+
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Son Aramalar</Text>
+        <Text style={styles.sectionTitle}>Son aramalar</Text>
         <Link href="/history" asChild>
           <Pressable style={({ pressed }) => [styles.viewAllLink, pressed && styles.viewAllPressed]}>
-            <Text style={styles.viewAllText}>Tümü</Text>
+            <Text style={styles.viewAllText}>Tümünü gör</Text>
           </Pressable>
         </Link>
       </View>
@@ -108,6 +102,8 @@ export function RecentSearchHistoryPanel({
             key={entry.id}
             entry={entry}
             isLast={index === searches.length - 1}
+            isLatest={index === 0}
+            styles={styles}
           />
         ))}
       </View>
@@ -115,93 +111,92 @@ export function RecentSearchHistoryPanel({
   );
 }
 
-const styles = StyleSheet.create({
-  section: {
-    alignSelf: 'stretch',
-    borderTopColor: colors.border.subtle,
-    borderTopWidth: 1,
-    gap: spacing.sm,
-    marginTop: spacing.xs,
-    paddingTop: spacing.md,
-    width: '100%',
-  },
-  sectionHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  sectionTitle: {
-    ...typography.sectionTitle,
-    color: colors.text.inverse,
-    fontWeight: '700',
-  },
-  viewAllLink: {
-    paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.xs,
-  },
-  viewAllPressed: {
-    opacity: 0.75,
-  },
-  viewAllText: {
-    ...typography.caption,
-    color: colors.accent.blueLight,
-    fontWeight: '700',
-  },
-  list: {
-    alignSelf: 'stretch',
-    overflow: 'hidden',
-    width: '100%',
-  },
-  rowWrapper: {
-    alignSelf: 'stretch',
-    width: '100%',
-  },
-  row: {
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    flexDirection: 'row',
-    minHeight: 64,
-    paddingVertical: spacing.sm,
-    width: '100%',
-  },
-  rowPressed: {
-    opacity: 0.85,
-  },
-  iconBox: {
-    alignItems: 'center',
-    backgroundColor: colors.background.elevated,
-    borderColor: colors.border.default,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    flexShrink: 0,
-    height: 40,
-    justifyContent: 'center',
-    marginRight: spacing.md,
-    width: 40,
-  },
-  rowText: {
-    flex: 1,
-    flexGrow: 1,
-    flexShrink: 1,
-    gap: 4,
-    minWidth: 0,
-  },
-  rowCode: {
-    ...typography.bodySm,
-    color: colors.text.inverse,
-    fontWeight: '700',
-  },
-  rowMeta: {
-    ...typography.caption,
-    color: colors.text.inverseMuted,
-  },
-  chevron: {
-    flexShrink: 0,
-    marginLeft: spacing.sm,
-  },
-  divider: {
-    backgroundColor: colors.border.subtle,
-    height: 1,
-    marginLeft: 40 + spacing.md,
-  },
-});
+const createStyles = (c: HomeColorPalette) =>
+  StyleSheet.create({
+    section: {
+      alignSelf: 'stretch',
+      gap: 10,
+      width: '100%',
+    },
+    divider: {
+      borderTopColor: c.border,
+      borderTopWidth: 1,
+      marginBottom: 18,
+      marginTop: 18,
+    },
+    sectionHeader: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    sectionTitle: {
+      color: c.textMuted,
+      fontSize: 13,
+      fontWeight: '500',
+      letterSpacing: 1,
+      textTransform: 'uppercase',
+    },
+    viewAllLink: {
+      paddingHorizontal: 2,
+      paddingVertical: 2,
+    },
+    viewAllPressed: {
+      opacity: 0.75,
+    },
+    viewAllText: {
+      color: c.accent,
+      fontSize: 12,
+    },
+    list: {
+      alignSelf: 'stretch',
+      width: '100%',
+    },
+    row: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 10,
+      paddingVertical: 11,
+    },
+    rowBorder: {
+      borderBottomColor: c.borderDark,
+      borderBottomWidth: 1,
+    },
+    rowPressed: {
+      opacity: 0.85,
+    },
+    dot: {
+      backgroundColor: c.border,
+      borderRadius: 4,
+      flexShrink: 0,
+      height: 8,
+      width: 8,
+    },
+    dotLatest: {
+      backgroundColor: c.accent,
+    },
+    rowCode: {
+      color: c.brandBlue,
+      flex: 1,
+      fontFamily: homeMonoFont,
+      fontSize: 14,
+      fontWeight: '600',
+      letterSpacing: 0.3,
+      minWidth: 0,
+    },
+    brandBadge: {
+      backgroundColor: c.checkBlueBg,
+      borderColor: c.checkBlueBorder,
+      borderRadius: 5,
+      borderWidth: 1,
+      flexShrink: 0,
+      maxWidth: 96,
+      overflow: 'hidden',
+      paddingHorizontal: 9,
+      paddingVertical: 3,
+    },
+    brandText: {
+      color: c.brandBlue,
+      fontSize: 11,
+      fontWeight: '600',
+    },
+  });

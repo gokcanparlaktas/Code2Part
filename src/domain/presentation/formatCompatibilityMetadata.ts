@@ -46,6 +46,10 @@ export const CATALOG_REVIEW_WARNING_TITLE_TR = 'Katalog doğrulaması gerekli';
 export const CATALOG_SUPPORTED_MATCH_FOOTNOTE_TR =
   'Eşleşme üretici katalog verileriyle desteklenir. Sipariş öncesi uygulama basıncı, debisi ve bağlantı detayları kontrol edilmelidir.';
 
+/** Muadiller sayfası — yüzde halkası skorunu açıklar. */
+export const EQUIVALENCE_PAGE_SCORE_NOTE_TR =
+  'Uyum oranı, kontrol gerektiren alanlardan dolayı etkilenebilir. Ana uyum skoru, kartların yanındaki yüzde ile gösterilir.';
+
 const CATALOG_REVIEW_PATTERN =
   /port durumları|katalog aday|inceleme gerektiren|katalog sembol|üretim onayı değildir/i;
 
@@ -166,10 +170,7 @@ export function buildLegacyMatchScoreFootnote(
   if (matchLevel === 'high') {
     return null;
   }
-  return (
-    'Yüzde skoru kontrol gerektiren alanlardan etkilenebilir; ' +
-    'ana uyumluluk seviyesi yukarıda gösterilir.'
-  );
+  return EQUIVALENCE_PAGE_SCORE_NOTE_TR;
 }
 
 export function buildCompatibilityMetadataFootnote(

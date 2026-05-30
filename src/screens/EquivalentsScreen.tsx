@@ -5,13 +5,15 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { EquivalentAccordionCard } from '@/components/EquivalentAccordionCard';
 import { EquivalencePageScoreNote } from '@/components/EquivalencePageScoreNote';
 import { SourceProductSummary } from '@/components/SourceProductSummary';
-import { collectEquivalencePageLegacyScoreFootnote } from '@/domain/presentation/collectEquivalencePageAlerts';
+import { EQUIVALENCE_PAGE_SCORE_NOTE_TR } from '@/domain/presentation/formatCompatibilityMetadata';
 import { sortCompatibilityResultsByMatchPercentage } from '@/domain/presentation/sortCompatibilityResults';
 import { filterVisibleEquivalentResults } from '@/domain/resolver/filterVisibleEquivalentResults';
 import { useBackendCompareLoader } from '@/hooks/useBackendCompareLoader';
 import { useResolvedProductSearch } from '@/hooks/useResolvedProductSearch';
 import { isBackendResolverMode } from '@/services/resolverService';
-import { colors, radius, spacing, typography, buttons } from '@/theme';
+import { useTheme } from '@/theme/ThemeProvider';
+import type { HomeColorPalette } from '@/theme/homePalettes';
+import { useHomeStyles } from '@/theme/useHomeStyles';
 import {
   compatibilityResultKey,
   mergeCompatibilityResultDisplay,
@@ -19,11 +21,12 @@ import {
 import { decodeProductCodeFromRoute } from '@/utils/productCodeRouteParam';
 
 function EquivalentsScreen() {
+  const styles = useHomeStyles(createStyles);
+  const { homeColors } = useTheme();
   const { code } = useLocalSearchParams<{ code: string }>();
   const inputCode = decodeProductCodeFromRoute(code);
   const { loading, errorMessage, data } = useResolvedProductSearch(inputCode);
   const {
-    loadingKey,
     errorMessage: compareErrorMessage,
     loadCompare,
     resolveDisplayResult,
@@ -53,14 +56,6 @@ function EquivalentsScreen() {
     () => filterVisibleEquivalentResults(compatibilityResults),
     [compatibilityResults],
   );
-
-  const legacyScoreFootnote = useMemo(() => {
-    const displayed = limited.visible.map((result) => {
-      const rowKey = compatibilityResultKey(result);
-      return mergeCompatibilityResultDisplay(result, resolveDisplayResult(result, rowKey));
-    });
-    return collectEquivalencePageLegacyScoreFootnote(displayed);
-  }, [limited.visible, resolveDisplayResult]);
 
   useEffect(() => {
     if (!expandedKey || !isBackendResolverMode()) {
@@ -96,7 +91,7 @@ function EquivalentsScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.navy[700]} />
+        <ActivityIndicator size="large" color={homeColors.accent} />
         <Text style={styles.loadingText}>Muadil adaylar yükleniyor…</Text>
       </View>
     );
@@ -131,7 +126,7 @@ function EquivalentsScreen() {
       <SourceProductSummary identification={identification} />
 
       {compatibilityResults.length > 0 ? (
-        <EquivalencePageScoreNote note={legacyScoreFootnote} />
+        <EquivalencePageScoreNote note={EQUIVALENCE_PAGE_SCORE_NOTE_TR} />
       ) : null}
 
       {compareErrorMessage ? (
@@ -147,25 +142,29 @@ function EquivalentsScreen() {
           </Text>
         </View>
       ) : (
-        <View style={styles.accordionList}>
-          {limited.visible.map((result) => {
-            const rowKey = compatibilityResultKey(result);
-            const displayResult = mergeCompatibilityResultDisplay(
-              result,
-              resolveDisplayResult(result, rowKey)
-            );
-            return (
-              <EquivalentAccordionCard
-                key={rowKey}
-                result={displayResult}
-                expanded={expandedKey === rowKey}
-                loading={loadingKey === rowKey}
-                onToggle={() =>
-                  setExpandedKey((current) => (current === rowKey ? null : rowKey))
-                }
-              />
-            );
-          })}
+        <>
+          <Text style={styles.listTitle}>Muadil adaylar</Text>
+          <View style={styles.accordionList}>
+            {limited.visible.map((result, index) => {
+              const rowKey = compatibilityResultKey(result);
+              const displayResult = mergeCompatibilityResultDisplay(
+                result,
+                resolveDisplayResult(result, rowKey)
+              );
+              return (
+                <EquivalentAccordionCard
+                  key={rowKey}
+                  result={displayResult}
+                  expanded={expandedKey === rowKey}
+                  isLast={index === limited.visible.length - 1}
+                  onToggle={() =>
+                    setExpandedKey((current) => (current === rowKey ? null : rowKey))
+                  }
+                />
+              );
+            })}
+          </View>
+
           {limited.isLimited ? (
             <View style={styles.limitedFooter}>
               <Text style={styles.limitedHint}>
@@ -190,87 +189,111 @@ function EquivalentsScreen() {
               </Pressable>
             </View>
           ) : null}
-        </View>
+        </>
       )}
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    gap: spacing.lg,
-    padding: spacing.xl,
-    paddingBottom: 40,
-  },
-  accordionList: {
-    gap: spacing.md,
-  },
-  limitedFooter: {
-    gap: spacing.sm,
-    paddingTop: spacing.xs,
-  },
-  limitedHint: {
-    ...typography.caption,
-    color: colors.text.muted,
-  },
-  allButton: {
-    ...buttons.primary,
-    paddingVertical: spacing.md,
-  },
-  allButtonPressed: buttons.primaryPressed,
-  allButtonText: {
-    ...buttons.primaryText,
-    fontSize: 15,
-  },
-  emptyCard: {
-    backgroundColor: colors.background.card,
-    borderColor: colors.border.accentLight,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    padding: spacing.lg,
-  },
-  emptyText: {
-    ...typography.body,
-    color: colors.surface.textMuted,
-    textAlign: 'center',
-  },
-  compareErrorCard: {
-    backgroundColor: colors.status.danger.bg,
-    borderColor: colors.status.danger.border,
-    borderLeftWidth: 3,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    padding: spacing.md,
-  },
-  compareErrorText: {
-    ...typography.bodySm,
-    color: colors.status.danger.text,
-  },
-  centered: {
-    flex: 1,
-    gap: spacing.sm,
-    justifyContent: 'center',
-    padding: spacing.xxl,
-  },
-  loadingText: {
-    ...typography.body,
-    color: colors.text.inverseMuted,
-    textAlign: 'center',
-  },
-  errorTitle: {
-    ...typography.h1,
-    color: colors.text.inverse,
-    textAlign: 'center',
-  },
-  errorMessage: {
-    ...typography.body,
-    color: colors.text.inverseMuted,
-    lineHeight: 22,
-    textAlign: 'center',
-  },
-});
+const createStyles = (c: HomeColorPalette) =>
+  StyleSheet.create({
+    scroll: {
+      backgroundColor: c.bg,
+      flex: 1,
+    },
+    content: {
+      gap: 12,
+      paddingBottom: 32,
+      paddingHorizontal: 16,
+      paddingTop: 12,
+    },
+    listTitle: {
+      color: c.textMuted,
+      fontSize: 13,
+      fontWeight: '500',
+      letterSpacing: 1,
+      textTransform: 'uppercase',
+    },
+    accordionList: {
+      backgroundColor: c.cardBg,
+      borderColor: c.border,
+      borderRadius: 8,
+      borderWidth: 1,
+      overflow: 'hidden',
+      paddingHorizontal: 12,
+    },
+    limitedFooter: {
+      gap: 8,
+      paddingTop: 4,
+    },
+    limitedHint: {
+      color: c.textDim,
+      fontSize: 12,
+      textAlign: 'center',
+    },
+    allButton: {
+      alignItems: 'center',
+      backgroundColor: c.accent,
+      borderRadius: 8,
+      paddingVertical: 14,
+    },
+    allButtonPressed: {
+      opacity: 0.88,
+    },
+    allButtonText: {
+      color: '#fff',
+      fontSize: 15,
+      fontWeight: '500',
+    },
+    emptyCard: {
+      backgroundColor: c.cardBg,
+      borderColor: c.border,
+      borderRadius: 8,
+      borderWidth: 1,
+      padding: 16,
+    },
+    emptyText: {
+      color: c.textMuted,
+      fontSize: 13,
+      textAlign: 'center',
+    },
+    compareErrorCard: {
+      backgroundColor: c.redBg,
+      borderColor: c.redBorder,
+      borderLeftWidth: 3,
+      borderRadius: 8,
+      borderWidth: 1,
+      padding: 12,
+    },
+    compareErrorText: {
+      color: c.red,
+      fontSize: 13,
+      lineHeight: 18,
+    },
+    centered: {
+      backgroundColor: c.bg,
+      flex: 1,
+      gap: 12,
+      justifyContent: 'center',
+      padding: 24,
+    },
+    loadingText: {
+      color: c.textMuted,
+      fontSize: 14,
+      textAlign: 'center',
+    },
+    errorTitle: {
+      color: c.textPrimary,
+      fontSize: 18,
+      fontWeight: '600',
+      textAlign: 'center',
+    },
+    errorMessage: {
+      color: c.textMuted,
+      fontSize: 14,
+      lineHeight: 20,
+      textAlign: 'center',
+    },
+  });
 
 export default EquivalentsScreen;

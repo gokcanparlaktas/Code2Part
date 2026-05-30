@@ -1,11 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import {
-  MATCH_PERCENTAGE_RING_SIZE,
-  MatchPercentageRing,
-} from '@/components/common/MatchPercentageRing';
 import { CompatibilityComparisonSections } from '@/components/CompatibilityComparisonSections';
-import { CompatibilityMetadataBanner } from '@/components/CompatibilityMetadataBanner';
+import { CompatibilityMetadataChips } from '@/components/CompatibilityMetadataChips';
 import { formatCollapsedEquivalentCheckHint } from '@/domain/presentation/formatCollapsedEquivalentCheckHint';
 import { calculateMatchPercentage } from '@/domain/scoring/calculateMatchPercentage';
 import type { CompatibilityResult } from '@/types/compatibility';
@@ -13,24 +10,30 @@ import {
   equivalenceStatusTone,
   formatEquivalenceStatusLabel,
 } from '@/domain/presentation/formatCompatibilityMetadata';
+import { formatProductCategoryDisplayValue } from '@/domain/presentation/formatUserFacingCatalogDisplay';
 import { formatCollapsedRiskHint } from '@/utils/formatRisk';
-import { colors, radius, shadows, spacing, typography } from '@/theme';
+import { homeMonoFont } from '@/theme/homePalettes';
+import type { HomeColorPalette } from '@/theme/homePalettes';
+import { useTheme } from '@/theme/ThemeProvider';
+import { useHomeStyles } from '@/theme/useHomeStyles';
 
 import { RiskLevelBadge } from './RiskLevelBadge';
 
 interface EquivalentAccordionCardProps {
   result: CompatibilityResult;
   expanded: boolean;
-  loading?: boolean;
+  isLast?: boolean;
   onToggle: () => void;
 }
 
 export function EquivalentAccordionCard({
   result,
   expanded,
-  loading = false,
+  isLast = false,
   onToggle,
 }: EquivalentAccordionCardProps) {
+  const styles = useHomeStyles(createStyles);
+  const { homeColors } = useTheme();
   const { candidate, summary } = result;
   const hasChecks = result.checkItems.length > 0;
   const modelCode = candidate.suggestedCode ?? 'Model oluşturulamadı';
@@ -41,167 +44,188 @@ export function EquivalentAccordionCard({
     ? equivalenceStatusTone(result.metadata)
     : undefined;
   const matchPercentage = calculateMatchPercentage(result);
+  const progress = Math.max(0, Math.min(100, matchPercentage.percentage));
   const collapsedCheckHint = formatCollapsedEquivalentCheckHint(result.checkItems.length);
+  const standardDisplay =
+    candidate.standardFamily.trim() ||
+    candidate.targetIdentification?.standardFamily?.value?.trim() ||
+    '';
+  const productTypeDisplay =
+    formatProductCategoryDisplayValue(candidate.productCategory, candidate.productType) ||
+    candidate.productType.trim();
 
   return (
-    <View style={styles.cardShell}>
-      <View style={[styles.card, expanded && styles.cardExpanded]}>
-        <Pressable
-          style={({ pressed }) => [styles.header, pressed && styles.headerPressed]}
-          onPress={onToggle}
-          accessibilityRole="button"
-          accessibilityState={{ expanded }}
+    <View style={[styles.item, !isLast && styles.itemBorder]}>
+      <Pressable
+        style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+        onPress={onToggle}
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+      >
+        <View
+          style={[
+            styles.chipBox,
+            styles.matchPill,
+            { borderColor: matchPercentage.color },
+          ]}
         >
-          <View style={styles.headerTop}>
-            <View style={styles.titleBlock}>
-              <Text style={styles.brandSeries}>{candidate.brand}</Text>
-              <Text style={styles.modelLine}>
-                <Text style={styles.modelLabel}>Model </Text>
-                {modelCode}
-              </Text>
-              {collapsedCheckHint ? (
-                <View style={styles.riskHintSlot} pointerEvents="none">
-                  <Text
-                    style={[styles.riskHint, expanded && styles.riskHintHidden]}
-                    numberOfLines={1}
-                  >
-                    {collapsedCheckHint}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-            <View style={styles.headerTrailing}>
-              <View style={styles.ringColumn}>
-                <MatchPercentageRing match={matchPercentage} />
-              </View>
-              <View style={styles.chevronAlign}>
-                <Text style={styles.chevron}>{expanded ? '−' : '+'}</Text>
-              </View>
-            </View>
+          <Text style={[styles.chipText, { color: matchPercentage.color }]}>
+            %{progress}
+          </Text>
+        </View>
+
+        <View style={styles.content}>
+          <View style={[styles.chipBox, styles.brandChip]}>
+            <Text style={[styles.chipText, styles.brandText]} numberOfLines={1}>
+              {candidate.brand}
+            </Text>
           </View>
-        </Pressable>
+          <Text style={styles.code} numberOfLines={2}>
+            {modelCode}
+          </Text>
 
-        {expanded ? (
-          <View style={styles.body}>
-            {loading ? (
-              <Text style={styles.loadingText}>Detaylı karşılaştırma yükleniyor…</Text>
-            ) : null}
-            <View style={styles.riskBadgeRow}>
-              <RiskLevelBadge
-                riskLevel={result.metadata ? undefined : summary.riskLevel}
-                label={result.metadata ? statusLabel : undefined}
-                tone={statusTone}
-              />
-            </View>
-            <Text style={styles.summaryText}>{summary.summaryTr}</Text>
+          {productTypeDisplay ? (
+            <Text style={styles.productType} numberOfLines={1}>
+              {productTypeDisplay}
+            </Text>
+          ) : null}
 
-            {result.metadata ? (
-              <CompatibilityMetadataBanner
-                metadata={result.metadata}
-                hasCheckItems={hasChecks}
-              />
-            ) : null}
+          {standardDisplay ? (
+            <Text style={styles.standardLine} numberOfLines={1}>
+              Standart: {standardDisplay}
+            </Text>
+          ) : null}
 
-            <CompatibilityComparisonSections result={result} />
+          {collapsedCheckHint ? (
+            <Text style={styles.statusLine} numberOfLines={1}>
+              {collapsedCheckHint}
+            </Text>
+          ) : null}
+        </View>
+
+        <Ionicons
+          name={expanded ? 'chevron-down' : 'chevron-forward'}
+          size={14}
+          color={homeColors.border}
+          style={styles.chevron}
+        />
+      </Pressable>
+
+      {expanded ? (
+        <View style={styles.body}>
+          <View style={styles.riskBadgeRow}>
+            <RiskLevelBadge
+              riskLevel={result.metadata ? undefined : summary.riskLevel}
+              label={result.metadata ? statusLabel : undefined}
+              tone={statusTone}
+              variant="dark"
+            />
           </View>
-        ) : null}
-      </View>
+
+          <Text style={styles.summaryText}>{summary.summaryTr}</Text>
+
+          {result.metadata ? (
+            <CompatibilityMetadataChips metadata={result.metadata} />
+          ) : null}
+
+          <CompatibilityComparisonSections result={result} variant="compare" />
+        </View>
+      ) : null}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  cardShell: {
-    borderRadius: radius.lg,
-    ...shadows.subtle,
-  },
-  card: {
-    backgroundColor: colors.background.card,
-    borderColor: colors.border.accentLight,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-  },
-  cardExpanded: {
-    borderColor: colors.accent.orange,
-  },
-  header: {
-    minHeight: MATCH_PERCENTAGE_RING_SIZE + spacing.lg * 2,
-    padding: spacing.lg,
-  },
-  headerPressed: {
-    backgroundColor: colors.background.elevated,
-  },
-  headerTop: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  titleBlock: {
-    flex: 1,
-    gap: 3,
-    paddingRight: spacing.sm,
-  },
-  brandSeries: {
-    ...typography.h2,
-    color: colors.surface.text,
-  },
-  headerTrailing: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    gap: spacing.xs,
-  },
-  ringColumn: {
-    alignItems: 'center',
-  },
-  chevronAlign: {
-    height: MATCH_PERCENTAGE_RING_SIZE,
-    justifyContent: 'center',
-  },
-  chevron: {
-    color: colors.surface.textMuted,
-    fontSize: 18,
-    fontWeight: '300',
-    width: 18,
-  },
-  modelLine: {
-    ...typography.code,
-    color: colors.accent.blueLight,
-    fontSize: 14,
-  },
-  modelLabel: {
-    color: colors.surface.textMuted,
-    fontFamily: undefined,
-    fontWeight: '600',
-  },
-  riskHintSlot: {
-    justifyContent: 'center',
-    minHeight: 20,
-  },
-  riskHint: {
-    ...typography.bodySm,
-    color: colors.match.medium,
-    fontWeight: '600',
-  },
-  riskHintHidden: {
-    opacity: 0,
-  },
-  body: {
-    borderTopColor: colors.border.subtle,
-    borderTopWidth: 1,
-    gap: spacing.lg,
-    padding: spacing.lg,
-    paddingTop: spacing.md,
-  },
-  riskBadgeRow: {
-    alignItems: 'flex-start',
-  },
-  summaryText: {
-    ...typography.body,
-    color: colors.surface.textSecondary,
-  },
-  loadingText: {
-    ...typography.bodySm,
-    color: colors.surface.textMuted,
-    fontStyle: 'italic',
-  },
-});
+const createStyles = (c: HomeColorPalette) =>
+  StyleSheet.create({
+    item: {
+      backgroundColor: c.cardBg,
+    },
+    itemBorder: {
+      borderBottomColor: c.borderDark,
+      borderBottomWidth: 1,
+    },
+    row: {
+      alignItems: 'flex-start',
+      flexDirection: 'row',
+      gap: 10,
+      paddingVertical: 10,
+    },
+    rowPressed: {
+      opacity: 0.85,
+    },
+    chipBox: {
+      alignItems: 'center',
+      backgroundColor: c.cardBg,
+      borderColor: c.border,
+      borderRadius: 5,
+      borderWidth: 1,
+      flexShrink: 0,
+      height: 28,
+      justifyContent: 'center',
+      overflow: 'hidden',
+      width: 56,
+    },
+    matchPill: {
+      alignSelf: 'flex-start',
+    },
+    chipText: {
+      fontSize: 11,
+      fontWeight: '700',
+      textAlign: 'center',
+    },
+    content: {
+      flex: 1,
+      gap: 4,
+      minWidth: 0,
+    },
+    brandChip: {
+      alignSelf: 'flex-start',
+      backgroundColor: c.checkBlueBg,
+      borderColor: c.checkBlueBorder,
+      height: undefined,
+      minHeight: 28,
+      paddingHorizontal: 8,
+      width: undefined,
+    },
+    brandText: {
+      color: c.brandBlue,
+      fontWeight: '700',
+      paddingHorizontal: 4,
+    },
+    code: {
+      color: c.brandBlue,
+      fontFamily: homeMonoFont,
+      fontSize: 13,
+      fontWeight: '600',
+      letterSpacing: 0.3,
+    },
+    productType: {
+      color: c.textPrimary,
+      fontSize: 11,
+      fontWeight: '500',
+    },
+    standardLine: {
+      color: c.textMuted,
+      fontSize: 11,
+    },
+    statusLine: {
+      color: c.textMuted,
+      fontSize: 11,
+      fontWeight: '500',
+    },
+    chevron: {
+      marginTop: 2,
+    },
+    body: {
+      gap: 12,
+      paddingBottom: 12,
+    },
+    riskBadgeRow: {
+      alignItems: 'flex-start',
+    },
+    summaryText: {
+      color: c.textDim,
+      fontSize: 13,
+      lineHeight: 19,
+    },
+  });
