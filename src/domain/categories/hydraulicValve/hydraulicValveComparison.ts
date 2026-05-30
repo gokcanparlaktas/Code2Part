@@ -12,6 +12,7 @@ import type {
 import { formatAttributeValue } from "@/utils/formatConfidence";
 
 import { getTechnicalAttributes } from "@/domain/attributes/getTechnicalAttributes";
+import type { CatalogDataProvider } from "@/domain/catalogData/CatalogDataProvider";
 import {
     buildCandidateFallbackCanonicalProfile,
     buildHydraulicValveCanonicalProfile,
@@ -264,6 +265,7 @@ function buildHydraulicValveProfileScoring(
 export function compareHydraulicValves(
   source: ProductIdentification,
   candidate: EquivalentCandidate,
+  options?: { catalogProvider?: CatalogDataProvider },
 ): CompatibilityResult {
   const target = candidate.targetIdentification;
   const sourceAttrs = getTechnicalAttributes(source);
@@ -276,11 +278,13 @@ export function compareHydraulicValves(
     const sourceProfile = buildHydraulicValveCanonicalProfile({
       identification: source,
       attributes: sourceAttrs,
+      catalogProvider: options?.catalogProvider,
     });
     const targetProfile = target
       ? buildHydraulicValveCanonicalProfile({
           identification: target,
           attributes: targetAttrs,
+          catalogProvider: options?.catalogProvider,
         })
       : buildCandidateFallbackCanonicalProfile(candidate);
 
