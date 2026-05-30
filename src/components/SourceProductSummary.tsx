@@ -22,7 +22,7 @@ export function SourceProductSummary({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: 'rgba(249, 115, 22, 0.9)',
+    backgroundColor: "rgba(249, 115, 22, 0.9)",
     borderColor: colors.accent.orangeDark,
     borderRadius: radius.lg,
     borderWidth: 1,
@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
   },
   label: {
     ...typography.sectionTitle,
-    color: 'rgba(255, 255, 255, 0.85)',
+    color: "rgba(255, 255, 255, 0.85)",
     fontSize: 11,
   },
   summary: {
@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
     ...typography.code,
     color: colors.navy[900],
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
     marginTop: spacing.xs,
   },
 });

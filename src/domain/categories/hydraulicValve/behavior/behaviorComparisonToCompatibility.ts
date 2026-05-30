@@ -17,6 +17,7 @@ import {
   dedupeCheckItemsByField,
   normalizeCheckFieldKey,
 } from '@/domain/presentation/dedupeCheckItems';
+import { filterCheckItemsForResolvedIncompatibilities } from '@/domain/presentation/filterCheckItemsForResolvedIncompatibilities';
 import type { HydraulicValveBehaviorComparisonResult } from './compareHydraulicValveBehaviorProfiles';
 
 function comparisonToCheckItem(comparison: AttributeComparison): CheckItem | null {
@@ -96,30 +97,33 @@ export function behaviorComparisonToCompatibilityResult(options: {
   const voltageComparison = comparisons.find((c) => c.label === 'Bobin voltajı');
   const connectorComparison = comparisons.find((c) => c.label === 'Konnektör kodu');
 
-  const checkItems = dedupeCheckItemsByField([
-    ...getHydraulicValveCheckItems(options.source, options.candidate, {
-      spool: options.behavior.spoolDynamicCheck,
-      voltage: voltageComparison
-        ? {
-            source: voltageComparison.sourceDisplay,
-            target: voltageComparison.targetDisplay,
-            status: voltageComparison.status,
-          }
-        : undefined,
-      connector: connectorComparison
-        ? {
-            source: connectorComparison.sourceDisplay,
-            target: connectorComparison.targetDisplay,
-            status: connectorComparison.status,
-          }
-        : undefined,
-    }),
-    ...attributeChecks.filter(
-      (item) =>
-        !['Bobin voltajı', 'Konnektör kodu', 'Sürgü / fonksiyon kodu'].includes(item.field) &&
-        normalizeCheckFieldKey(item.field) !== 'merkez tipi'
-    ),
-  ]);
+  const checkItems = filterCheckItemsForResolvedIncompatibilities(
+    dedupeCheckItemsByField([
+      ...getHydraulicValveCheckItems(options.source, options.candidate, {
+        spool: options.behavior.spoolDynamicCheck,
+        voltage: voltageComparison
+          ? {
+              source: voltageComparison.sourceDisplay,
+              target: voltageComparison.targetDisplay,
+              status: voltageComparison.status,
+            }
+          : undefined,
+        connector: connectorComparison
+          ? {
+              source: connectorComparison.sourceDisplay,
+              target: connectorComparison.targetDisplay,
+              status: connectorComparison.status,
+            }
+          : undefined,
+      }),
+      ...attributeChecks.filter(
+        (item) =>
+          !['Bobin voltajı', 'Konnektör kodu', 'Sürgü / fonksiyon kodu'].includes(item.field) &&
+          normalizeCheckFieldKey(item.field) !== 'merkez tipi'
+      ),
+    ]),
+    comparisons
+  );
 
   const warningSet = new Set<string>([...HYDRAULIC_VALVE_WARNINGS, ...options.behavior.warnings]);
 

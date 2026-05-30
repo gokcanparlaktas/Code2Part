@@ -32,6 +32,7 @@ import {
   profileHasCatalogFlowEvidence,
   profileHasCatalogPressureEvidence,
 } from '@/domain/presentation/dedupeCheckItems';
+import { filterCheckItemsForResolvedIncompatibilities } from '@/domain/presentation/filterCheckItemsForResolvedIncompatibilities';
 import { deriveSummaryRiskLevelFromMetadata } from '@/domain/presentation/formatCompatibilityMetadata';
 import { consolidateCatalogWarningsForUi } from '@/domain/presentation/formatUserFacingCatalogDisplay';
 import { portStateBehaviorSummary } from '@/domain/presentation/formatCatalogFieldDisplay';
@@ -1194,7 +1195,10 @@ export function canonicalComparisonToCompatibilityResult(options: {
     return true;
   });
 
-  const checkItems = dedupeCheckItemsByField([...baseChecks, ...attributeChecksForMerge]);
+  const checkItems = filterCheckItemsForResolvedIncompatibilities(
+    dedupeCheckItemsByField([...baseChecks, ...attributeChecksForMerge]),
+    comparisons
+  );
 
   const warningSet = new Set<string>([...HYDRAULIC_VALVE_WARNINGS, ...options.canonical.warnings]);
 

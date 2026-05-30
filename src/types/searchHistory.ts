@@ -7,6 +7,7 @@ export interface SearchHistoryEntry {
   identified: boolean;
   brand: string | null;
   series: string | null;
+  productType: string | null;
   confidence: ConfidenceLevel | null;
   searchedAt: string;
 }

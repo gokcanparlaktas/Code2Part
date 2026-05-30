@@ -64,6 +64,7 @@ export async function recordSearch(
     identified,
     brand: identification.brand.value,
     series: identification.series.value,
+    productType: identification.productType.value,
     confidence: identified ? identification.confidence : null,
     searchedAt: new Date().toISOString(),
   };

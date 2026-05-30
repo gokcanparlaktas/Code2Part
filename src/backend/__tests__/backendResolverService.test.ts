@@ -106,6 +106,18 @@ describe('backend compareProductsService PoC', () => {
     );
   });
 
+  it('blocks cross-category compare via backend service', async () => {
+    const dto = await compareProductsService({
+      sourceCode: '4WE6E-6X/EG24N9K4',
+      candidateCode: 'DSBC-50-100-PPVA-N3',
+      catalogProvider: new LocalCatalogDataProvider(),
+    });
+
+    expect(dto.different.some((row) => row.label === 'Ürün kategorisi')).toBe(true);
+    expect(dto.unknownOrCheck).toHaveLength(0);
+    expect(dto.summary.summaryTr).toContain('kategorileri farklı');
+  });
+
   it('serialized compareProducts DTO contains none of the forbidden keys', async () => {
     const dto = await compareProductsService({
       sourceCode: REXROTH_CODE,

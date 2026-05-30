@@ -24,9 +24,10 @@ import {
 import { compareValveFunctionBehavior } from "@/domain/categories/hydraulicValve/functionMappings/compareValveFunctionBehavior";
 import { compareCompatibilityProfilesDetailed } from "@/domain/compatibilityProfiles/compareCompatibilityProfiles";
 import {
-    getHydraulicValveCheckItems,
-    HYDRAULIC_VALVE_WARNINGS,
+  getHydraulicValveCheckItems,
+  HYDRAULIC_VALVE_WARNINGS,
 } from "./hydraulicValveCheckItems";
+import { filterCheckItemsForResolvedIncompatibilities } from "@/domain/presentation/filterCheckItemsForResolvedIncompatibilities";
 import { buildHydraulicValveCompatibilityProfile } from "./hydraulicValveCompatibilityProfile";
 
 function displayAttribute(attr: TechnicalAttribute<string | number>): string {
@@ -365,36 +366,39 @@ export function compareHydraulicValvesFromAttributes(
       ),
   );
 
-  const checkItems: CheckItem[] = [
-    ...getHydraulicValveCheckItems(source, candidate, {
-      spool: spoolComparison
-        ? {
-            source: spoolComparison.sourceDisplay,
-            target: spoolComparison.targetDisplay,
-            status: spoolComparison.status,
-            reasonTr:
-              spoolComparison.status === "unknownOrCheck"
-                ? functionMatch.statusMessageTr
-                : undefined,
-          }
-        : undefined,
-      voltage: voltageComparison
-        ? {
-            source: voltageComparison.sourceDisplay,
-            target: voltageComparison.targetDisplay,
-            status: voltageComparison.status,
-          }
-        : undefined,
-      connector: connectorComparison
-        ? {
-            source: connectorComparison.sourceDisplay,
-            target: connectorComparison.targetDisplay,
-            status: connectorComparison.status,
-          }
-        : undefined,
-    }),
-    ...baseCheckItems,
-  ];
+  const checkItems = filterCheckItemsForResolvedIncompatibilities(
+    [
+      ...getHydraulicValveCheckItems(source, candidate, {
+        spool: spoolComparison
+          ? {
+              source: spoolComparison.sourceDisplay,
+              target: spoolComparison.targetDisplay,
+              status: spoolComparison.status,
+              reasonTr:
+                spoolComparison.status === "unknownOrCheck"
+                  ? functionMatch.statusMessageTr
+                  : undefined,
+            }
+          : undefined,
+        voltage: voltageComparison
+          ? {
+              source: voltageComparison.sourceDisplay,
+              target: voltageComparison.targetDisplay,
+              status: voltageComparison.status,
+            }
+          : undefined,
+        connector: connectorComparison
+          ? {
+              source: connectorComparison.sourceDisplay,
+              target: connectorComparison.targetDisplay,
+              status: connectorComparison.status,
+            }
+          : undefined,
+      }),
+      ...baseCheckItems,
+    ],
+    comparisons
+  );
 
   const warningSet = new Set<string>(HYDRAULIC_VALVE_WARNINGS);
   if (

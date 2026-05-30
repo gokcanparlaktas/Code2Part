@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import {
@@ -29,6 +29,8 @@ export function ProductCodeFieldWithSuggestions({
   onSelectSuggestion,
   suggestionsTitle = 'Bunlar olabilir',
 }: ProductCodeFieldWithSuggestionsProps) {
+  const [suggestionsDismissed, setSuggestionsDismissed] = useState(false);
+
   const suggestionResult = useMemo(() => {
     const trimmed = value.trim();
     if (trimmed.length < 2) {
@@ -36,6 +38,11 @@ export function ProductCodeFieldWithSuggestions({
     }
     return suggestProductsDetailed(trimmed, DEFAULT_SUGGESTION_LIMIT);
   }, [value]);
+
+  const handleChangeText = (text: string) => {
+    setSuggestionsDismissed(false);
+    onChange(text);
+  };
 
   const handleTrySuggestion = (suggestion: SuggestedProduct) => {
     const hasBoreOnly =
@@ -53,8 +60,12 @@ export function ProductCodeFieldWithSuggestions({
     }
 
     onSelectSuggestion(suggestion);
+    setSuggestionsDismissed(true);
     onChange(targetCode);
   };
+
+  const showSuggestions =
+    suggestionResult.suggestions.length > 0 && !suggestionsDismissed;
 
   return (
     <View style={styles.field}>
@@ -68,7 +79,7 @@ export function ProductCodeFieldWithSuggestions({
         placeholder={placeholder}
         placeholderTextColor={colors.text.inverseFaint}
         value={value}
-        onChangeText={onChange}
+        onChangeText={handleChangeText}
         autoCapitalize="characters"
         autoCorrect={false}
         returnKeyType="done"
@@ -76,7 +87,7 @@ export function ProductCodeFieldWithSuggestions({
         underlineColorAndroid={colors.accent.blueDark}
       />
 
-      {suggestionResult.suggestions.length > 0 ? (
+      {showSuggestions ? (
         <PartialSuggestionsPanel
           title={suggestionsTitle}
           query={value}

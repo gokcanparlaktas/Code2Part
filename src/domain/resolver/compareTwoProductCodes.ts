@@ -1,7 +1,7 @@
-import type { CompatibilityResult } from '@/types/compatibility';
+import type { CompatibilityResult, EquivalentCandidate } from '@/types/compatibility';
 import type { ProductIdentification } from '@/types/product';
 
-import { compareProducts } from './compareProducts';
+import { compareProducts, isCrossCategoryComparison } from './compareProducts';
 import { getProductSeriesById } from './productSeriesCatalog';
 import { identifyProduct } from './identifyProduct';
 import { normalizeCode } from './normalizeCode';
@@ -15,6 +15,7 @@ export class CompareTwoProductCodesError extends Error {
       | 'source_unresolved'
       | 'target_unresolved'
       | 'target_series_missing'
+      | 'category_mismatch'
   ) {
     super(message);
     this.name = 'CompareTwoProductCodesError';
@@ -37,10 +38,10 @@ function requireFullIdentification(
   return identification;
 }
 
-export function compareTwoProductCodes(
+export function prepareTwoProductCodeComparison(
   sourceCode: string,
   candidateCode: string
-): CompatibilityResult {
+): { source: ProductIdentification; candidate: EquivalentCandidate } {
   const sourceInput = sourceCode.trim();
   const candidateInput = candidateCode.trim();
 
@@ -71,7 +72,7 @@ export function compareTwoProductCodes(
     );
   }
 
-  return compareProducts(sourceIdentification, {
+  const candidate: EquivalentCandidate = {
     seriesId: targetSeries.id,
     brand: targetSeries.brand,
     series: targetSeries.series,
@@ -80,5 +81,22 @@ export function compareTwoProductCodes(
     standardFamily: targetSeries.standardFamily,
     suggestedCode: candidateInput,
     targetIdentification,
-  });
+  };
+
+  if (isCrossCategoryComparison(sourceIdentification, candidate)) {
+    throw new CompareTwoProductCodesError(
+      'Ürün kategorileri farklı. Hidrolik valf ile pnömatik silindir gibi farklı ürün türleri karşılaştırılamaz.',
+      'category_mismatch'
+    );
+  }
+
+  return { source: sourceIdentification, candidate };
+}
+
+export function compareTwoProductCodes(
+  sourceCode: string,
+  candidateCode: string
+): CompatibilityResult {
+  const { source, candidate } = prepareTwoProductCodeComparison(sourceCode, candidateCode);
+  return compareProducts(source, candidate);
 }

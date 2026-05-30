@@ -15,6 +15,16 @@ describe('compareTwoProductCodes', () => {
     expect(() => compareTwoProductCodes('DSBC', 'C96-40-80')).toThrow(CompareTwoProductCodesError);
   });
 
+  it('throws when source and target product categories differ', () => {
+    expect(() =>
+      compareTwoProductCodes('4WE6E-6X/EG24N9K4', 'DSBC-50-100-PPVA-N3')
+    ).toThrow(CompareTwoProductCodesError);
+
+    expect(() =>
+      compareTwoProductCodes('DSBC-50-100-PPVA-N3', '4WE6E-6X/EG24N9K4')
+    ).toThrow(CompareTwoProductCodesError);
+  });
+
   it('marks different bore and stroke in uyumsuz for mismatched sizes', () => {
     const result = compareTwoProductCodes('DSBC-63-200-PPVA', 'C96-40-80');
 

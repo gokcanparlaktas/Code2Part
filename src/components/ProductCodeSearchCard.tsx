@@ -1,4 +1,4 @@
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -21,6 +21,7 @@ import { colors, radius, spacing, typography, buttons } from '@/theme';
 import { productCodeResultHref } from '@/utils/productCodeRouteParam';
 
 import { PartialSuggestionsPanel } from './PartialSuggestionsPanel';
+import { RecentSearchHistoryPanel } from './RecentSearchHistoryPanel';
 
 const EXAMPLES = [
   '4WE6G-6X/EG24N9K4',
@@ -149,14 +150,6 @@ export function ProductCodeSearchCard() {
           )}
         </Pressable>
 
-        <Link href="/history" asChild>
-          <Pressable
-            style={({ pressed }) => [styles.historyLink, pressed && styles.historyLinkPressed]}
-          >
-            <Text style={styles.historyLinkText}>Son Aramalar</Text>
-          </Pressable>
-        </Link>
-
         <View style={styles.examplesSection}>
           <Text style={styles.examplesTitle}>Hızlı örnekler</Text>
           <View style={styles.examplesRow}>
@@ -171,6 +164,8 @@ export function ProductCodeSearchCard() {
             ))}
           </View>
         </View>
+
+        <RecentSearchHistoryPanel limit={3} />
       </View>
     </View>
   );
@@ -240,22 +235,6 @@ const styles = StyleSheet.create({
   buttonDisabled: buttons.primaryDisabled,
   buttonPressed: buttons.primaryPressed,
   buttonText: buttons.primaryText,
-  historyLink: {
-    alignSelf: 'flex-start',
-    borderColor: colors.border.default,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  historyLinkPressed: {
-    backgroundColor: colors.background.elevated,
-  },
-  historyLinkText: {
-    color: colors.text.inverseMuted,
-    fontSize: 13,
-    fontWeight: '700',
-  },
   examplesSection: {
     borderTopColor: colors.border.subtle,
     borderTopWidth: 1,

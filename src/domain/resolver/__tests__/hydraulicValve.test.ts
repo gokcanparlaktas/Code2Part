@@ -126,6 +126,9 @@ describe("hydraulic_valve category", () => {
     expect(result.different.some((d) => d.label === "Montaj standardı")).toBe(
       true,
     );
+    expect(result.checkItems.some((c) => c.field === "Montaj arayüzü")).toBe(
+      false,
+    );
   });
 
   describe("suggestions", () => {

@@ -1,9 +1,9 @@
 import {
-  compareTwoProductCodes,
   CompareTwoProductCodesError,
+  prepareTwoProductCodeComparison,
 } from '@/domain/resolver/compareTwoProductCodes';
+import { compareProducts, resolveResolverCategory } from '@/domain/resolver/compareProducts';
 import { resolveProductSearch } from '@/domain/resolver/resolveProductSearch';
-import { resolveResolverCategory } from '@/domain/resolver/compareProducts';
 import { identifyProduct } from '@/domain/resolver/identifyProduct';
 import { normalizeCode } from '@/domain/resolver/normalizeCode';
 import { PNEUMATIC_CYLINDER_CATEGORY } from '@/types/category';
@@ -113,18 +113,20 @@ export async function compareTwoProductsResolved(
     throw new ResolverApiError('Karşılaştırma için iki ürün kodu gerekli.', 'validation');
   }
 
-  if (shouldUseLocalTwoCodeCompare(source)) {
-    try {
-      return compareTwoProductCodes(source, candidate);
-    } catch (error) {
-      mapCompareTwoProductCodesError(error);
-    }
-  }
+  try {
+    const prepared = prepareTwoProductCodeComparison(source, candidate);
 
-  return withOptionalLocalFallback(async () => {
-    const dto = await compareProductsRemote(source, candidate);
-    return mapCompareProductsDtoToCompatibilityResult(dto);
-  }, () => compareTwoProductCodes(source, candidate));
+    if (shouldUseLocalTwoCodeCompare(source)) {
+      return compareProducts(prepared.source, prepared.candidate);
+    }
+
+    return withOptionalLocalFallback(async () => {
+      const dto = await compareProductsRemote(source, candidate);
+      return mapCompareProductsDtoToCompatibilityResult(dto);
+    }, () => compareProducts(prepared.source, prepared.candidate));
+  } catch (error) {
+    mapCompareTwoProductCodesError(error);
+  }
 }
 
 export async function compareProductsResolved(

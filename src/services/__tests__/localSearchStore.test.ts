@@ -11,6 +11,7 @@ function entry(
     identified: overrides.identified ?? true,
     brand: overrides.brand ?? 'Festo',
     series: overrides.series ?? 'DSBC',
+    productType: overrides.productType ?? 'Pnömatik silindir',
     confidence: overrides.confidence ?? 'high',
     searchedAt: overrides.searchedAt ?? '2026-05-26T10:00:00.000Z',
   };

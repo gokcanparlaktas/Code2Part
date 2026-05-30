@@ -1,4 +1,4 @@
-import { Link, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -8,6 +8,7 @@ import {
   getUnresolvedSearches,
 } from '@/services/localSearchStore';
 import type { SearchHistoryEntry, UnresolvedSearchEntry } from '@/types/searchHistory';
+import { colors, radius, spacing, typography } from '@/theme';
 import { formatConfidencePercent } from '@/utils/confidenceScore';
 import { productCodeResultHref } from '@/utils/productCodeRouteParam';
 
@@ -22,31 +23,37 @@ function formatDate(iso: string): string {
   });
 }
 
+function formatSearchHistorySubtitle(entry: SearchHistoryEntry): string | null {
+  const brand = entry.brand?.trim();
+  const productType = entry.productType?.trim() || entry.series?.trim();
+
+  if (brand && productType) {
+    return `${brand} - ${productType}`;
+  }
+  if (brand) {
+    return brand;
+  }
+  if (productType) {
+    return productType;
+  }
+  return null;
+}
+
 function HistoryRow({ entry }: { entry: SearchHistoryEntry }) {
+  const subtitle = formatSearchHistorySubtitle(entry);
+
   return (
-    <Link href={productCodeResultHref(entry.originalInput)} asChild>
-      <Pressable style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}>
-        <View style={styles.rowHeader}>
-          <Text style={styles.rowCode}>{entry.normalizedCode}</Text>
-          <View
-            style={[
-              styles.statusBadge,
-              entry.identified ? styles.statusOk : styles.statusFail,
-            ]}
-          >
-            <Text
-              style={[
-                styles.statusText,
-                entry.identified ? styles.statusTextOk : styles.statusTextFail,
-              ]}
-            >
-              {entry.identified ? 'Tanımlandı' : 'Tanımsız'}
-            </Text>
-          </View>
-        </View>
-        {entry.brand || entry.series ? (
-          <Text style={styles.rowMeta}>
-            {[entry.brand, entry.series].filter(Boolean).join(' · ')}
+    <Pressable
+      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+      onPress={() => router.push(productCodeResultHref(entry.originalInput))}
+    >
+      <View style={styles.rowContent}>
+        <Text style={styles.rowCode} numberOfLines={1}>
+          {entry.originalInput}
+        </Text>
+        {subtitle ? (
+          <Text style={styles.rowMeta} numberOfLines={1}>
+            {subtitle}
           </Text>
         ) : null}
         <Text style={styles.rowDate}>
@@ -55,19 +62,44 @@ function HistoryRow({ entry }: { entry: SearchHistoryEntry }) {
             ? ` · Güven ${formatConfidencePercent(entry.confidence)}`
             : ''}
         </Text>
-      </Pressable>
-    </Link>
+      </View>
+
+      <View
+        style={[
+          styles.statusBadge,
+          entry.identified ? styles.statusOk : styles.statusFail,
+        ]}
+      >
+        <Text
+          style={[
+            styles.statusText,
+            entry.identified ? styles.statusTextOk : styles.statusTextFail,
+          ]}
+        >
+          {entry.identified ? 'Tanımlandı' : 'Tanımsız'}
+        </Text>
+      </View>
+    </Pressable>
   );
 }
 
 function UnresolvedRow({ entry }: { entry: UnresolvedSearchEntry }) {
   return (
-    <Link href={productCodeResultHref(entry.originalInput)} asChild>
-      <Pressable style={({ pressed }) => [styles.unresolvedRow, pressed && styles.rowPressed]}>
-        <Text style={styles.rowCode}>{entry.normalizedCode}</Text>
+    <Pressable
+      style={({ pressed }) => [styles.unresolvedRow, pressed && styles.rowPressed]}
+      onPress={() => router.push(productCodeResultHref(entry.originalInput))}
+    >
+      <View style={styles.rowContent}>
+        <Text style={styles.rowCode} numberOfLines={1}>
+          {entry.originalInput}
+        </Text>
         <Text style={styles.rowDate}>{formatDate(entry.savedAt)}</Text>
-      </Pressable>
-    </Link>
+      </View>
+
+      <View style={[styles.statusBadge, styles.statusFail]}>
+        <Text style={[styles.statusText, styles.statusTextFail]}>Tanımsız</Text>
+      </View>
+    </Pressable>
   );
 }
 
@@ -92,12 +124,6 @@ export default function HistoryScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <Link href="/diagnostics" asChild>
-        <Pressable style={({ pressed }) => [styles.diagnosticsLink, pressed && styles.rowPressed]}>
-          <Text style={styles.diagnosticsLinkText}>Veri Kontrolü</Text>
-        </Pressable>
-      </Link>
-
       <Text style={styles.subtitle}>Son yapılan ürün kodu aramaları</Text>
 
       {searches.length === 0 ? (
@@ -137,110 +163,114 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   scroll: {
     flex: 1,
+    backgroundColor: colors.background.screen,
   },
   content: {
-    gap: 14,
-    padding: 20,
-    paddingBottom: 40,
-  },
-  diagnosticsLink: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#EFF6FF',
-    borderColor: '#BFDBFE',
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  diagnosticsLinkText: {
-    color: '#1E40AF',
-    fontSize: 14,
-    fontWeight: '600',
+    gap: spacing.md,
+    padding: spacing.xl,
+    paddingBottom: spacing.xxxl,
   },
   subtitle: {
-    color: '#64748B',
-    fontSize: 15,
+    ...typography.bodySm,
+    color: colors.text.inverseMuted,
     lineHeight: 22,
   },
   sectionTitle: {
-    color: '#0F172A',
-    fontSize: 18,
+    ...typography.h3,
+    color: colors.text.inverse,
     fontWeight: '700',
-    marginTop: 8,
+    marginTop: spacing.sm,
   },
   sectionSubtitle: {
-    color: '#64748B',
-    fontSize: 14,
+    ...typography.bodySm,
+    color: colors.text.inverseMuted,
     lineHeight: 20,
   },
   list: {
-    gap: 10,
+    gap: spacing.sm,
   },
   row: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    gap: 6,
-    padding: 14,
+    alignItems: 'center',
+    backgroundColor: colors.background.card,
+    borderColor: colors.border.subtle,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.md,
+    padding: spacing.lg,
+    width: '100%',
   },
   unresolvedRow: {
-    backgroundColor: '#FFF7ED',
-    borderColor: '#FDBA74',
-    borderRadius: 12,
+    alignItems: 'center',
+    backgroundColor: colors.background.card,
+    borderColor: colors.compat.check.border,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    gap: 4,
-    padding: 14,
+    flexDirection: 'row',
+    gap: spacing.md,
+    padding: spacing.lg,
+    width: '100%',
   },
   rowPressed: {
-    opacity: 0.9,
+    opacity: 0.88,
   },
-  rowHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  rowContent: {
+    flex: 1,
+    flexShrink: 1,
+    gap: spacing.xs,
+    minWidth: 0,
   },
   rowCode: {
-    color: '#0F172A',
-    flex: 1,
-    fontSize: 16,
+    ...typography.body,
+    color: colors.text.inverse,
     fontWeight: '700',
   },
   rowMeta: {
-    color: '#475569',
-    fontSize: 14,
+    ...typography.bodySm,
+    color: colors.text.inverseMuted,
   },
   rowDate: {
-    color: '#94A3B8',
-    fontSize: 13,
+    ...typography.caption,
+    color: colors.text.inverseFaint,
   },
   statusBadge: {
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    alignItems: 'center',
+    alignSelf: 'center',
+    borderRadius: radius.pill,
+    flexShrink: 0,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
   },
   statusOk: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: 'rgba(74, 222, 128, 0.15)',
   },
   statusFail: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: 'rgba(248, 113, 113, 0.15)',
   },
   statusText: {
     fontSize: 12,
     fontWeight: '700',
+    includeFontPadding: false,
+    lineHeight: 16,
+    textAlignVertical: 'center',
   },
   statusTextOk: {
-    color: '#166534',
+    color: colors.accent.greenBright,
   },
   statusTextFail: {
-    color: '#991B1B',
+    color: '#FCA5A5',
   },
   emptyCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: colors.background.card,
+    borderColor: colors.border.subtle,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    padding: spacing.lg,
   },
   emptyText: {
-    color: '#94A3B8',
-    fontSize: 14,
+    ...typography.bodySm,
+    color: colors.text.inverseMuted,
     textAlign: 'center',
   },
 });

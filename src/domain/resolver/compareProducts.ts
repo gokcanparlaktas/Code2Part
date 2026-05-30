@@ -14,6 +14,9 @@ import { getProductSeriesById } from './productSeriesCatalog';
 const UNSUPPORTED_CATEGORY_WARNING =
   'Bu ürün kategorisi için detaylı karşılaştırma kuralları henüz eklenmemiştir.';
 
+const CROSS_CATEGORY_WARNING =
+  'Ürün kategorisi farklı: Bu iki ürün doğrudan uyumlu kabul edilmez.';
+
 export function resolveResolverCategory(
   source: ProductIdentification
 ): ProductIdentification['resolverCategoryKey'] {
@@ -26,6 +29,83 @@ export function resolveResolverCategory(
   }
 
   return getProductSeriesById(source.seriesId)?.resolverCategory ?? null;
+}
+
+export function resolveTargetResolverCategory(
+  candidate: EquivalentCandidate
+): ProductIdentification['resolverCategoryKey'] {
+  if (candidate.targetIdentification?.resolverCategoryKey) {
+    return candidate.targetIdentification.resolverCategoryKey;
+  }
+
+  if (candidate.seriesId) {
+    return getProductSeriesById(candidate.seriesId)?.resolverCategory ?? null;
+  }
+
+  return null;
+}
+
+function formatResolverCategoryDisplay(
+  identification: ProductIdentification | null | undefined,
+  categoryKey: ProductIdentification['resolverCategoryKey']
+): string {
+  const fromAttribute = identification?.productCategory?.value;
+  if (fromAttribute != null && String(fromAttribute).trim()) {
+    return String(fromAttribute);
+  }
+
+  if (categoryKey === PNEUMATIC_CYLINDER_CATEGORY) {
+    return 'Pnömatik silindir';
+  }
+  if (categoryKey === HYDRAULIC_VALVE_CATEGORY) {
+    return 'Hidrolik valf';
+  }
+
+  return categoryKey ?? 'Bilinmiyor';
+}
+
+export function isCrossCategoryComparison(
+  source: ProductIdentification,
+  candidate: EquivalentCandidate
+): boolean {
+  const category = resolveResolverCategory(source);
+  const targetCategory = resolveTargetResolverCategory(candidate);
+  const isSupportedCategory =
+    category === PNEUMATIC_CYLINDER_CATEGORY || category === HYDRAULIC_VALVE_CATEGORY;
+
+  return Boolean(isSupportedCategory && targetCategory && category !== targetCategory);
+}
+
+function buildCrossCategoryComparisonResult(
+  source: ProductIdentification,
+  candidate: EquivalentCandidate
+): CompatibilityResult {
+  const category = resolveResolverCategory(source);
+  const targetCategory = resolveTargetResolverCategory(candidate);
+
+  return {
+    candidate,
+    summary: {
+      matchLevelTr: 'Karşılaştırılamaz',
+      summaryTr:
+        'Ürün kategorileri farklı. Hidrolik valf ile pnömatik silindir gibi farklı ürün türleri karşılaştırılamaz.',
+      riskLevel: 'high',
+    },
+    compatible: [],
+    different: [
+      {
+        label: 'Ürün kategorisi',
+        sourceDisplay: formatResolverCategoryDisplay(source, category),
+        targetDisplay: formatResolverCategoryDisplay(
+          candidate.targetIdentification,
+          targetCategory
+        ),
+        status: 'different',
+      },
+    ],
+    checkItems: [],
+    warnings: [CROSS_CATEGORY_WARNING],
+  };
 }
 
 function displayAttribute(attr: TechnicalAttribute<string | number>): string {
@@ -95,45 +175,27 @@ function compareGenericProducts(
   };
 }
 
+import type { CatalogDataProvider } from '@/domain/catalogData/CatalogDataProvider';
+
 export function compareProducts(
   source: ProductIdentification,
-  candidate: EquivalentCandidate
+  candidate: EquivalentCandidate,
+  options?: { catalogProvider?: CatalogDataProvider }
 ): CompatibilityResult {
-  const category = resolveResolverCategory(source);
-  const targetCategory = candidate.targetIdentification?.resolverCategoryKey ?? null;
-
-  const isSupportedCategory =
-    category === PNEUMATIC_CYLINDER_CATEGORY || category === HYDRAULIC_VALVE_CATEGORY;
-
-  if (isSupportedCategory && targetCategory && category !== targetCategory) {
-    return {
-      candidate,
-      summary: {
-        matchLevelTr: 'Fonksiyonel alternatif',
-        summaryTr:
-          'Ürün kategorileri farklı. Bu iki ürün doğrudan muadil olarak karşılaştırılamaz; doğru kategori seçilmelidir.',
-        riskLevel: 'high',
-      },
-      compatible: [],
-      different: [
-        {
-          label: 'Ürün kategorisi',
-          sourceDisplay: String(category),
-          targetDisplay: String(targetCategory),
-          status: 'different',
-        },
-      ],
-      checkItems: [],
-      warnings: ['Ürün kategorisi farklı: Bu iki ürün doğrudan uyumlu kabul edilmez.'],
-    };
+  if (isCrossCategoryComparison(source, candidate)) {
+    return buildCrossCategoryComparisonResult(source, candidate);
   }
+
+  const category = resolveResolverCategory(source);
 
   if (category === PNEUMATIC_CYLINDER_CATEGORY) {
     return comparePneumaticCylinders(source, candidate);
   }
 
   if (category === HYDRAULIC_VALVE_CATEGORY) {
-    return compareHydraulicValves(source, candidate);
+    return compareHydraulicValves(source, candidate, {
+      catalogProvider: options?.catalogProvider,
+    });
   }
 
   return compareGenericProducts(source, candidate);
