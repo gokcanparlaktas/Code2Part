@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -23,7 +23,9 @@ import { homeMonoFont } from '@/theme/homePalettes';
 import type { HomeColorPalette } from '@/theme/homePalettes';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useHomeStyles } from '@/theme/useHomeStyles';
+import { usePendingProductCodeScan } from '@/hooks/usePendingProductCodeScan';
 import { productCodeResultHref } from '@/utils/productCodeRouteParam';
+import { openProductCodeScan } from '@/utils/openProductCodeScan';
 
 import { PartialSuggestionsPanel } from './PartialSuggestionsPanel';
 import { RecentSearchHistoryPanel } from './RecentSearchHistoryPanel';
@@ -45,6 +47,13 @@ export function ProductCodeSearchCard() {
   const [code, setCode] = useState('');
   const [strokeHint, setStrokeHint] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+
+  const applyScannedCode = useCallback((scannedCode: string) => {
+    setCode(scannedCode);
+    setStrokeHint(false);
+  }, []);
+
+  usePendingProductCodeScan('home', applyScannedCode);
 
   const suggestionResult = useMemo(() => {
     const trimmed = code.trim();
@@ -157,7 +166,12 @@ export function ProductCodeSearchCard() {
           ) : null}
         </View>
 
-        <Pressable style={styles.cameraButton} onPress={() => {}}>
+        <Pressable
+          style={styles.cameraButton}
+          onPress={() => openProductCodeScan('home')}
+          accessibilityRole="button"
+          accessibilityLabel="Etiket oku"
+        >
           <Ionicons name="camera-outline" size={22} color={homeColors.textMuted} />
         </Pressable>
       </View>

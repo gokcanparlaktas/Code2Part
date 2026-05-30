@@ -12,6 +12,8 @@ import type { HomeColorPalette } from '@/theme/homePalettes';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useHomeStyles } from '@/theme/useHomeStyles';
 import { colors, radius, spacing, typography } from '@/theme';
+import type { ProductCodeScanTarget } from '@/services/scanCaptureStore';
+import { openProductCodeScan } from '@/utils/openProductCodeScan';
 
 import { PartialSuggestionsPanel } from './PartialSuggestionsPanel';
 
@@ -24,6 +26,7 @@ interface ProductCodeFieldWithSuggestionsProps {
   onSelectSuggestion: (suggestion: SuggestedProduct) => void;
   suggestionsTitle?: string;
   variant?: 'default' | 'compare';
+  scanTarget?: ProductCodeScanTarget;
 }
 
 export function ProductCodeFieldWithSuggestions({
@@ -35,6 +38,7 @@ export function ProductCodeFieldWithSuggestions({
   onSelectSuggestion,
   suggestionsTitle = 'Bunlar olabilir',
   variant = 'default',
+  scanTarget,
 }: ProductCodeFieldWithSuggestionsProps) {
   const styles = useHomeStyles(createStyles);
   const { homeColors } = useTheme();
@@ -119,7 +123,17 @@ export function ProductCodeFieldWithSuggestions({
               </Pressable>
             ) : null}
           </View>
-          <Pressable style={styles.cameraButton} onPress={() => {}}>
+          <Pressable
+            style={styles.cameraButton}
+            onPress={() => {
+              if (scanTarget) {
+                openProductCodeScan(scanTarget);
+              }
+            }}
+            disabled={!scanTarget}
+            accessibilityRole="button"
+            accessibilityLabel="Etiket oku"
+          >
             <Ionicons name="camera-outline" size={22} color={homeColors.textMuted} />
           </Pressable>
         </View>

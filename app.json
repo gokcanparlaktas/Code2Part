@@ -14,6 +14,9 @@
     },
     "ios": {
       "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Code2Part, ürün etiketlerindeki kodları okumak için kamerayı kullanır."
+      },
       "splash": {
         "image": "./assets/splash.png",
         "resizeMode": "cover",
@@ -27,6 +30,9 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "CAMERA"
+      ],
       "package": "com.anonymous.Code2Part",
       "splash": {
         "image": "./assets/splash.png",
@@ -41,6 +47,12 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Code2Part, ürün etiketlerindeki kodları okumak için kamerayı kullanır."
+        }
+      ],
       [
         "expo-splash-screen",
         {

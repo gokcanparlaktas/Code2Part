@@ -73,7 +73,20 @@ Local release APK path (typical):
 npx expo start
 ```
 
-Scan QR with Expo Go, or use a development build if native modules require it. AsyncStorage and catalog JSON work in Expo Go for this MVP.
+Scan QR with **Expo Go** for resolver/UI only. **Camera OCR fails in Expo Go** (`Cannot find native module ExpoCamera`). Use the dev client below.
+
+### Label scan (camera OCR)
+
+Requires a **dev client** or release APK — **not Expo Go** (`expo-camera` + ML Kit).
+
+```bash
+npm run prebuild:android
+npm run android
+```
+
+Open the app installed by `run:android` on the phone (not the Expo Go app). Camera button shows an alert in Expo Go instead of crashing.
+
+Flow: camera → **Oku** → edit text → **Kullan** → search/compare field fills → user presses **Tanımla** / **Karşılaştır** (no auto-search).
 
 ## Known limitations (demo)
 
@@ -87,6 +100,7 @@ Scan QR with Expo Go, or use a development build if native modules require it. A
 | Cross-brand functions | Cautious `unknownOrCheck`, not full equivalence |
 | History | Stored on device only (`AsyncStorage`) |
 | Diagnostics | **Veri Kontrolü** shows v2 runtime catalog + legacy v1 JSON check |
+| Label OCR | On-device ML Kit; accuracy varies — user must confirm before search |
 
 ## Post-build smoke test
 

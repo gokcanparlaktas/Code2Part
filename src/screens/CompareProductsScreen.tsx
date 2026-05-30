@@ -1,10 +1,11 @@
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ProductCodeFieldWithSuggestions } from '@/components/ProductCodeFieldWithSuggestions';
 import { ProductCompareResultView } from '@/components/ProductCompareResultView';
 import { ThemeModeToggle } from '@/components/ThemeModeToggle';
+import { usePendingProductCodeScan } from '@/hooks/usePendingProductCodeScan';
 import type { CompatibilityResult } from '@/types/compatibility';
 import {
   compareTwoProductsResolved,
@@ -24,6 +25,9 @@ export function CompareProductsScreen() {
   const [result, setResult] = useState<CompatibilityResult | null>(null);
   const [comparedSource, setComparedSource] = useState('');
   const [comparedTarget, setComparedTarget] = useState('');
+
+  usePendingProductCodeScan('compare-source', useCallback((code) => setSourceCode(code), []));
+  usePendingProductCodeScan('compare-target', useCallback((code) => setTargetCode(code), []));
 
   const canCompare =
     sourceCode.trim().length > 0 && targetCode.trim().length > 0 && !loading;
@@ -87,6 +91,7 @@ export function CompareProductsScreen() {
             onChange={setSourceCode}
             onSelectSuggestion={() => {}}
             suggestionsTitle="Kaynak için öneriler"
+            scanTarget="compare-source"
           />
 
           <ProductCodeFieldWithSuggestions
@@ -98,6 +103,7 @@ export function CompareProductsScreen() {
             onChange={setTargetCode}
             onSelectSuggestion={() => {}}
             suggestionsTitle="Hedef için öneriler"
+            scanTarget="compare-target"
           />
 
           <Pressable
