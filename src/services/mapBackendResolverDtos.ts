@@ -29,6 +29,7 @@ export interface ResolvedIdentifyProduct {
 export interface ResolvedProductSearch extends ResolvedIdentifyProduct {
   compatibilityResults: CompatibilityResult[];
   hasEquivalents: boolean;
+  equivalenceWarnings: string[];
 }
 
 function emptyAttribute<T = string>(value: T | null = null): ProductIdentification['brand'] {
@@ -188,6 +189,14 @@ export function mapFindEquivalentsCandidateToCompatibilityResult(
       standardFamily: '',
       suggestedCode: candidate.code,
       targetIdentification: null,
+      generation: candidate.generationStatus
+        ? {
+            generationStatus: candidate.generationStatus,
+            requiresCheck: candidate.requiresCheck ?? false,
+            generationCheckNotes: candidate.checkNotes,
+            isExactKnownExample: candidate.generationStatus === 'exact_known',
+          }
+        : undefined,
     },
     summary: {
       matchLevelTr: metadataToMatchLevel(candidate.metadata),

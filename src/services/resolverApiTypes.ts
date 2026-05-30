@@ -67,6 +67,8 @@ export interface FindEquivalentsResponseDto {
     manufacturer: string;
     series: string;
     matchPercentage: number;
+    generationStatus?: 'exact_known' | 'generated_full' | 'generated_partial' | 'cannot_generate';
+    requiresCheck?: boolean;
     metadata: NonNullable<CompatibilityResult['metadata']>;
     summary: string;
     compatibleHighlights: string[];

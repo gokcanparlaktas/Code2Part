@@ -183,20 +183,45 @@ export function compareProducts(
   options?: { catalogProvider?: CatalogDataProvider }
 ): CompatibilityResult {
   if (isCrossCategoryComparison(source, candidate)) {
-    return buildCrossCategoryComparisonResult(source, candidate);
+    return enrichWithGenerationMetadata(buildCrossCategoryComparisonResult(source, candidate));
   }
 
   const category = resolveResolverCategory(source);
 
   if (category === PNEUMATIC_CYLINDER_CATEGORY) {
-    return comparePneumaticCylinders(source, candidate);
+    return enrichWithGenerationMetadata(comparePneumaticCylinders(source, candidate));
   }
 
   if (category === HYDRAULIC_VALVE_CATEGORY) {
-    return compareHydraulicValves(source, candidate, {
-      catalogProvider: options?.catalogProvider,
-    });
+    return enrichWithGenerationMetadata(
+      compareHydraulicValves(source, candidate, {
+        catalogProvider: options?.catalogProvider,
+      })
+    );
   }
 
-  return compareGenericProducts(source, candidate);
+  return enrichWithGenerationMetadata(compareGenericProducts(source, candidate));
+}
+
+function enrichWithGenerationMetadata(result: CompatibilityResult): CompatibilityResult {
+  const generation = result.candidate.generation;
+  if (!generation?.generationCheckNotes?.length) {
+    return result;
+  }
+
+  const existingReasons = new Set(result.checkItems.map((item) => item.reasonTr));
+  const extraItems = generation.generationCheckNotes
+    .filter((note) => !existingReasons.has(note))
+    .map((reasonTr, index) => ({
+      field: `Üretim kontrolü ${index + 1}`,
+      sourceValue: '',
+      targetValue: '',
+      reasonTr,
+      severity: 'medium' as const,
+    }));
+
+  return {
+    ...result,
+    checkItems: [...result.checkItems, ...extraItems],
+  };
 }

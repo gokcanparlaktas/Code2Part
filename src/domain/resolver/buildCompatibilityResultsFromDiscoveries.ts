@@ -1,3 +1,4 @@
+import { generationStatusSortRank } from '@/domain/categories/hydraulicValve/equivalentCodeGeneration/hydraulicValveEquivalentCodeGenerator';
 import { calculateMatchPercentage } from '@/domain/scoring/calculateMatchPercentage';
 import type { CompatibilityResult } from '@/types/compatibility';
 import type { ProductIdentification } from '@/types/product';
@@ -22,7 +23,11 @@ function discoverySortScore(
   reason: EquivalentCandidateReason,
 ): number {
   const matchPercent = calculateMatchPercentage(result).percentage;
-  return matchPercent + (REASON_SORT_BOOST[reason] ?? 0);
+  const generationBoost = generationStatusSortRank(
+    result.candidate.generation?.generationStatus,
+    result.candidate.generation?.isExactKnownExample
+  );
+  return matchPercent + (REASON_SORT_BOOST[reason] ?? 0) + generationBoost * 0.01;
 }
 
 export function buildCompatibilityResultsFromDiscoveries(

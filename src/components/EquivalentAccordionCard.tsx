@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CompatibilityComparisonSections } from '@/components/CompatibilityComparisonSections';
 import { CompatibilityMetadataChips } from '@/components/CompatibilityMetadataChips';
-import { formatCollapsedEquivalentCheckHint } from '@/domain/presentation/formatCollapsedEquivalentCheckHint';
+import { formatGenerationBadgeLabel } from '@/domain/presentation/formatGenerationBadgeLabel';
 import { calculateMatchPercentage } from '@/domain/scoring/calculateMatchPercentage';
 import type { CompatibilityResult } from '@/types/compatibility';
 import {
@@ -44,6 +44,10 @@ export function EquivalentAccordionCard({
     ? equivalenceStatusTone(result.metadata)
     : undefined;
   const matchPercentage = calculateMatchPercentage(result);
+  const generationBadgeLabel = formatGenerationBadgeLabel({
+    generationStatus: candidate.generation?.generationStatus,
+    isExactKnownExample: candidate.generation?.isExactKnownExample,
+  });
   const progress = Math.max(0, Math.min(100, matchPercentage.percentage));
   const collapsedCheckHint = formatCollapsedEquivalentCheckHint(result.checkItems.length);
   const standardDisplay =
@@ -83,6 +87,14 @@ export function EquivalentAccordionCard({
           <Text style={styles.code} numberOfLines={2}>
             {modelCode}
           </Text>
+
+          {generationBadgeLabel ? (
+            <View style={[styles.chipBox, styles.generationChip]}>
+              <Text style={[styles.chipText, styles.generationText]} numberOfLines={2}>
+                {generationBadgeLabel}
+              </Text>
+            </View>
+          ) : null}
 
           {productTypeDisplay ? (
             <Text style={styles.productType} numberOfLines={1}>
@@ -191,6 +203,22 @@ const createStyles = (c: HomeColorPalette) =>
       color: c.brandBlue,
       fontWeight: '700',
       paddingHorizontal: 4,
+    },
+    generationChip: {
+      alignSelf: 'flex-start',
+      backgroundColor: c.checkBlueBg,
+      borderColor: c.border,
+      height: undefined,
+      minHeight: 28,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      width: undefined,
+    },
+    generationText: {
+      color: c.textPrimary,
+      fontSize: 10,
+      fontWeight: '600',
+      textAlign: 'left',
     },
     code: {
       color: c.brandBlue,

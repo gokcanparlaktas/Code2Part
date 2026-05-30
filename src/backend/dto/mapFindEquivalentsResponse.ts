@@ -15,6 +15,8 @@ export interface FindEquivalentsCandidateDto {
   manufacturer: string;
   series: string;
   matchPercentage: number;
+  generationStatus?: 'exact_known' | 'generated_full' | 'generated_partial' | 'cannot_generate';
+  requiresCheck?: boolean;
   metadata: {
     compatibilityLevel: NonNullable<CompatibilityResult['metadata']>['compatibilityLevel'];
     confidenceLevel: NonNullable<CompatibilityResult['metadata']>['confidenceLevel'];
@@ -53,6 +55,8 @@ export function mapFindEquivalentsResponse(options: {
     manufacturer: string;
     series: string;
     matchPercentage: number;
+    generationStatus?: FindEquivalentsCandidateDto['generationStatus'];
+    requiresCheck?: boolean;
     metadata: FindEquivalentsCandidateDto['metadata'];
     summary: string;
     compatibleHighlights: string[];
@@ -71,6 +75,8 @@ export function mapFindEquivalentsResponse(options: {
       manufacturer: candidate.manufacturer,
       series: candidate.series,
       matchPercentage: candidate.matchPercentage,
+      generationStatus: candidate.generationStatus,
+      requiresCheck: candidate.requiresCheck,
       metadata: candidate.metadata,
       summary: candidate.summary,
       compatibleHighlights: candidate.compatibleHighlights,
@@ -94,6 +100,8 @@ export function mapComparisonToEquivalentCandidateSummary(
     manufacturer: candidateManufacturer,
     series: candidateSeries,
     matchPercentage,
+    generationStatus: result.candidate.generation?.generationStatus,
+    requiresCheck: result.candidate.generation?.requiresCheck,
     metadata: {
       compatibilityLevel: result.metadata?.compatibilityLevel ?? 'low',
       confidenceLevel: result.metadata?.confidenceLevel ?? 'low',

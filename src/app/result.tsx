@@ -14,6 +14,7 @@ import { ProductCard } from '@/components/ProductCard';
 import { PartialSuggestionsPanel } from '@/components/PartialSuggestionsPanel';
 import { UnresolvedResultCard } from '@/components/UnresolvedResultCard';
 import { calculateProductReliability } from '@/domain/reliability/calculateProductReliability';
+import { PARTIAL_SOURCE_EQUIVALENTS_WARNING_TR } from '@/domain/resolver/partialSourceEquivalents';
 import { suggestProducts } from '@/domain/resolver/suggestProducts';
 import { useResolvedProductSearch } from '@/hooks/useResolvedProductSearch';
 import {
@@ -66,6 +67,7 @@ export default function ResultScreen() {
     isPartialIdentification,
     suggestions,
     productDetailRows,
+    equivalenceWarnings,
   } = useMemo(() => {
     if (!data) {
       return {
@@ -75,6 +77,7 @@ export default function ResultScreen() {
         isPartialIdentification: false,
         suggestions: [],
         productDetailRows: [],
+        equivalenceWarnings: [] as string[],
       };
     }
 
@@ -89,6 +92,7 @@ export default function ResultScreen() {
       isPartialIdentification: partial,
       suggestions: partialSuggestions,
       productDetailRows: data.productDetailRows,
+      equivalenceWarnings: data.equivalenceWarnings ?? [],
     };
   }, [data, inputCode]);
 
@@ -159,6 +163,7 @@ export default function ResultScreen() {
   );
 
   const partialNoticeText =
+    equivalenceWarnings[0] ??
     reliability?.seriesOnlyNoticeTr ??
     reliability?.warningMessageTr ??
     PARTIAL_IDENTIFICATION_NOTICE_FALLBACK;
@@ -255,10 +260,26 @@ export default function ResultScreen() {
               />
             ) : null}
 
-            <Text style={styles.noEquivalentsText}>
-              Tam kod doğrulanmadığı için muadil listesi gösterilmiyor. Sipariş öncesi alanları
-              kontrol edin veya tam kodu girin.
-            </Text>
+            {equivalenceWarnings.length > 0 ? (
+              <Text style={styles.partialIntro}>{PARTIAL_SOURCE_EQUIVALENTS_WARNING_TR}</Text>
+            ) : null}
+
+            {hasEquivalents ? (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.primaryButton,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={openEquivalents}
+              >
+                <Text style={styles.primaryButtonText}>Muadil adaylarını gör</Text>
+              </Pressable>
+            ) : (
+              <Text style={styles.noEquivalentsText}>
+                Elde edilen bilgilerle muadil aday oluşturulamadı. Tam kodu girerek tekrar
+                deneyin.
+              </Text>
+            )}
 
             {alreadySaved ? (
               <View style={styles.savedBox}>

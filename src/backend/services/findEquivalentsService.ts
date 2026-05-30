@@ -1,16 +1,15 @@
 import type { CatalogDataProvider } from '@/domain/catalogData/CatalogDataProvider';
-import { findEquivalents } from '@/domain/resolver/findEquivalents';
-import { identifyProduct } from '@/domain/resolver/identifyProduct';
-import { normalizeCode } from '@/domain/resolver/normalizeCode';
+import { resolveProductSearch } from '@/domain/resolver/resolveProductSearch';
 import { calculateMatchPercentage } from '@/domain/scoring/calculateMatchPercentage';
+import {
+  canSearchEquivalentsForIdentification,
+} from '@/domain/resolver/partialSourceEquivalents';
 
 import {
   mapComparisonToEquivalentCandidateSummary,
   mapFindEquivalentsResponse,
   type FindEquivalentsResponseDto,
 } from '@/backend/dto/mapFindEquivalentsResponse';
-import { buildCandidateFromEquivalent } from '@/backend/services/buildCandidateFromCode';
-import { compareSourceToCandidate } from '@/backend/services/compareSourceToCandidate';
 import { ensureCatalogProviderInitialized } from '@/backend/services/ensureCatalogProviderInitialized';
 
 export interface FindEquivalentsServiceOptions {
@@ -21,27 +20,34 @@ export interface FindEquivalentsServiceOptions {
 export async function findEquivalentsService(
   options: FindEquivalentsServiceOptions
 ): Promise<FindEquivalentsResponseDto> {
-  const catalogProvider = await ensureCatalogProviderInitialized(options.catalogProvider);
-  const normalized = normalizeCode(options.code);
-  const source = identifyProduct(options.code, normalized);
-  const discoveries = findEquivalents(source);
+  await ensureCatalogProviderInitialized(options.catalogProvider);
+  const resolved = resolveProductSearch(options.code);
+  const source = resolved.identification;
 
-  const candidates = discoveries
-    .map((discovery) => {
-      const candidate = buildCandidateFromEquivalent(discovery);
-      const candidateCode = candidate.suggestedCode?.trim();
+  if (!canSearchEquivalentsForIdentification(source)) {
+    return mapFindEquivalentsResponse({
+      sourceCode: options.code,
+      normalizedCode: source.normalizedCode,
+      manufacturer: source.brand.value,
+      series: source.series.value,
+      candidates: [],
+    });
+  }
+
+  const candidates = resolved.compatibilityResults
+    .map((comparison) => {
+      const candidateCode = comparison.candidate.suggestedCode?.trim();
       if (!candidateCode) {
         return null;
       }
 
-      const comparison = compareSourceToCandidate(source, candidate, catalogProvider);
       const match = calculateMatchPercentage(comparison);
 
       return mapComparisonToEquivalentCandidateSummary(
         comparison,
         candidateCode,
-        candidate.brand,
-        candidate.series,
+        comparison.candidate.brand,
+        comparison.candidate.series,
         match.percentage
       );
     })

@@ -6,6 +6,7 @@ import { EquivalentAccordionCard } from '@/components/EquivalentAccordionCard';
 import { EquivalencePageScoreNote } from '@/components/EquivalencePageScoreNote';
 import { SourceProductSummary } from '@/components/SourceProductSummary';
 import { EQUIVALENCE_PAGE_SCORE_NOTE_TR } from '@/domain/presentation/formatCompatibilityMetadata';
+import { PARTIAL_SOURCE_EQUIVALENTS_WARNING_TR } from '@/domain/resolver/partialSourceEquivalents';
 import { sortCompatibilityResultsByMatchPercentage } from '@/domain/presentation/sortCompatibilityResults';
 import { filterVisibleEquivalentResults } from '@/domain/resolver/filterVisibleEquivalentResults';
 import { useBackendCompareLoader } from '@/hooks/useBackendCompareLoader';
@@ -33,21 +34,25 @@ function EquivalentsScreen() {
     candidateCodeForResult,
   } = useBackendCompareLoader(inputCode);
 
-  const { identification, compatibilityResults, isResolvable } = useMemo(() => {
+  const { identification, compatibilityResults, isResolvable, equivalenceWarnings } = useMemo(() => {
     if (!data) {
       return {
         identification: null,
         compatibilityResults: [],
         isResolvable: false,
+        equivalenceWarnings: [] as string[],
       };
     }
 
-    const ok = data.identification.outcome === 'full';
+    const ok =
+      data.identification.outcome === 'full' ||
+      (data.identification.outcome === 'series_only' && data.hasEquivalents);
     const results = ok ? sortCompatibilityResultsByMatchPercentage(data.compatibilityResults) : [];
     return {
       identification: data.identification,
       compatibilityResults: results,
       isResolvable: ok,
+      equivalenceWarnings: data.equivalenceWarnings ?? [],
     };
   }, [data]);
 
@@ -124,6 +129,12 @@ function EquivalentsScreen() {
       showsVerticalScrollIndicator={false}
     >
       <SourceProductSummary identification={identification} />
+
+      {equivalenceWarnings.length > 0 ? (
+        <View style={styles.warningCard}>
+          <Text style={styles.warningText}>{PARTIAL_SOURCE_EQUIVALENTS_WARNING_TR}</Text>
+        </View>
+      ) : null}
 
       {compatibilityResults.length > 0 ? (
         <EquivalencePageScoreNote note={EQUIVALENCE_PAGE_SCORE_NOTE_TR} />
@@ -264,6 +275,19 @@ const createStyles = (c: HomeColorPalette) =>
       borderRadius: 8,
       borderWidth: 1,
       padding: 12,
+    },
+    warningCard: {
+      backgroundColor: c.amberBg,
+      borderColor: c.amberBorder,
+      borderLeftWidth: 3,
+      borderRadius: 8,
+      borderWidth: 1,
+      padding: 12,
+    },
+    warningText: {
+      color: c.textPrimary,
+      fontSize: 13,
+      lineHeight: 18,
     },
     compareErrorText: {
       color: c.red,

@@ -1,4 +1,5 @@
 import type { ProductIdentification } from './product';
+import type { EquivalentGenerationMetadata } from './equivalentCodeGeneration';
 
 export type CompatibilityStatus = 'compatible' | 'different' | 'unknownOrCheck';
 
@@ -70,6 +71,7 @@ export interface EquivalentCandidate {
   standardFamily: string;
   suggestedCode: string | null;
   targetIdentification: ProductIdentification | null;
+  generation?: EquivalentGenerationMetadata;
 }
 
 export interface CompatibilityResult {

@@ -1,3 +1,4 @@
+import { buildHydraulicValveEquivalentCandidates } from '@/domain/categories/hydraulicValve/buildHydraulicValveEquivalentCandidates';
 import {
   getAllCatalogExampleCodes,
   getLegacyEquivalentGroups,
@@ -9,6 +10,7 @@ import {
   type ProductResolverCategory,
 } from '@/types/category';
 import type { EquivalentCandidate } from '@/types/compatibility';
+import type { GeneratedEquivalentCandidate } from '@/types/equivalentCodeGeneration';
 import type {
   EquivalentGroupRecord,
   ProductIdentification,
@@ -88,10 +90,53 @@ function candidateDedupeKey(candidate: EquivalentCandidate): string | null {
   return normalizeCode(code);
 }
 
+function generationToCandidateMetadata(
+  generated: GeneratedEquivalentCandidate
+): NonNullable<EquivalentCandidate['generation']> {
+  return {
+    generationStatus: generated.generationStatus,
+    requiresCheck: generated.requiresCheck,
+    generationCheckNotes: generated.checkNotes,
+    isExactKnownExample: generated.isExactKnownExample,
+    generationTraceSummaryTr: generated.generationTrace.summaryTr,
+  };
+}
+
+function buildEquivalentCandidateFromGenerated(
+  source: ProductIdentification,
+  targetSeries: ProductSeriesRecord,
+  generated: GeneratedEquivalentCandidate
+): EquivalentCandidate | null {
+  const targetIdentification = identifyProduct(
+    generated.generatedCode,
+    normalizeCode(generated.generatedCode)
+  );
+  if (targetIdentification.outcome !== 'full') {
+    return null;
+  }
+
+  if (targetIdentification.seriesId === source.seriesId) {
+    return null;
+  }
+
+  return {
+    seriesId: targetSeries.id,
+    brand: targetSeries.brand,
+    series: targetSeries.series,
+    productType: targetSeries.productType,
+    productCategory: targetSeries.productCategory,
+    standardFamily: targetSeries.standardFamily,
+    suggestedCode: generated.generatedCode,
+    targetIdentification,
+    generation: generationToCandidateMetadata(generated),
+  };
+}
+
 function buildEquivalentCandidate(
   source: ProductIdentification,
   targetSeries: ProductSeriesRecord,
   suggestedCodeOverride?: string | null,
+  generationOverride?: EquivalentCandidate['generation']
 ): EquivalentCandidate | null {
   const suggestedCode =
     suggestedCodeOverride ?? buildSuggestedEquivalentCode(source, targetSeries);
@@ -117,6 +162,68 @@ function buildEquivalentCandidate(
     standardFamily: targetSeries.standardFamily,
     suggestedCode,
     targetIdentification,
+    generation: generationOverride,
+  };
+}
+
+function buildEquivalentCandidatesForTargetSeries(
+  source: ProductIdentification,
+  targetSeries: ProductSeriesRecord,
+  suggestedCodeOverride?: string | null
+): EquivalentCandidate[] {
+  if (suggestedCodeOverride) {
+    const candidate = buildEquivalentCandidate(source, targetSeries, suggestedCodeOverride, {
+      generationStatus: 'exact_known',
+      requiresCheck: false,
+      generationCheckNotes: [],
+      isExactKnownExample: true,
+    });
+    return candidate ? [candidate] : [];
+  }
+
+  if (isHydraulicValveCategory(source.resolverCategoryKey)) {
+    const generated = buildHydraulicValveEquivalentCandidates(source, targetSeries);
+    if (generated.length > 0) {
+      return generated
+        .map((entry) => buildEquivalentCandidateFromGenerated(source, targetSeries, entry))
+        .filter((candidate): candidate is EquivalentCandidate => candidate !== null);
+    }
+  }
+
+  const candidate = buildEquivalentCandidate(source, targetSeries);
+  return candidate ? [candidate] : [];
+}
+
+function mergeCandidateGeneration(
+  existing: EquivalentCandidate,
+  next: EquivalentCandidate
+): EquivalentCandidate['generation'] {
+  const left = existing.generation;
+  const right = next.generation;
+  if (!left && !right) {
+    return undefined;
+  }
+
+  const isExactKnownExample = Boolean(left?.isExactKnownExample || right?.isExactKnownExample);
+  const hasGeneratedFull =
+    left?.generationStatus === 'generated_full' || right?.generationStatus === 'generated_full';
+
+  let generationStatus = right?.generationStatus ?? left?.generationStatus ?? 'generated_partial';
+  if (isExactKnownExample && hasGeneratedFull) {
+    generationStatus = 'generated_full';
+  } else if (isExactKnownExample && !hasGeneratedFull) {
+    generationStatus = 'exact_known';
+  }
+
+  return {
+    generationStatus,
+    requiresCheck: Boolean(left?.requiresCheck || right?.requiresCheck),
+    generationCheckNotes: [
+      ...new Set([...(left?.generationCheckNotes ?? []), ...(right?.generationCheckNotes ?? [])]),
+    ],
+    isExactKnownExample,
+    generationTraceSummaryTr:
+      right?.generationTraceSummaryTr ?? left?.generationTraceSummaryTr,
   };
 }
 
@@ -135,6 +242,15 @@ function upsertCandidate(
     return;
   }
 
+  const mergedCandidate: EquivalentCandidate = {
+    ...entry.candidate,
+    generation: mergeCandidateGeneration(existing.candidate, entry.candidate),
+  };
+  const mergedEntry: DiscoveredEquivalentCandidate = {
+    ...entry,
+    candidate: mergedCandidate,
+  };
+
   const existingRank = reasonRank(existing.reason);
   const nextRank = reasonRank(entry.reason);
   if (
@@ -143,10 +259,22 @@ function upsertCandidate(
       confidenceRank(entry.coarseMatchConfidence) > confidenceRank(existing.coarseMatchConfidence))
   ) {
     pool.set(key, {
-      ...entry,
+      ...mergedEntry,
       notes: [...(existing.notes ?? []), ...(entry.notes ?? [])],
     });
+    return;
   }
+
+  pool.set(key, {
+    ...existing,
+    candidate: mergeCandidateGeneration(existing.candidate, entry.candidate)
+      ? {
+          ...existing.candidate,
+          generation: mergeCandidateGeneration(existing.candidate, entry.candidate),
+        }
+      : existing.candidate,
+    notes: [...(existing.notes ?? []), ...(entry.notes ?? [])],
+  });
 }
 
 function collectEquivalenceGroupCandidates(
@@ -173,17 +301,15 @@ function collectEquivalenceGroupCandidates(
       continue;
     }
 
-    const candidate = buildEquivalentCandidate(source, series);
-    if (!candidate) {
-      continue;
+    const candidates = buildEquivalentCandidatesForTargetSeries(source, series);
+    for (const candidate of candidates) {
+      upsertCandidate(pool, {
+        candidate,
+        reason: 'equivalence_group',
+        coarseMatchConfidence: 'high',
+        notes: [`Muadil grubu: ${group.name}`],
+      });
     }
-
-    upsertCandidate(pool, {
-      candidate,
-      reason: 'equivalence_group',
-      coarseMatchConfidence: 'high',
-      notes: [`Muadil grubu: ${group.name}`],
-    });
   }
 }
 
@@ -279,23 +405,21 @@ function collectSeriesProfileCandidates(
       continue;
     }
 
-    const candidate = buildEquivalentCandidate(source, targetSeries);
-    if (!candidate) {
-      continue;
-    }
+    const candidates = buildEquivalentCandidatesForTargetSeries(source, targetSeries);
+    for (const candidate of candidates) {
+      if (
+        isPneumaticCylinderCategory(category) &&
+        candidate.targetIdentification &&
+        !pneumaticDimensionsMatch(source, candidate.targetIdentification)
+      ) {
+        continue;
+      }
 
-    if (
-      isPneumaticCylinderCategory(category) &&
-      candidate.targetIdentification &&
-      !pneumaticDimensionsMatch(source, candidate.targetIdentification)
-    ) {
-      continue;
+      upsertCandidate(pool, {
+        candidate,
+        ...profile,
+      });
     }
-
-    upsertCandidate(pool, {
-      candidate,
-      ...profile,
-    });
   }
 }
 
@@ -358,18 +482,20 @@ function collectCatalogExampleCandidates(
       }
     }
 
-    const candidate = buildEquivalentCandidate(source, targetSeries, exampleCode);
-    if (!candidate) {
-      continue;
+    const candidates = buildEquivalentCandidatesForTargetSeries(
+      source,
+      targetSeries,
+      exampleCode
+    );
+    for (const candidate of candidates) {
+      const profile = inferProfileDiscoveryForSeries(source, sourceSeries, targetSeries);
+      upsertCandidate(pool, {
+        candidate,
+        reason: profile?.reason ?? 'same_category_profile',
+        coarseMatchConfidence: profile?.coarseMatchConfidence ?? 'medium',
+        notes: profile?.notes,
+      });
     }
-
-    const profile = inferProfileDiscoveryForSeries(source, sourceSeries, targetSeries);
-    upsertCandidate(pool, {
-      candidate,
-      reason: profile?.reason ?? 'same_category_profile',
-      coarseMatchConfidence: profile?.coarseMatchConfidence ?? 'medium',
-      notes: profile?.notes,
-    });
   }
 }
 

@@ -7,6 +7,10 @@ import { buildProductDetailRows } from '@/domain/presentation/buildProductDetail
 import { resolveProductSearch } from '@/domain/resolver/resolveProductSearch';
 import { identifyProduct } from '@/domain/resolver/identifyProduct';
 import { collectRexrothWEParserWarnings } from '@/domain/resolver/collectRexrothWEParserDiagnostics';
+import {
+  applyPartialSourceEquivalenceAdjustments,
+  getEquivalenceWarningsForIdentification,
+} from '@/domain/resolver/partialSourceEquivalents';
 import { normalizeCode } from '@/domain/resolver/normalizeCode';
 import { PNEUMATIC_CYLINDER_CATEGORY } from '@/types/category';
 import type { CompatibilityResult } from '@/types/compatibility';
@@ -54,13 +58,15 @@ function mapLocalIdentify(inputCode: string): ResolvedIdentifyProduct {
 
 function mapLocalProductSearch(inputCode: string): ResolvedProductSearch {
   const resolved = resolveProductSearch(inputCode);
+  const parserWarnings = collectRexrothWEParserWarnings(inputCode, resolved.identification);
   return {
     identification: resolved.identification,
     productDetailRows: mapLocalProductDetailRows(inputCode, resolved.identification),
-    warnings: collectRexrothWEParserWarnings(inputCode, resolved.identification),
+    warnings: [...resolved.equivalenceWarnings, ...parserWarnings],
     source: 'local',
     compatibilityResults: resolved.compatibilityResults,
     hasEquivalents: resolved.hasEquivalents,
+    equivalenceWarnings: resolved.equivalenceWarnings,
   };
 }
 
@@ -181,24 +187,36 @@ export async function findEquivalentsResolved(code: string): Promise<ResolvedPro
     const identifyDto = await identifyProductRemote(trimmed);
     const resolvedIdentify = mapIdentifyProductDtoToResolved(identifyDto, trimmed);
 
-    if (resolvedIdentify.identification.outcome !== 'full') {
+    if (resolvedIdentify.identification.outcome === 'not_found') {
       return {
         ...resolvedIdentify,
         compatibilityResults: [],
         hasEquivalents: false,
+        equivalenceWarnings: [],
       };
     }
 
     const equivalentsDto = await findEquivalentsRemote(trimmed);
-    const compatibilityResults = mapFindEquivalentsDtoToCompatibilityResults(equivalentsDto).map(
+    let compatibilityResults = mapFindEquivalentsDtoToCompatibilityResults(equivalentsDto).map(
       (result, index) =>
         enrichCompareResultCandidate(result, equivalentsDto.candidates[index]!)
+    );
+
+    compatibilityResults = applyPartialSourceEquivalenceAdjustments(
+      resolvedIdentify.identification,
+      compatibilityResults
+    );
+
+    const equivalenceWarnings = getEquivalenceWarningsForIdentification(
+      resolvedIdentify.identification
     );
 
     return {
       ...resolvedIdentify,
       compatibilityResults,
       hasEquivalents: compatibilityResults.length > 0,
+      equivalenceWarnings,
+      warnings: [...resolvedIdentify.warnings, ...equivalenceWarnings],
     };
   }, () => mapLocalProductSearch(trimmed));
 }
