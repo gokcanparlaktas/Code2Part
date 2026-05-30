@@ -224,12 +224,3 @@ export function getCatalogSearchAliases(seriesId: string): string[] {
 export function getCatalogVoltageCodes(seriesId: string) {
   return seriesById.get(seriesId)?.voltageCodes ?? [];
 }
-
-export {
-  getBoreStrokeFallbackPatternsForSeries,
-  getCodePatternsForSeries,
-  getComparisonProfileRef,
-  getKnownTokensForSeries,
-  getParsingRulesForSeries,
-  getVoltageCodesForSeries,
-} from '../catalogPatternSelectors';

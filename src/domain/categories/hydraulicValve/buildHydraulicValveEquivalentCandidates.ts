@@ -7,7 +7,7 @@ import { getProductSeriesById } from '@/domain/resolver/productSeriesCatalog';
 import type { GeneratedEquivalentCandidate } from '@/types/equivalentCodeGeneration';
 import type { ProductIdentification, ProductSeriesRecord } from '@/types/product';
 
-import { getHydraulicValveExampleCode } from './hydraulicValveSuggestedCode';
+import { getHydraulicValveExampleCode } from './hydraulicValveExampleCodes';
 
 function isRexrothYukenPair(sourceSeriesId: string, targetSeriesId: string): boolean {
   const rexroth = sourceSeriesId.startsWith('rexroth_4we') || targetSeriesId.startsWith('rexroth_4we');

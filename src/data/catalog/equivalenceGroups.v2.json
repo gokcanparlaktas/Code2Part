@@ -52,6 +52,7 @@
     "name": "CETOP 03 / NG6 hidrolik yön kontrol valfi",
     "seriesIds": [
       "rexroth_4we6",
+      "rexroth_3we6",
       "yuken_dsg01",
       "vickers_dg4v3",
       "atos_dhi",
@@ -72,6 +73,18 @@
       "vickers_dg4v5",
       "atos_dhu",
       "parker_d3w"
+    ]
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": "2026-05-26",
+    "notesTr": "CETOP 02 / NG4 hidrolik yön kontrol valfleri için manuel muadil grubu (şimdilik yalnızca Rexroth 3WE4).",
+    "id": "hydraulic_cetop_02_ng4_valve",
+    "name": "CETOP 02 / NG4 hidrolik yön kontrol valfi",
+    "seriesIds": [
+      "rexroth_3we4"
     ]
   }
 ]

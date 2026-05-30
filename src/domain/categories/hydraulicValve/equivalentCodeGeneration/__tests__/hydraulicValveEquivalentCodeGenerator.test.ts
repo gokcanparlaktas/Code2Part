@@ -48,7 +48,7 @@ describe('hydraulicValveEquivalentCodeGenerator', () => {
     const candidates = generateHydraulicValveEquivalentCandidates(source, rexroth4we6);
 
     expect(candidates.length).toBeGreaterThan(0);
-    expect(candidates[0]?.generatedCode).toMatch(/^4WE6E-6X\/EG24N9K4$/);
+    expect(candidates[0]?.generatedCode).toMatch(/^4WE6E-62\/EG24N9K4$/);
     expect(candidates[0]?.generationStatus).toBe('generated_full');
   });
 

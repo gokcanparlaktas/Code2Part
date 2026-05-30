@@ -5,8 +5,15 @@ import {
   parseRexrothWEDesignSeriesToken,
   type RexrothWEDesignSeriesParse,
 } from './rexrothWEDesignSeries';
+import {
+  rexrothWEAllowedDesignFirstDigits,
+  rexrothWEPartialHeaderRegex,
+  rexrothWESourceFamilyFromPrefix,
+  type RexrothWESeriesPrefix,
+  type RexrothWESourceFamily,
+} from './rexrothWESeriesPrefixes';
 
-export type RexrothWESeriesPrefix = '3WE6' | '4WE6' | '4WE10';
+export type { RexrothWESeriesPrefix };
 
 export type RexrothParseCompleteness = 'fully_parsed' | 'partial' | 'unknown';
 
@@ -33,7 +40,7 @@ function isValidRexrothWESpoolToken(spoolToken: string): boolean {
 }
 
 function allowedDesignDigitsForSeries(seriesPrefix: RexrothWESeriesPrefix): string {
-  return seriesPrefix === '4WE10' ? '35' : '67';
+  return rexrothWEAllowedDesignFirstDigits(seriesPrefix);
 }
 
 function splitRexrothWESpoolDesignToken(
@@ -116,9 +123,142 @@ function splitRexrothWESpoolDesignToken(
   return { kind: 'unknown_spool', token: token };
 }
 
+export interface RexrothWEPartialHeader {
+  seriesPrefix: RexrothWESeriesPrefix;
+  sourceFamily: RexrothWESourceFamily;
+  spoolToken?: string;
+  spoolSymbol?: string;
+  rawDesignSeries?: string | null;
+  componentSeriesFamily?: string;
+  designDisplay?: string;
+}
+
+function resolveRexrothWESpoolSymbol(spoolToken: string): string {
+  if (spoolToken === 'DOF') {
+    return 'D';
+  }
+  if (spoolToken.startsWith('E')) {
+    return 'E';
+  }
+  return spoolToken;
+}
+
+function tryParseRexrothWESpoolOnlyRemainder(
+  remainder: string
+): { spoolToken: string; spoolSymbol: string } | null {
+  const upper = remainder.trim().toUpperCase();
+  if (!upper) {
+    return null;
+  }
+
+  const candidates = ['DOF', 'EA', 'EB', ...'ABCDEGHJY'.split('')];
+  candidates.sort((a, b) => b.length - a.length);
+
+  for (const spoolToken of candidates) {
+    if (upper !== spoolToken) {
+      continue;
+    }
+    if (!isValidRexrothWESpoolToken(spoolToken)) {
+      continue;
+    }
+    return {
+      spoolToken,
+      spoolSymbol: resolveRexrothWESpoolSymbol(spoolToken),
+    };
+  }
+
+  return null;
+}
+
+export function parseRexrothWEPartialHeader(normalized: string): RexrothWEPartialHeader | null {
+  const headerPart = normalized.split('/')[0] ?? normalized;
+  const prefixMatch = headerPart.match(rexrothWEPartialHeaderRegex());
+  if (!prefixMatch) {
+    return null;
+  }
+
+  const seriesPrefix = prefixMatch[1].toUpperCase() as RexrothWESeriesPrefix;
+  const remainder = prefixMatch[2] ?? '';
+  const sourceFamily = rexrothWESourceFamilyFromPrefix(seriesPrefix);
+  const normalizedHeader = `${seriesPrefix}${remainder}`.toUpperCase();
+
+  const fullHeader = parseRexrothWEHeaderOnly(normalizedHeader);
+  if (fullHeader) {
+    return fullHeader;
+  }
+
+  const partial: RexrothWEPartialHeader = {
+    seriesPrefix,
+    sourceFamily,
+  };
+
+  if (!remainder) {
+    return partial;
+  }
+
+  const spoolOnly = tryParseRexrothWESpoolOnlyRemainder(remainder);
+  if (spoolOnly) {
+    return {
+      ...partial,
+      ...spoolOnly,
+    };
+  }
+
+  return partial;
+}
+
+export function parseRexrothWEHeaderOnly(normalized: string): {
+  seriesPrefix: RexrothWESeriesPrefix;
+  sourceFamily: RexrothWESourceFamily;
+  spoolToken: string;
+  spoolSymbol: string;
+  rawDesignSeries: string | null;
+  componentSeriesFamily: string;
+  designDisplay: string;
+} | null {
+  const header = normalized.split('/')[0] ?? normalized;
+  const prefixMatch = header.match(/^(3WE4|3WE6|4WE6|4WE10)(.+)$/);
+  if (!prefixMatch) {
+    return null;
+  }
+
+  const seriesPrefix = prefixMatch[1] as RexrothWESeriesPrefix;
+  const split = splitRexrothWESpoolDesignToken(
+    prefixMatch[2],
+    allowedDesignDigitsForSeries(seriesPrefix)
+  );
+  if (split.kind !== 'ok') {
+    return null;
+  }
+
+  const sourceFamily = rexrothWESourceFamilyFromPrefix(seriesPrefix);
+  const designDisplay = split.design.rawDesignSeries ?? split.design.componentSeriesFamily;
+
+  return {
+    seriesPrefix,
+    sourceFamily,
+    spoolToken: split.spoolToken,
+    spoolSymbol:
+      split.spoolToken === 'DOF' ? 'D' : split.spoolToken.startsWith('E') ? 'E' : split.spoolToken,
+    rawDesignSeries: split.design.rawDesignSeries,
+    componentSeriesFamily: split.design.componentSeriesFamily,
+    designDisplay,
+  };
+}
+
 export function analyzePartialRexrothWE(normalized: string): RexrothWEParserDiagnostics {
   const slashIndex = normalized.indexOf('/');
   if (slashIndex === -1) {
+    const headerOnly = parseRexrothWEHeaderOnly(normalized);
+    if (headerOnly) {
+      return {
+        parseCompleteness: 'partial',
+        unknownTokens: [],
+        unresolvedSegments: ['coil_section'],
+        parserNotes: ['Bobin bölümü girilmedi'],
+      };
+    }
+
     return {
       parseCompleteness: 'unknown',
       unknownTokens: [normalized],
@@ -129,7 +269,7 @@ export function analyzePartialRexrothWE(normalized: string): RexrothWEParserDiag
 
   const header = normalized.slice(0, slashIndex);
   const coilSection = normalized.slice(slashIndex + 1);
-  const prefixMatch = header.match(/^(3WE6|4WE6|4WE10)(.+)$/);
+  const prefixMatch = header.match(/^(3WE4|3WE6|4WE6|4WE10)(.+)$/);
   if (!prefixMatch) {
     return {
       parseCompleteness: 'unknown',

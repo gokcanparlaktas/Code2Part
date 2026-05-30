@@ -2,6 +2,8 @@ import { getTechnicalAttributes } from '@/domain/attributes/getTechnicalAttribut
 import type { CatalogDataProvider } from '@/domain/catalogData/CatalogDataProvider';
 import {
   buildHydraulicValveBehaviorDescriptions,
+} from '@/domain/canonical/hydraulicValve/hydraulicValveBehaviorDescriptionsBundle';
+import {
   formatBehaviorDescriptionForUi,
 } from '@/domain/canonical/hydraulicValve/hydraulicValveBehaviorDescriptions';
 import {

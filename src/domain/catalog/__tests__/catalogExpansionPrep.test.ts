@@ -6,7 +6,7 @@ import {
 import {
   getCodePatternsForSeries,
   getComparisonProfileRef,
-} from '@/domain/catalog/adapters/catalogV2Adapter';
+} from '@/domain/catalog/catalogPatternSelectors';
 import {
   lookupEquivalenceProfile,
   lookupEquivalenceSummaryFromCatalog,

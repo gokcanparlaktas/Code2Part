@@ -9,12 +9,17 @@ import {
   View,
 } from 'react-native';
 
+import { ProductCodeCompletionPanel } from '@/components/ProductCodeCompletionPanel';
 import { ConfidenceBadge } from '@/components/ConfidenceBadge';
 import { ProductCard } from '@/components/ProductCard';
 import { PartialSuggestionsPanel } from '@/components/PartialSuggestionsPanel';
 import { UnresolvedResultCard } from '@/components/UnresolvedResultCard';
 import { calculateProductReliability } from '@/domain/reliability/calculateProductReliability';
 import { PARTIAL_SOURCE_EQUIVALENTS_WARNING_TR } from '@/domain/resolver/partialSourceEquivalents';
+import {
+  completeProductCode,
+  shouldSuppressWeakPartialSuggestions,
+} from '@/domain/resolver/completeProductCode';
 import { suggestProducts } from '@/domain/resolver/suggestProducts';
 import { useResolvedProductSearch } from '@/hooks/useResolvedProductSearch';
 import {
@@ -96,7 +101,21 @@ export default function ResultScreen() {
     };
   }, [data, inputCode]);
 
-  const canSaveUnresolved = isNotFound || isPartialIdentification;
+  const codeCompletion = useMemo(
+    () => (inputCode ? completeProductCode(inputCode) : null),
+    [inputCode]
+  );
+
+  const showCodeCompletionPanel = Boolean(
+    codeCompletion &&
+      (codeCompletion.completionStatus === 'can_complete' ||
+        codeCompletion.completionStatus === 'already_complete')
+  );
+
+  const showWeakPartialSuggestions = Boolean(
+    suggestions.length > 0 &&
+      !shouldSuppressWeakPartialSuggestions(codeCompletion)
+  );
 
   useEffect(() => {
     if (!inputCode || !identification) {
@@ -135,8 +154,14 @@ export default function ResultScreen() {
     };
   }, [identification, showHeaderBadge, styles.headerBadgeWrap]);
 
-  const openEquivalents = () => {
-    router.push(productCodeEquivalentsHref(inputCode));
+  const canSaveUnresolved = isNotFound || isPartialIdentification;
+
+  const openEquivalentsForCode = (code: string) => {
+    router.push(productCodeEquivalentsHref(code));
+  };
+
+  const searchWithCode = (code: string) => {
+    router.push(productCodeResultHref(code));
   };
 
   const handleSaveUnresolved = async () => {
@@ -214,7 +239,22 @@ export default function ResultScreen() {
       >
         {isNotFound ? (
           <>
-            {suggestions.length > 0 ? (
+            {showCodeCompletionPanel && codeCompletion ? (
+              <>
+                <Text style={styles.pageTitle}>Koddan çıkarılanlar</Text>
+                <Text style={styles.partialIntro}>
+                  Tam sipariş kodu doğrulanamadı; tanınan seri bilgisinden kodu adım adım
+                  tamamlayabilirsiniz.
+                </Text>
+                <ProductCodeCompletionPanel
+                  inputCode={inputCode}
+                  initialCompletion={codeCompletion}
+                  onSearchWithCode={searchWithCode}
+                  onOpenEquivalents={openEquivalentsForCode}
+                />
+              </>
+            ) : null}
+            {!showCodeCompletionPanel && suggestions.length > 0 ? (
               <>
                 <Text style={styles.partialIntro}>
                   Tam ürün kodu tanınamadı; aşağıdaki seriler olası görünüyor. Kesin eşleşme
@@ -251,7 +291,16 @@ export default function ResultScreen() {
               detailRows={productDetailRows}
             />
 
-            {suggestions.length > 0 ? (
+            {showCodeCompletionPanel && codeCompletion ? (
+              <ProductCodeCompletionPanel
+                inputCode={inputCode}
+                initialCompletion={codeCompletion}
+                onSearchWithCode={searchWithCode}
+                onOpenEquivalents={openEquivalentsForCode}
+              />
+            ) : null}
+
+            {showWeakPartialSuggestions ? (
               <PartialSuggestionsPanel
                 title="Olası tam kod örnekleri"
                 query={inputCode}
@@ -260,26 +309,26 @@ export default function ResultScreen() {
               />
             ) : null}
 
-            {equivalenceWarnings.length > 0 ? (
+            {!showCodeCompletionPanel && equivalenceWarnings.length > 0 ? (
               <Text style={styles.partialIntro}>{PARTIAL_SOURCE_EQUIVALENTS_WARNING_TR}</Text>
             ) : null}
 
-            {hasEquivalents ? (
+            {!showCodeCompletionPanel && hasEquivalents ? (
               <Pressable
                 style={({ pressed }) => [
                   styles.primaryButton,
                   pressed && styles.buttonPressed,
                 ]}
-                onPress={openEquivalents}
+                onPress={() => openEquivalentsForCode(inputCode)}
               >
                 <Text style={styles.primaryButtonText}>Muadil adaylarını gör</Text>
               </Pressable>
-            ) : (
+            ) : !showCodeCompletionPanel ? (
               <Text style={styles.noEquivalentsText}>
                 Elde edilen bilgilerle muadil aday oluşturulamadı. Tam kodu girerek tekrar
                 deneyin.
               </Text>
-            )}
+            ) : null}
 
             {alreadySaved ? (
               <View style={styles.savedBox}>
@@ -312,7 +361,7 @@ export default function ResultScreen() {
                   styles.primaryButton,
                   pressed && styles.buttonPressed,
                 ]}
-                onPress={openEquivalents}
+                onPress={() => openEquivalentsForCode(inputCode)}
               >
                 <Text style={styles.primaryButtonText}>Muadilleri gör</Text>
               </Pressable>

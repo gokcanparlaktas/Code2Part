@@ -1,5 +1,5 @@
 /**
- * Rexroth WE family parser (3WE6, 4WE6, 4WE10).
+ * Rexroth WE family parser (3WE4, 3WE6, 4WE6, 4WE10).
  * Raw structured fields only — canonical meanings come from resolver/catalog layers.
  */
 
@@ -26,6 +26,14 @@ import {
   REXROTH_WE_FULLY_PARSED_NOTE_TR,
   type RexrothWEParserDiagnostics,
 } from './rexrothWEParserDiagnostics';
+import {
+  isRexrothWECode,
+  type RexrothWENominalSize,
+  type RexrothWESeriesPrefix,
+  type RexrothWESourceFamily,
+} from './rexrothWESeriesPrefixes';
+
+export { isRexrothWECode, type RexrothWESeriesPrefix, type RexrothWESourceFamily };
 
 const CATALOG_SOURCE = 'Rexroth WE directional controls catalog';
 
@@ -34,13 +42,10 @@ export type RexrothWECodeFormat = 're23164_7x' | 'legacy_6x' | 'we10_ordering' |
 /** @deprecated Use RexrothWECodeFormat */
 export type RexrothWE6CodeFormat = RexrothWECodeFormat;
 
-export type RexrothWESeriesPrefix = '3WE6' | '4WE6' | '4WE10';
-export type RexrothWESourceFamily = 'WE6' | 'WE10';
-
 export interface RexrothWEParsedCode {
   seriesPrefix: RexrothWESeriesPrefix;
   sourceFamily: RexrothWESourceFamily;
-  nominalSize: '6' | '10';
+  nominalSize: RexrothWENominalSize;
   numberOfMainPorts: 3 | 4;
   spoolSymbol: RexrothWE6BaseSpoolSymbol;
   functionToken: string;
@@ -74,11 +79,6 @@ function normalizeCoilRatingToken(voltageToken: string): string {
     return hg[1];
   }
   return upper;
-}
-
-/** True when normalized code looks like a Rexroth 3WE6 / 4WE6 / 4WE10 product code. */
-export function isRexrothWECode(normalized: string): boolean {
-  return /^(?:3WE6|4WE6|4WE10)/.test(normalized);
 }
 
 /** True when code begins with 4WE6 and the next segment looks like a Rexroth WE6 header. */
@@ -156,7 +156,7 @@ function parseLegacyCoilSection(section: string): {
 type HeaderMatch = {
   seriesPrefix: RexrothWESeriesPrefix;
   sourceFamily: RexrothWESourceFamily;
-  nominalSize: '6' | '10';
+  nominalSize: RexrothWENominalSize;
   numberOfMainPorts: 3 | 4;
   baseSpoolSymbol: RexrothWE6BaseSpoolSymbol;
   functionToken: string;
@@ -184,7 +184,7 @@ function matchSeriesHeader(
   config: {
     seriesPrefix: RexrothWESeriesPrefix;
     sourceFamily: RexrothWESourceFamily;
-    nominalSize: '6' | '10';
+    nominalSize: RexrothWENominalSize;
     numberOfMainPorts: 3 | 4;
     componentSeriesDigits: string;
   }
@@ -293,6 +293,13 @@ function matchSeriesHeader(
 
 function matchWEHeader(normalized: string): HeaderMatch | null {
   return (
+    matchSeriesHeader(normalized, {
+      seriesPrefix: '3WE4',
+      sourceFamily: 'WE4',
+      nominalSize: '4',
+      numberOfMainPorts: 3,
+      componentSeriesDigits: '45',
+    }) ??
     matchSeriesHeader(normalized, {
       seriesPrefix: '3WE6',
       sourceFamily: 'WE6',
@@ -678,6 +685,19 @@ export function parseRexrothWE(inputCode: string): TechnicalAttributeResult[] | 
         confidence: isCatalogFormat || parsed.format === 'we10_ordering' ? 'high' : 'medium',
         requiresCatalogCheck: !isCatalogFormat && parsed.format !== 'we10_ordering',
         sourceToken: parsed.manualOverrideToken,
+        category: HYDRAULIC_VALVE_CATEGORY,
+      })
+    );
+  } else if (coilToken) {
+    results.push(
+      buildAttributeResult({
+        key: PARSER_KEYS.manual_override,
+        label: 'Manuel kumanda kodu',
+        value: 'none',
+        evidence: 'code',
+        confidence: isCatalogFormat || parsed.format === 'we10_ordering' ? 'high' : 'medium',
+        requiresCatalogCheck: false,
+        sourceToken: 'none',
         category: HYDRAULIC_VALVE_CATEGORY,
       })
     );

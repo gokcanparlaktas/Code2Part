@@ -3,6 +3,8 @@ import { parseVickersDG4V } from '@/domain/categories/hydraulicValve/manufacture
 import { parseYukenDSG } from '@/domain/categories/hydraulicValve/manufacturers/yuken/parseYukenDSG';
 import {
   buildHydraulicValveBehaviorDescriptions,
+} from '@/domain/canonical/hydraulicValve/hydraulicValveBehaviorDescriptionsBundle';
+import {
   formatBehaviorDescriptionForUi,
 } from '@/domain/canonical/hydraulicValve/hydraulicValveBehaviorDescriptions';
 import { buildProductDetailRows } from '@/domain/presentation/buildProductDetailRows';

@@ -31,7 +31,12 @@ import {
 } from './rexrothYukenGenerationMappings';
 
 function isRexrothWeSeries(seriesId: string): boolean {
-  return seriesId === 'rexroth_4we6' || seriesId === 'rexroth_4we10';
+  return (
+    seriesId === 'rexroth_3we4' ||
+    seriesId === 'rexroth_3we6' ||
+    seriesId === 'rexroth_4we6' ||
+    seriesId === 'rexroth_4we10'
+  );
 }
 
 function isYukenDsgSeries(seriesId: string): boolean {
@@ -101,10 +106,45 @@ function buildYukenCode(
 }
 
 function resolveRexrothManualOverride(manualOverride: string | null): string {
-  if (!manualOverride || manualOverride === 'default') {
+  if (manualOverride === 'N9' || manualOverride === 'N') {
     return 'N9';
   }
+  if (manualOverride === 'default' || manualOverride === 'C') {
+    return 'N9';
+  }
+  if (manualOverride === null || manualOverride === '' || manualOverride === 'none') {
+    return '';
+  }
   return manualOverride;
+}
+
+const REXROTH_WE4_DESIGN_SERIES = new Set(['41', '42', '45', '52']);
+const REXROTH_WE6_DESIGN_SERIES = new Set(['61', '62', '71', '72']);
+const REXROTH_WE10_DESIGN_SERIES = new Set(['31', '35', '51', '52']);
+const REXROTH_WE4_DEFAULT_DESIGN_SERIES = '42';
+
+function resolveRexrothDesignSeries(
+  targetSeries: ProductSeriesRecord,
+  tokens: HydraulicEquivalentTokens
+): string {
+  const isWe10 = targetSeries.id === 'rexroth_4we10';
+  const isWe4 = targetSeries.id === 'rexroth_3we4';
+  const validSeries = isWe10
+    ? REXROTH_WE10_DESIGN_SERIES
+    : isWe4
+      ? REXROTH_WE4_DESIGN_SERIES
+      : REXROTH_WE6_DESIGN_SERIES;
+  const defaultSeries = isWe10
+    ? REXROTH_WE10_DEFAULT_DESIGN_SERIES
+    : isWe4
+      ? REXROTH_WE4_DEFAULT_DESIGN_SERIES
+      : REXROTH_WE6_DEFAULT_DESIGN_SERIES;
+
+  if (tokens.designSeries && validSeries.has(tokens.designSeries)) {
+    return tokens.designSeries;
+  }
+
+  return defaultSeries;
 }
 
 function buildRexrothCode(
@@ -113,10 +153,7 @@ function buildRexrothCode(
   spool: string
 ): string {
   const prefix = targetSeries.codePrefix.replace(/-/g, '');
-  const design =
-    targetSeries.id === 'rexroth_4we10'
-      ? REXROTH_WE10_DEFAULT_DESIGN_SERIES
-      : REXROTH_WE6_DEFAULT_DESIGN_SERIES;
+  const design = resolveRexrothDesignSeries(targetSeries, tokens);
 
   const coil = mapCoilToRexroth(tokens.coilRating) ?? 'EG24';
   const manual = resolveRexrothManualOverride(tokens.manualOverride);

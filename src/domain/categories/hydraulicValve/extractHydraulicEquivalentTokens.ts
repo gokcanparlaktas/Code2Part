@@ -1,7 +1,12 @@
 import { getTechnicalAttributes } from '@/domain/attributes/getTechnicalAttributes';
 import { normalizeProductCode } from '@/domain/attributes/extractors/attributeNormalization';
-import { parseRexrothWEProductCode } from '@/domain/categories/hydraulicValve/manufacturers/rexroth/parseRexrothWE';
-import { isRexrothWECode } from '@/domain/categories/hydraulicValve/manufacturers/rexroth/parseRexrothWE';
+import {
+  isRexrothWECode,
+  parseRexrothWEProductCode,
+} from '@/domain/categories/hydraulicValve/manufacturers/rexroth/parseRexrothWE';
+import {
+  REXROTH_WE_CODE_PREFIX_PATTERN,
+} from '@/domain/categories/hydraulicValve/manufacturers/rexroth/rexrothWESeriesPrefixes';
 import { isYukenDSGCode, parseYukenDSGProductCode } from '@/domain/categories/hydraulicValve/manufacturers/yuken/parseYukenDSG';
 import type { ProductIdentification } from '@/types/product';
 
@@ -45,7 +50,10 @@ function extractFromRexrothParser(normalized: string): HydraulicEquivalentTokens
   }
 
   const header = normalized.match(
-    /^(3WE6|4WE6|4WE10)(E[AB]|DOF|[ABCDEGHJY])(?:-?)(([67][0-9])|([67]X))\/?/i
+    new RegExp(
+      `^${REXROTH_WE_CODE_PREFIX_PATTERN}(E[AB]|DOF|[ABCDEGHJY])(?:-?)(([457][0-9])|([457]X))/?`,
+      'i'
+    )
   );
   if (!header) {
     return null;
@@ -54,14 +62,19 @@ function extractFromRexrothParser(normalized: string): HydraulicEquivalentTokens
   const coilSection = normalized.includes('/') ? normalized.split('/')[1] ?? '' : '';
   const coilMatch = coilSection.match(/^(?:OF)?(EG24|CG24|HG24|G12|G24)(N9|N)?(K4|C4Z)?/i);
 
+  const spoolToken = header[1] ?? '';
+  const designTwoDigit = header[3];
+  const designXNotation = header[4];
+
   return {
-    spoolSymbol: header[2] === 'DOF' ? 'D' : header[2].startsWith('E') ? 'E' : header[2].toUpperCase(),
-    functionCode: header[2].toUpperCase(),
+    spoolSymbol:
+      spoolToken === 'DOF' ? 'D' : spoolToken.startsWith('E') ? 'E' : spoolToken.toUpperCase(),
+    functionCode: spoolToken.toUpperCase(),
     coilRating: coilMatch?.[1]?.toUpperCase() ?? null,
-    manualOverride: coilMatch?.[2]?.toUpperCase() ?? null,
+    manualOverride: coilMatch?.[2]?.toUpperCase() ?? (coilMatch?.[1] ? 'none' : null),
     connector: coilMatch?.[3]?.toUpperCase() ?? null,
-    designSeries: header[3]?.length === 2 ? header[3] : null,
-    designSeriesFamily: header[4] ? `${header[4]}X` : header[3]?.toUpperCase() ?? null,
+    designSeries: designTwoDigit ?? null,
+    designSeriesFamily: designXNotation ?? designTwoDigit ?? null,
   };
 }
 
@@ -79,7 +92,7 @@ function extractFromYukenParser(normalized: string): HydraulicEquivalentTokens |
     spoolSymbol: parsed.spoolType,
     functionCode: parsed.spoolFunctionCode,
     coilRating: parsed.voltageToken,
-    manualOverride: parsed.manualOverrideToken === 'default' ? null : parsed.manualOverrideToken,
+    manualOverride: parsed.manualOverrideToken,
     connector: parsed.connectorToken,
     designSeries: parsed.designNumber,
     designSeriesFamily: null,
@@ -99,8 +112,7 @@ function mergeTokens(
     functionCode: fromParser.functionCode ?? fromAttributes.functionCode,
     coilRating: fromParser.coilRating ?? fromAttributes.coilRating,
     manualOverride:
-      fromParser.manualOverride ??
-      (fromAttributes.manualOverride === 'default' ? null : fromAttributes.manualOverride),
+      fromParser.manualOverride ?? fromAttributes.manualOverride,
     connector: fromParser.connector ?? fromAttributes.connector,
     designSeries: fromParser.designSeries ?? fromAttributes.designSeries,
     designSeriesFamily: fromParser.designSeriesFamily ?? fromAttributes.designSeriesFamily,

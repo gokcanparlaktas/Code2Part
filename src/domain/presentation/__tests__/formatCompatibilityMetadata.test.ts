@@ -2,6 +2,8 @@ import { getTechnicalAttributes } from '@/domain/attributes/getTechnicalAttribut
 import { buildHydraulicValveCanonicalProfile } from '@/domain/canonical/hydraulicValve/buildHydraulicValveCanonicalProfile';
 import {
   buildHydraulicValveBehaviorDescriptions,
+} from '@/domain/canonical/hydraulicValve/hydraulicValveBehaviorDescriptionsBundle';
+import {
   formatBehaviorDescriptionForUi,
 } from '@/domain/canonical/hydraulicValve/hydraulicValveBehaviorDescriptions';
 import { FIELD_LABELS } from '@/domain/canonical/hydraulicValve/hydraulicValveCanonicalDictionary';

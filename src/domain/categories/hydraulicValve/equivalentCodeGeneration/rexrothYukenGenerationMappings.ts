@@ -34,8 +34,8 @@ export const CONFIDENT_YUKEN_TO_REXROTH_SPOOL: Partial<Record<YukenDSGSpoolFunct
     '3C9': 'D',
   };
 
-export const REXROTH_WE6_DEFAULT_DESIGN_SERIES = '6X';
-export const REXROTH_WE10_DEFAULT_DESIGN_SERIES = '3X';
+export const REXROTH_WE6_DEFAULT_DESIGN_SERIES = '62';
+export const REXROTH_WE10_DEFAULT_DESIGN_SERIES = '35';
 
 export const UNRESOLVED_SPOOL_MAPPING_NOTE_TR =
   'Rexroth sürgü/fonksiyon sembolünün Yuken karşılığı mevcut katalog verisiyle kesin eşleştirilemedi. Yuken sürgü sembolü katalogdan kontrol edilmelidir.';
