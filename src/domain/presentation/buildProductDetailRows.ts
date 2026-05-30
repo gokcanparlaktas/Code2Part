@@ -1,4 +1,5 @@
 import { getTechnicalAttributes } from '@/domain/attributes/getTechnicalAttributes';
+import type { CatalogDataProvider } from '@/domain/catalogData/CatalogDataProvider';
 import {
   buildHydraulicValveBehaviorDescriptions,
   formatBehaviorDescriptionForUi,
@@ -132,7 +133,8 @@ function profileAttributeToDetailRow(
 }
 
 export function buildProductDetailRows(
-  identification: ProductIdentification
+  identification: ProductIdentification,
+  options?: { catalogProvider?: CatalogDataProvider }
 ): ProductDetailRow[] {
   const attributes = getTechnicalAttributes(identification);
 
@@ -149,6 +151,7 @@ export function buildProductDetailRows(
     const behaviorDescriptions = buildHydraulicValveBehaviorDescriptions({
       identification,
       attributes,
+      catalogProvider: options?.catalogProvider,
     });
 
     const hasDesignSeriesDescription = behaviorDescriptions.some(

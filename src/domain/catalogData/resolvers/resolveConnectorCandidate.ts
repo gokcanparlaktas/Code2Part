@@ -1,4 +1,7 @@
-import { getRexrothConnectorVoltageCatalog, getYukenDsgConnectorVoltageCatalog } from '@/domain/catalogData/loadCatalogData';
+import {
+  getDefaultCatalogDataProvider,
+  type CatalogDataProvider,
+} from '@/domain/catalogData/CatalogDataProvider';
 import type { CatalogResolvedCandidate, CatalogResolverContext } from '@/domain/catalogData/types';
 
 function notFound(context: CatalogResolverContext): CatalogResolvedCandidate {
@@ -12,8 +15,11 @@ function notFound(context: CatalogResolverContext): CatalogResolvedCandidate {
   };
 }
 
-function resolveRexrothConnector(context: CatalogResolverContext): CatalogResolvedCandidate {
-  const catalog = getRexrothConnectorVoltageCatalog();
+function resolveRexrothConnector(
+  context: CatalogResolverContext,
+  catalogProvider: CatalogDataProvider
+): CatalogResolvedCandidate {
+  const catalog = catalogProvider.getRexrothConnectorVoltageCatalog();
   const token = context.rawToken.trim().toUpperCase();
   const entry = catalog.entries?.find((row) => {
     if (row.rawConnectorToken?.toUpperCase() !== token) {
@@ -41,8 +47,11 @@ function resolveRexrothConnector(context: CatalogResolverContext): CatalogResolv
   };
 }
 
-function resolveYukenConnector(context: CatalogResolverContext): CatalogResolvedCandidate {
-  const catalog = getYukenDsgConnectorVoltageCatalog();
+function resolveYukenConnector(
+  context: CatalogResolverContext,
+  catalogProvider: CatalogDataProvider
+): CatalogResolvedCandidate {
+  const catalog = catalogProvider.getYukenDsgConnectorVoltageCatalog();
   const token = context.rawToken.trim().toUpperCase();
   const entry = catalog.connectorTokenMeanings?.find((row) => {
     if (row.rawConnectorToken?.toUpperCase() !== token) {
@@ -73,16 +82,19 @@ function resolveYukenConnector(context: CatalogResolverContext): CatalogResolved
   };
 }
 
-export function resolveConnectorCandidate(context: CatalogResolverContext): CatalogResolvedCandidate {
+export function resolveConnectorCandidate(
+  context: CatalogResolverContext,
+  catalogProvider: CatalogDataProvider = getDefaultCatalogDataProvider()
+): CatalogResolvedCandidate {
   if (context.attributeKey !== 'connector_type') {
     return notFound(context);
   }
   const manufacturer = context.manufacturer.trim().toLowerCase();
   if (manufacturer === 'rexroth') {
-    return resolveRexrothConnector(context);
+    return resolveRexrothConnector(context, catalogProvider);
   }
   if (manufacturer === 'yuken') {
-    return resolveYukenConnector(context);
+    return resolveYukenConnector(context, catalogProvider);
   }
   return notFound(context);
 }

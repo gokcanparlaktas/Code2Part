@@ -1,5 +1,6 @@
 export * from '@/domain/catalogData/types';
 export * from '@/domain/catalogData/loadCatalogData';
+export * from '@/domain/catalogData/CatalogDataProvider';
 export * from '@/domain/catalogData/context/buildResolverContext';
 export { resolveVoltageCandidate } from '@/domain/catalogData/resolvers/resolveVoltageCandidate';
 export { resolveMountingCandidate } from '@/domain/catalogData/resolvers/resolveMountingCandidate';

@@ -1,3 +1,4 @@
+import type { CatalogDataProvider } from '@/domain/catalogData/CatalogDataProvider';
 import {
   buildProductResolverContext,
   portStatesMatch,
@@ -245,7 +246,8 @@ function applyTechnicalData(
  */
 export function enrichHydraulicProfileFromCatalogData(
   profile: HydraulicValveCanonicalProfile,
-  identification: ProductIdentification
+  identification: ProductIdentification,
+  catalogProvider?: CatalogDataProvider
 ): HydraulicValveCanonicalProfile {
   const productContext = buildProductResolverContext(identification.normalizedCode);
   if (!productContext) {
@@ -256,19 +258,21 @@ export function enrichHydraulicProfileFromCatalogData(
     applyVoltage(
       profile,
       resolveVoltageCandidate(
-        toCatalogResolverContext(productContext, 'coil_rating', profile.rawVoltageCode)
+        toCatalogResolverContext(productContext, 'coil_rating', profile.rawVoltageCode),
+        catalogProvider
       )
     );
   }
 
-  applyMounting(profile, resolveMountingCandidate(productContext));
+  applyMounting(profile, resolveMountingCandidate(productContext, catalogProvider));
 
   const spoolToken = profile.rawSpoolSymbol ?? profile.rawFunctionCode;
   if (spoolToken) {
     applySpool(
       profile,
       resolveSpoolCandidate(
-        toCatalogResolverContext(productContext, 'spool_symbol', spoolToken)
+        toCatalogResolverContext(productContext, 'spool_symbol', spoolToken),
+        catalogProvider
       )
     );
   }
@@ -277,12 +281,13 @@ export function enrichHydraulicProfileFromCatalogData(
     applyConnector(
       profile,
       resolveConnectorCandidate(
-        toCatalogResolverContext(productContext, 'connector_type', profile.rawConnectorCode)
+        toCatalogResolverContext(productContext, 'connector_type', profile.rawConnectorCode),
+        catalogProvider
       )
     );
   }
 
-  applyTechnicalData(profile, resolveTechnicalDataCandidate(productContext));
+  applyTechnicalData(profile, resolveTechnicalDataCandidate(productContext, catalogProvider));
 
   profile.notes = [...new Set(profile.notes)];
   return profile;

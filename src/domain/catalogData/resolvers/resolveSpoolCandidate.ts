@@ -1,4 +1,7 @@
-import { getRexrothSpoolCatalog, getYukenSpoolCatalog } from '@/domain/catalogData/loadCatalogData';
+import {
+  getDefaultCatalogDataProvider,
+  type CatalogDataProvider,
+} from '@/domain/catalogData/CatalogDataProvider';
 import type { CatalogPortState, CatalogResolvedCandidate, CatalogResolverContext } from '@/domain/catalogData/types';
 
 function notFound(context: CatalogResolverContext): CatalogResolvedCandidate {
@@ -26,8 +29,11 @@ function toPortState(row: {
   };
 }
 
-function resolveRexrothSpool(context: CatalogResolverContext): CatalogResolvedCandidate {
-  const catalog = getRexrothSpoolCatalog();
+function resolveRexrothSpool(
+  context: CatalogResolverContext,
+  catalogProvider: CatalogDataProvider
+): CatalogResolvedCandidate {
+  const catalog = catalogProvider.getRexrothSpoolCatalog();
   const token = context.rawToken.trim().toUpperCase();
   const entry = catalog.spoolSymbolMeanings?.find((row) => {
     if (row.attributeKey !== 'spool_symbol' || row.rawToken?.toUpperCase() !== token) {
@@ -60,8 +66,11 @@ function resolveRexrothSpool(context: CatalogResolverContext): CatalogResolvedCa
   };
 }
 
-function resolveYukenSpool(context: CatalogResolverContext): CatalogResolvedCandidate {
-  const catalog = getYukenSpoolCatalog();
+function resolveYukenSpool(
+  context: CatalogResolverContext,
+  catalogProvider: CatalogDataProvider
+): CatalogResolvedCandidate {
+  const catalog = catalogProvider.getYukenSpoolCatalog();
   const token = context.rawToken.trim();
   const entry = catalog.spoolSymbolMeanings?.find((row) => {
     if (row.attributeKey !== 'spool_symbol' || row.rawToken !== token) {
@@ -103,16 +112,19 @@ function resolveYukenSpool(context: CatalogResolverContext): CatalogResolvedCand
   };
 }
 
-export function resolveSpoolCandidate(context: CatalogResolverContext): CatalogResolvedCandidate {
+export function resolveSpoolCandidate(
+  context: CatalogResolverContext,
+  catalogProvider: CatalogDataProvider = getDefaultCatalogDataProvider()
+): CatalogResolvedCandidate {
   if (context.attributeKey !== 'spool_symbol') {
     return notFound(context);
   }
   const manufacturer = context.manufacturer.trim().toLowerCase();
   if (manufacturer === 'rexroth') {
-    return resolveRexrothSpool(context);
+    return resolveRexrothSpool(context, catalogProvider);
   }
   if (manufacturer === 'yuken') {
-    return resolveYukenSpool(context);
+    return resolveYukenSpool(context, catalogProvider);
   }
   return notFound(context);
 }

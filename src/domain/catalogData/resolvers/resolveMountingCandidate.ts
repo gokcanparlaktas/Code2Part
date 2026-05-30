@@ -1,4 +1,7 @@
-import { getRexrothMountingCatalog, getYukenMountingCatalog } from '@/domain/catalogData/loadCatalogData';
+import {
+  getDefaultCatalogDataProvider,
+  type CatalogDataProvider,
+} from '@/domain/catalogData/CatalogDataProvider';
 import type { CatalogResolvedCandidate, ProductResolverContext } from '@/domain/catalogData/types';
 
 function modelKeys(context: ProductResolverContext): string[] {
@@ -86,13 +89,16 @@ function resolveFromCatalog(
   };
 }
 
-export function resolveMountingCandidate(context: ProductResolverContext): CatalogResolvedCandidate {
+export function resolveMountingCandidate(
+  context: ProductResolverContext,
+  catalogProvider: CatalogDataProvider = getDefaultCatalogDataProvider()
+): CatalogResolvedCandidate {
   const manufacturer = context.manufacturer.trim().toLowerCase();
   if (manufacturer === 'rexroth') {
-    return resolveFromCatalog(context, getRexrothMountingCatalog());
+    return resolveFromCatalog(context, catalogProvider.getRexrothMountingCatalog());
   }
   if (manufacturer === 'yuken') {
-    return resolveFromCatalog(context, getYukenMountingCatalog());
+    return resolveFromCatalog(context, catalogProvider.getYukenMountingCatalog());
   }
   return {
     found: false,

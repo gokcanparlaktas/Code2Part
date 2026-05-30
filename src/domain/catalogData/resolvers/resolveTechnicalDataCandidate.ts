@@ -1,7 +1,7 @@
 import {
-  getRexrothTechnicalDataCatalog,
-  getYukenDsgTechnicalDataCatalog,
-} from '@/domain/catalogData/loadCatalogData';
+  getDefaultCatalogDataProvider,
+  type CatalogDataProvider,
+} from '@/domain/catalogData/CatalogDataProvider';
 import type {
   CatalogCandidateConfidence,
   ProductResolverContext,
@@ -44,8 +44,11 @@ function readQuantity(value: unknown): PressureQuantity | FlowQuantity | null {
   };
 }
 
-function resolveRexrothTechnicalData(context: ProductResolverContext): TechnicalDataResolved {
-  const catalog = getRexrothTechnicalDataCatalog();
+function resolveRexrothTechnicalData(
+  context: ProductResolverContext,
+  catalogProvider: CatalogDataProvider
+): TechnicalDataResolved {
+  const catalog = catalogProvider.getRexrothTechnicalDataCatalog();
   const entry = catalog.entries?.find((row) => {
     if (row.technicalGroup !== 'hydraulic') {
       return false;
@@ -104,8 +107,11 @@ function resolveRexrothTechnicalData(context: ProductResolverContext): Technical
   return result;
 }
 
-function resolveYukenDsgTechnicalData(context: ProductResolverContext): TechnicalDataResolved {
-  const catalog = getYukenDsgTechnicalDataCatalog();
+function resolveYukenDsgTechnicalData(
+  context: ProductResolverContext,
+  catalogProvider: CatalogDataProvider
+): TechnicalDataResolved {
+  const catalog = catalogProvider.getYukenDsgTechnicalDataCatalog();
   const seriesKey = context.sourceFamily.toUpperCase();
   const entry = catalog.entries?.find((row) => {
     if (row.technicalGroup !== 'general_specifications') {
@@ -155,14 +161,15 @@ function resolveYukenDsgTechnicalData(context: ProductResolverContext): Technica
 }
 
 export function resolveTechnicalDataCandidate(
-  context: ProductResolverContext
+  context: ProductResolverContext,
+  catalogProvider: CatalogDataProvider = getDefaultCatalogDataProvider()
 ): TechnicalDataResolved {
   const manufacturer = context.manufacturer.trim().toLowerCase();
   if (manufacturer === 'rexroth' && context.family.toUpperCase() === 'WE') {
-    return resolveRexrothTechnicalData(context);
+    return resolveRexrothTechnicalData(context, catalogProvider);
   }
   if (manufacturer === 'yuken' && context.family.toUpperCase() === 'DSG') {
-    return resolveYukenDsgTechnicalData(context);
+    return resolveYukenDsgTechnicalData(context, catalogProvider);
   }
   return { found: false, needsReview: true, confidence: 'unknown' };
 }

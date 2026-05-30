@@ -40,6 +40,7 @@ import {
   UNRESOLVED_VOLTAGE_CODES,
 } from './normalizeHydraulicValveAttribute';
 import { enrichHydraulicProfileFromCatalogData } from './catalogDataProfileBridge';
+import type { CatalogDataProvider } from '@/domain/catalogData/CatalogDataProvider';
 import { applyBehaviorDisplayToCanonicalProfile } from './hydraulicValveBehaviorDescriptions';
 import type {
   CanonicalCoilVoltage,
@@ -151,6 +152,7 @@ function parseValveWays(map: Map<string, AttributeWithNormalized>): number | nul
 export interface BuildHydraulicValveCanonicalProfileOptions {
   identification: ProductIdentification;
   attributes: TechnicalAttribute[];
+  catalogProvider?: CatalogDataProvider;
 }
 
 export function buildCandidateFallbackCanonicalProfile(candidate: {
@@ -563,7 +565,11 @@ export function buildHydraulicValveCanonicalProfile(
 
   applyBehaviorDisplayToCanonicalProfile(profile, attributes);
 
-  return enrichHydraulicProfileFromCatalogData(profile, options.identification);
+  return enrichHydraulicProfileFromCatalogData(
+    profile,
+    options.identification,
+    options.catalogProvider
+  );
 }
 
 export function buildHydraulicValveCanonicalProfileFromCandidate(options: {

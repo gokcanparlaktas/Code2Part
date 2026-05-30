@@ -1,8 +1,7 @@
 import {
-  getRexrothConnectorVoltageCatalog,
-  getYukenDsgConnectorVoltageCatalog,
-  getYukenDshgConnectorVoltageCatalog,
-} from '@/domain/catalogData/loadCatalogData';
+  getDefaultCatalogDataProvider,
+  type CatalogDataProvider,
+} from '@/domain/catalogData/CatalogDataProvider';
 import type {
   CatalogResolvedCandidate,
   CatalogResolverContext,
@@ -33,8 +32,11 @@ function normalizeVoltageToken(raw: string): string {
   return upper;
 }
 
-function resolveRexrothVoltage(context: CatalogResolverContext): CatalogResolvedCandidate {
-  const catalog = getRexrothConnectorVoltageCatalog();
+function resolveRexrothVoltage(
+  context: CatalogResolverContext,
+  catalogProvider: CatalogDataProvider
+): CatalogResolvedCandidate {
+  const catalog = catalogProvider.getRexrothConnectorVoltageCatalog();
   const token = normalizeVoltageToken(context.rawToken);
   const entry = catalog.voltageTokenMeanings?.find(
     (row) => row.rawVoltageToken?.toUpperCase() === token
@@ -80,9 +82,15 @@ function yukenVoltageEntryApplies(
   });
 }
 
-function resolveYukenVoltage(context: CatalogResolverContext): CatalogResolvedCandidate {
+function resolveYukenVoltage(
+  context: CatalogResolverContext,
+  catalogProvider: CatalogDataProvider
+): CatalogResolvedCandidate {
   const token = context.rawToken.trim().toUpperCase();
-  const catalogs = [getYukenDsgConnectorVoltageCatalog(), getYukenDshgConnectorVoltageCatalog()];
+  const catalogs = [
+    catalogProvider.getYukenDsgConnectorVoltageCatalog(),
+    catalogProvider.getYukenDshgConnectorVoltageCatalog(),
+  ];
   const entry = catalogs
     .flatMap((catalog) => catalog.voltageTokenMeanings ?? [])
     .find(
@@ -112,16 +120,19 @@ function resolveYukenVoltage(context: CatalogResolverContext): CatalogResolvedCa
   };
 }
 
-export function resolveVoltageCandidate(context: CatalogResolverContext): CatalogResolvedCandidate {
+export function resolveVoltageCandidate(
+  context: CatalogResolverContext,
+  catalogProvider: CatalogDataProvider = getDefaultCatalogDataProvider()
+): CatalogResolvedCandidate {
   if (context.attributeKey !== 'coil_rating') {
     return notFound(context);
   }
   const manufacturer = context.manufacturer.trim().toLowerCase();
   if (manufacturer === 'rexroth') {
-    return resolveRexrothVoltage(context);
+    return resolveRexrothVoltage(context, catalogProvider);
   }
   if (manufacturer === 'yuken') {
-    return resolveYukenVoltage(context);
+    return resolveYukenVoltage(context, catalogProvider);
   }
   return notFound(context);
 }

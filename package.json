@@ -45,7 +45,11 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "catalog-data:import": "tsx scripts/catalog-data-firestore/cli.ts",
-    "catalog-data:import:dry-run": "tsx scripts/catalog-data-firestore/cli.ts --dry-run"
+    "catalog-data:import:dry-run": "tsx scripts/catalog-data-firestore/cli.ts --dry-run",
+    "catalog-data:firestore:verify": "tsx scripts/catalog-data-firestore/verifyCli.ts",
+    "catalog-data:backend:compare-poc": "tsx scripts/backend/compareProductsPocCli.ts",
+    "catalog-data:backend:identify-poc": "tsx scripts/backend/identifyPocCli.ts",
+    "catalog-data:backend:equivalents-poc": "tsx scripts/backend/equivalentsPocCli.ts"
   },
   "private": true,
   "overrides": {
