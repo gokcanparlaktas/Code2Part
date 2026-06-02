@@ -1,5 +1,6 @@
 import {
   buildHydraulicCenterTypeCatalogOptions,
+  hydraulicCenterTypeOptionsForCreator,
   serializePortStateKey,
 } from '@/domain/categories/hydraulicValve/hydraulicCenterTypeCatalogOptions';
 
@@ -14,7 +15,17 @@ describe('hydraulicCenterTypeCatalogOptions', () => {
       ).length
     ).toBeGreaterThanOrEqual(10);
     expect(new Set(options.map((option) => option.id)).size).toBe(options.length);
-    expect(new Set(options.map((option) => option.labelTr)).size).toBe(options.length);
+  });
+
+  it('creator options are unique and never show Belirsiz PTAB rows', () => {
+    const creator = hydraulicCenterTypeOptionsForCreator();
+    const labels = creator.map((option) => option.labelTr);
+
+    expect(new Set(labels).size).toBe(labels.length);
+    expect(labels.every((label) => !/Belirsiz/i.test(label))).toBe(true);
+    expect(labels.filter((label) => label.includes('Açık merkez'))).toHaveLength(1);
+    expect(labels.filter((label) => label.includes('Basınç merkez'))).toHaveLength(1);
+    expect(labels.filter((label) => label.includes('Ofset merkez'))).toHaveLength(1);
   });
 
   it('includes closed center WE6 mapping for code generation', () => {
@@ -25,5 +36,11 @@ describe('hydraulicCenterTypeCatalogOptions', () => {
     expect(closed?.rexrothSpoolToken).toBe('E');
     expect(closed?.portState).toBeTruthy();
     expect(closed?.id).toBe(serializePortStateKey(closed!.portState!));
+  });
+
+  it('creator options exclude all-port-uncertain PTAB rows', () => {
+    const creator = hydraulicCenterTypeOptionsForCreator();
+
+    expect(creator.every((option) => !/Belirsiz/i.test(option.labelTr))).toBe(true);
   });
 });

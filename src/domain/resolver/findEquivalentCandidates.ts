@@ -100,6 +100,7 @@ function generationToCandidateMetadata(
     generationStatus: generated.generationStatus,
     requiresCheck: generated.requiresCheck,
     generationCheckNotes: generated.checkNotes,
+    generationInfoNotes: generated.infoNotes ?? [],
     isExactKnownExample: generated.isExactKnownExample,
     generationTraceSummaryTr: generated.generationTrace.summaryTr,
   };
@@ -254,6 +255,9 @@ function mergeCandidateGeneration(
     requiresCheck: Boolean(left?.requiresCheck || right?.requiresCheck),
     generationCheckNotes: [
       ...new Set([...(left?.generationCheckNotes ?? []), ...(right?.generationCheckNotes ?? [])]),
+    ],
+    generationInfoNotes: [
+      ...new Set([...(left?.generationInfoNotes ?? []), ...(right?.generationInfoNotes ?? [])]),
     ],
     isExactKnownExample,
     generationTraceSummaryTr:

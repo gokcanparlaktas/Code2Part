@@ -4,6 +4,7 @@ import { REXROTH_PREFERRED_SPOOL_BY_CENTER } from '@/domain/categories/hydraulic
 import {
   isRexrothWEOrderingSpoolSymbol,
   rexrothWE6BehaviorLookupToken,
+  rexrothWE6OrderingSpoolTokenForEquivalent,
 } from '@/domain/categories/hydraulicValve/manufacturers/rexroth/rexrothWE6SpoolSemantics';
 
 /**
@@ -16,6 +17,11 @@ export function resolveRexrothSpoolForGeneration(
 ): string | null {
   const raw = centerOption?.rexrothSpoolToken?.trim().toUpperCase() ?? '';
   if (raw) {
+    const ordering = rexrothWE6OrderingSpoolTokenForEquivalent(raw);
+    if (ordering) {
+      return ordering;
+    }
+
     const letter = raw.length === 1 ? raw : (rexrothWE6BehaviorLookupToken(raw) ?? null);
     if (letter && isRexrothWEOrderingSpoolSymbol(letter)) {
       return letter;

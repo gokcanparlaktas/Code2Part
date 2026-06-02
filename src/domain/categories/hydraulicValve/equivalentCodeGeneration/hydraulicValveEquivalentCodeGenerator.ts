@@ -6,6 +6,7 @@ import {
 import {
   isRexrothWEOrderingSpoolSymbol,
   rexrothWE6BehaviorLookupToken,
+  rexrothWE6OrderingSpoolTokenForEquivalent,
 } from '@/domain/categories/hydraulicValve/manufacturers/rexroth/rexrothWE6SpoolSemantics';
 import { identifyProduct } from '@/domain/resolver/identifyProduct';
 import { normalizeCode } from '@/domain/resolver/normalizeCode';
@@ -24,6 +25,7 @@ import {
   REXROTH_WE6_DEFAULT_DESIGN_SERIES,
   resolveConfidentRexrothSpoolCode,
   resolveConfidentYukenSpoolCode,
+  softTransitionInfoNotesForSpool,
   UNRESOLVED_SPOOL_MAPPING_NOTE_TR,
   UNKNOWN_SOURCE_SPOOL_NOTE_TR,
   VALID_YUKEN_DSG_SPOOL_CODES,
@@ -257,6 +259,7 @@ function resolveYukenSpoolAlternatives(tokens: HydraulicEquivalentTokens): {
   functionCodes: string[];
   spoolConfident: boolean;
   checkNotes: string[];
+  infoNotes: string[];
   unresolvedFields: string[];
 } {
   const vickersSpoolType = resolveVickersSpoolType(tokens);
@@ -266,6 +269,7 @@ function resolveYukenSpoolAlternatives(tokens: HydraulicEquivalentTokens): {
       functionCodes: [confidentVickersYuken],
       spoolConfident: true,
       checkNotes: [],
+      infoNotes: [],
       unresolvedFields: [],
     };
   }
@@ -273,12 +277,14 @@ function resolveYukenSpoolAlternatives(tokens: HydraulicEquivalentTokens): {
   const spool = tokens.spoolSymbol ?? rexrothWE6BehaviorLookupToken(tokens.functionCode ?? '');
   const checkNotes: string[] = [];
   const unresolvedFields: string[] = [];
+  const infoNotes = softTransitionInfoNotesForSpool(spool ?? tokens.functionCode);
 
   if (!spool) {
     return {
       functionCodes: [...VALID_YUKEN_DSG_SPOOL_CODES],
       spoolConfident: false,
       checkNotes: [UNKNOWN_SOURCE_SPOOL_NOTE_TR],
+      infoNotes: [],
       unresolvedFields: ['spool_symbol'],
     };
   }
@@ -289,17 +295,19 @@ function resolveYukenSpoolAlternatives(tokens: HydraulicEquivalentTokens): {
       functionCodes: [...VALID_YUKEN_DSG_SPOOL_CODES],
       spoolConfident: false,
       checkNotes: [`Kaynak sürgü sembolü ${spool} çözümlenemedi.`, UNKNOWN_SOURCE_SPOOL_NOTE_TR],
+      infoNotes: [],
       unresolvedFields: ['spool_symbol'],
     };
   }
 
-  if (isConfidentRexrothSpoolMapping(base)) {
-    const mapped = resolveConfidentYukenSpoolCode(base);
+  if (isConfidentRexrothSpoolMapping(spool)) {
+    const mapped = resolveConfidentYukenSpoolCode(spool);
     if (mapped) {
       return {
         functionCodes: [mapped],
         spoolConfident: true,
         checkNotes: [],
+        infoNotes,
         unresolvedFields: [],
       };
     }
@@ -309,6 +317,7 @@ function resolveYukenSpoolAlternatives(tokens: HydraulicEquivalentTokens): {
     functionCodes: [...VALID_YUKEN_DSG_SPOOL_CODES],
     spoolConfident: false,
     checkNotes: [UNRESOLVED_SPOOL_MAPPING_NOTE_TR],
+    infoNotes,
     unresolvedFields: ['spool_symbol'],
   };
 }
@@ -317,6 +326,7 @@ function resolveRexrothSpoolAlternatives(tokens: HydraulicEquivalentTokens): {
   spoolSymbols: string[];
   spoolConfident: boolean;
   checkNotes: string[];
+  infoNotes: string[];
   unresolvedFields: string[];
 } {
   const confidentVickersRexroth = resolveConfidentRexrothSpoolFromVickers(tokens);
@@ -324,10 +334,14 @@ function resolveRexrothSpoolAlternatives(tokens: HydraulicEquivalentTokens): {
     confidentVickersRexroth &&
     isConfidentVickersSpoolType(resolveVickersSpoolType(tokens))
   ) {
+    const ordering =
+      rexrothWE6OrderingSpoolTokenForEquivalent(confidentVickersRexroth) ??
+      confidentVickersRexroth;
     return {
-      spoolSymbols: [confidentVickersRexroth],
+      spoolSymbols: [ordering],
       spoolConfident: true,
       checkNotes: [],
+      infoNotes: softTransitionInfoNotesForSpool(ordering),
       unresolvedFields: [],
     };
   }
@@ -338,25 +352,28 @@ function resolveRexrothSpoolAlternatives(tokens: HydraulicEquivalentTokens): {
       spoolSymbols: [confident],
       spoolConfident: true,
       checkNotes: [],
+      infoNotes: softTransitionInfoNotesForSpool(confident),
       unresolvedFields: [],
     };
   }
 
   if (tokens.functionCode) {
     return {
-      spoolSymbols: ['E', 'C', 'D', 'J'],
+      spoolSymbols: ['E', 'C46', 'D', 'J'],
       spoolConfident: false,
       checkNotes: [
         `Yuken ${tokens.functionCode} fonksiyon kodunun Rexroth karşılığı kesin eşleştirilemedi; olası sürgü alternatifleri listelenmiştir.`,
       ],
+      infoNotes: [],
       unresolvedFields: ['function_code'],
     };
   }
 
   return {
-    spoolSymbols: ['E', 'C', 'D', 'J'],
+    spoolSymbols: ['E', 'C46', 'D', 'J'],
     spoolConfident: false,
     checkNotes: [UNKNOWN_SOURCE_SPOOL_NOTE_TR],
+    infoNotes: [],
     unresolvedFields: ['function_code'],
   };
 }
@@ -398,6 +415,7 @@ function generateRexrothToYuken(
       mappedFields,
       unresolvedFields,
       checkNotes,
+      infoNotes: spoolResolution.infoNotes,
       requiresCheck: !isFull || checkNotes.length > 0,
       generationTrace: buildTrace(
         [
@@ -476,6 +494,7 @@ function generateYukenToRexroth(
       mappedFields,
       unresolvedFields,
       checkNotes,
+      infoNotes: spoolResolution.infoNotes,
       requiresCheck: !isFull || checkNotes.length > 0,
       generationTrace: buildTrace(
         [
@@ -598,6 +617,7 @@ function generateToVickers(
       mappedFields,
       unresolvedFields,
       checkNotes,
+      infoNotes: softTransitionInfoNotesForSpool(tokens.spoolSymbol ?? tokens.functionCode),
       requiresCheck: !isFull || checkNotes.length > 0,
       generationTrace: buildTrace(
         [

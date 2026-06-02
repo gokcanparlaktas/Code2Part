@@ -11,11 +11,66 @@ export const GENERIC_PORT_STATE_RESOLVED_TR =
 const PORT_KEYS = ['P', 'T', 'A', 'B'] as const;
 
 function isPortConnected(state: string | null | undefined): boolean {
-  return state != null && state !== 'blocked' && /connected/i.test(state);
+  return (
+    state != null &&
+    state !== 'blocked' &&
+    /connected|restricted_connection/i.test(state)
+  );
 }
 
 function isPortBlocked(state: string | null | undefined): boolean {
   return state === 'blocked';
+}
+
+function parsePortConnectionTargets(state: string | null | undefined): string[] {
+  if (!state || state === 'blocked') {
+    return [];
+  }
+
+  const match = state.match(/^(?:connected_to|restricted_connection_to)_(.+)$/i);
+  if (!match) {
+    return [];
+  }
+
+  return match[1].split('_').filter(Boolean);
+}
+
+function portConnectsTo(
+  state: string | null | undefined,
+  ...targets: string[]
+): boolean {
+  const connected = parsePortConnectionTargets(state);
+  if (connected.length === 0 || targets.length === 0) {
+    return false;
+  }
+
+  if (targets.length === 1) {
+    return connected.includes(targets[0]!);
+  }
+
+  return (
+    targets.every((target) => connected.includes(target)) &&
+    connected.length === targets.length
+  );
+}
+
+function portConnectsToAny(
+  state: string | null | undefined,
+  ...targets: string[]
+): boolean {
+  const connected = parsePortConnectionTargets(state);
+  return targets.some((target) => connected.includes(target));
+}
+
+function portConnectsOnlyTo(
+  state: string | null | undefined,
+  ...targets: string[]
+): boolean {
+  const connected = parsePortConnectionTargets(state);
+  if (connected.length !== targets.length) {
+    return false;
+  }
+  return targets.every((target) => connected.includes(target));
 }
 
 /** Markalar arası ortak port özeti: `P,T,A,B Kapalı`, `P-T Bağlı, A,B Kapalı`, … */
@@ -56,6 +111,12 @@ function portCompactLineFromCenterParts(parts: CenterTypeParts): string {
       return 'P-B-T Bağlı, A Kapalı';
     case 'A-T merkez':
       return 'A-T Bağlı, P ve B Kapalı';
+    case 'P-A çalışma':
+      return 'P-A Bağlı, T ve B Kapalı';
+    case 'P-B çalışma':
+      return 'P-B Bağlı, T ve A Kapalı';
+    case 'T-B çalışma':
+      return 'T-B Bağlı, P ve A Kapalı';
     case 'Kısmen açık merkez':
       return parts.detail;
     default:
@@ -173,12 +234,30 @@ export function centerTypePartsFromPortState(
     return { primary: 'Kapalı merkez', detail: 'P,T,A,B Kapalı' };
   }
 
-  if (
+  const offsetCenter =
+    portConnectsOnlyTo(P, 'A') &&
+    portConnectsOnlyTo(A, 'P') &&
+    portConnectsOnlyTo(B, 'T') &&
+    portConnectsOnlyTo(T, 'B');
+
+  if (offsetCenter) {
+    return {
+      primary: 'Ofset merkez',
+      detail: 'P-A Bağlı, B-T Bağlı',
+    };
+  }
+
+  const openCenter =
     isPortConnected(P) &&
     isPortConnected(T) &&
     isPortConnected(A) &&
-    isPortConnected(B)
-  ) {
+    isPortConnected(B) &&
+    parsePortConnectionTargets(P).length >= 3 &&
+    parsePortConnectionTargets(T).length >= 3 &&
+    parsePortConnectionTargets(A).length >= 3 &&
+    parsePortConnectionTargets(B).length >= 3;
+
+  if (openCenter) {
     return { primary: 'Açık merkez', detail: 'P,T,A,B Açık' };
   }
 
@@ -187,7 +266,7 @@ export function centerTypePartsFromPortState(
     isPortConnected(T) &&
     isPortBlocked(A) &&
     isPortBlocked(B) &&
-    (P.includes('T') || T.includes('P'));
+    (portConnectsTo(P, 'T') || portConnectsTo(T, 'P'));
 
   if (tandemCenter) {
     return {
@@ -201,8 +280,8 @@ export function centerTypePartsFromPortState(
     isPortConnected(A) &&
     isPortConnected(B) &&
     isPortConnected(T) &&
-    (A.includes('B') || A.includes('T')) &&
-    (B.includes('A') || B.includes('T'));
+    (portConnectsToAny(A, 'B', 'T') || portConnectsTo(T, 'A', 'B')) &&
+    (portConnectsToAny(B, 'A', 'T') || portConnectsTo(T, 'A', 'B'));
 
   if (floatCenter) {
     return {
@@ -216,9 +295,9 @@ export function centerTypePartsFromPortState(
     isPortBlocked(T) &&
     isPortConnected(A) &&
     isPortConnected(B) &&
-    (P.includes('A') || P.includes('B')) &&
-    (A.includes('P') || A.includes('B')) &&
-    (B.includes('P') || B.includes('A'));
+    portConnectsToAny(P, 'A', 'B') &&
+    portConnectsToAny(A, 'P', 'B') &&
+    portConnectsToAny(B, 'P', 'A');
 
   if (pressureCenter) {
     return {
@@ -232,7 +311,7 @@ export function centerTypePartsFromPortState(
     isPortConnected(B) &&
     isPortBlocked(P) &&
     isPortBlocked(T) &&
-    (A.includes('B') || B.includes('A'));
+    (portConnectsTo(A, 'B') || portConnectsTo(B, 'A'));
 
   if (abConnectedPtBlocked) {
     return {
@@ -241,31 +320,14 @@ export function centerTypePartsFromPortState(
     };
   }
 
-  const offsetCenter =
-    isPortConnected(P) &&
-    isPortConnected(A) &&
-    isPortConnected(B) &&
-    isPortConnected(T) &&
-    P.includes('A') &&
-    A.includes('P') &&
-    B.includes('T') &&
-    T.includes('B');
-
-  if (offsetCenter) {
-    return {
-      primary: 'Ofset merkez',
-      detail: 'P-A Bağlı, B-T Bağlı',
-    };
-  }
-
   const pToAtBBlocked =
     isPortBlocked(B) &&
     isPortConnected(P) &&
     isPortConnected(T) &&
     isPortConnected(A) &&
-    (P.includes('A') || P.includes('T')) &&
-    (T.includes('P') || T.includes('A')) &&
-    (A.includes('P') || A.includes('T'));
+    portConnectsToAny(P, 'A', 'T') &&
+    portConnectsToAny(T, 'P', 'A') &&
+    portConnectsToAny(A, 'P', 'T');
 
   if (pToAtBBlocked) {
     return {
@@ -279,9 +341,9 @@ export function centerTypePartsFromPortState(
     isPortConnected(P) &&
     isPortConnected(T) &&
     isPortConnected(B) &&
-    (P.includes('B') || P.includes('T')) &&
-    (T.includes('P') || T.includes('B')) &&
-    (B.includes('P') || B.includes('T'));
+    portConnectsToAny(P, 'B', 'T') &&
+    portConnectsToAny(T, 'P', 'B') &&
+    portConnectsToAny(B, 'P', 'T');
 
   if (pToBtABlocked) {
     return {
@@ -295,12 +357,57 @@ export function centerTypePartsFromPortState(
     isPortBlocked(B) &&
     isPortConnected(A) &&
     isPortConnected(T) &&
-    (A.includes('T') || T.includes('A'));
+    (portConnectsTo(A, 'T') || portConnectsTo(T, 'A'));
 
   if (aToT_PBBlocked) {
     return {
       primary: 'A-T merkez',
       detail: 'A-T Bağlı, P ve B Kapalı',
+    };
+  }
+
+  const pToAWork =
+    isPortConnected(P) &&
+    isPortConnected(A) &&
+    isPortBlocked(T) &&
+    isPortBlocked(B) &&
+    portConnectsTo(P, 'A') &&
+    portConnectsTo(A, 'P');
+
+  if (pToAWork) {
+    return {
+      primary: 'P-A çalışma',
+      detail: 'P-A Bağlı, T ve B Kapalı',
+    };
+  }
+
+  const pToBWork =
+    isPortConnected(P) &&
+    isPortConnected(B) &&
+    isPortBlocked(T) &&
+    isPortBlocked(A) &&
+    portConnectsTo(P, 'B') &&
+    portConnectsTo(B, 'P');
+
+  if (pToBWork) {
+    return {
+      primary: 'P-B çalışma',
+      detail: 'P-B Bağlı, T ve A Kapalı',
+    };
+  }
+
+  const tToBWork =
+    isPortBlocked(P) &&
+    isPortConnected(T) &&
+    isPortConnected(B) &&
+    isPortBlocked(A) &&
+    portConnectsTo(T, 'B') &&
+    portConnectsTo(B, 'T');
+
+  if (tToBWork) {
+    return {
+      primary: 'T-B çalışma',
+      detail: 'T-B Bağlı, P ve A Kapalı',
     };
   }
 

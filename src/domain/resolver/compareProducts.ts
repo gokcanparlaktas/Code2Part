@@ -223,23 +223,34 @@ export function compareProducts(
 
 function enrichWithGenerationMetadata(result: CompatibilityResult): CompatibilityResult {
   const generation = result.candidate.generation;
-  if (!generation?.generationCheckNotes?.length) {
-    return result;
+  const infoNotes = generation?.generationInfoNotes ?? [];
+
+  let enriched = result;
+
+  if (generation?.generationCheckNotes?.length) {
+    const existingReasons = new Set(result.checkItems.map((item) => item.reasonTr));
+    const extraItems = generation.generationCheckNotes
+      .filter((note) => !existingReasons.has(note))
+      .map((reasonTr, index) => ({
+        field: `Üretim kontrolü ${index + 1}`,
+        sourceValue: '',
+        targetValue: '',
+        reasonTr,
+        severity: 'medium' as const,
+      }));
+
+    enriched = {
+      ...enriched,
+      checkItems: [...enriched.checkItems, ...extraItems],
+    };
   }
 
-  const existingReasons = new Set(result.checkItems.map((item) => item.reasonTr));
-  const extraItems = generation.generationCheckNotes
-    .filter((note) => !existingReasons.has(note))
-    .map((reasonTr, index) => ({
-      field: `Üretim kontrolü ${index + 1}`,
-      sourceValue: '',
-      targetValue: '',
-      reasonTr,
-      severity: 'medium' as const,
-    }));
+  if (infoNotes.length > 0) {
+    enriched = {
+      ...enriched,
+      infoNotes: [...new Set([...(enriched.infoNotes ?? []), ...infoNotes])],
+    };
+  }
 
-  return {
-    ...result,
-    checkItems: [...result.checkItems, ...extraItems],
-  };
+  return enriched;
 }

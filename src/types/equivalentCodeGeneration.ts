@@ -27,6 +27,8 @@ export interface GeneratedEquivalentCandidate {
   mappedFields: string[];
   unresolvedFields: string[];
   checkNotes: string[];
+  /** Informational notes only — must not affect match score or requiresCheck. */
+  infoNotes?: string[];
   requiresCheck: boolean;
   generationTrace: CodeGenerationTrace;
   /** True when the code also exists as a stored catalog example. */
@@ -44,6 +46,7 @@ export interface EquivalentGenerationMetadata {
   generationStatus: EquivalentGenerationStatus;
   requiresCheck: boolean;
   generationCheckNotes: string[];
+  generationInfoNotes?: string[];
   isExactKnownExample?: boolean;
   generationTraceSummaryTr?: string;
 }

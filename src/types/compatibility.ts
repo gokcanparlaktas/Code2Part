@@ -80,6 +80,8 @@ export interface CompatibilityResult {
   compatible: AttributeComparison[];
   different: AttributeComparison[];
   checkItems: CheckItem[];
+  /** Informational notes (e.g. Yumuşak Geçiş) — excluded from match scoring. */
+  infoNotes?: string[];
   warnings: string[];
   /** Universal profile comparisons used for match percentage scoring. */
   profileScoring?: ProfileScoringData;

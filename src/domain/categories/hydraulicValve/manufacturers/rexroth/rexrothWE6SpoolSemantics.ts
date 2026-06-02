@@ -143,6 +143,16 @@ const BASE_SPOOL_SEMANTICS: Record<RexrothWE6BaseSpoolSymbol, RexrothWE6SpoolSem
 export const REXROTH_WE6_DETENT_NOTE_TR =
   'Yay dönüşü yok, kilitlemeli/detent yapı. Katalogda yalnızca D sembolü için belirtilmiştir.';
 
+export const REXROTH_WE6_SOFT_TRANSITION_NOTE_TR = 'Yumuşak Geçiş';
+
+export const REXROTH_WE6_SOFT_TRANSITION_ORDERING_TOKEN = 'C46';
+
+export function isRexrothWE6SoftTransitionOrderingToken(
+  token: string | null | undefined
+): boolean {
+  return token?.trim().toUpperCase() === REXROTH_WE6_SOFT_TRANSITION_ORDERING_TOKEN;
+}
+
 export const REXROTH_WE6_INVALID_OF_WARNING_TR =
   'OF seçeneği katalogda yalnızca D sembolü için belirtilmiştir.';
 
@@ -221,6 +231,13 @@ export function parseRexrothWE6FunctionTokenParts(
       switchingPositionVariant: 'b',
     };
   }
+  if (upper === REXROTH_WE6_SOFT_TRANSITION_ORDERING_TOKEN) {
+    return {
+      baseSpoolSymbol: 'C',
+      functionToken: REXROTH_WE6_SOFT_TRANSITION_ORDERING_TOKEN,
+      switchingPositionVariant: null,
+    };
+  }
   if (upper.length === 1 && isRexrothWEOrderingSpoolSymbol(upper)) {
     return {
       baseSpoolSymbol: upper,
@@ -231,8 +248,29 @@ export function parseRexrothWE6FunctionTokenParts(
   return null;
 }
 
-/** Behavior lookup token: base spool letter (EA/EB → E). */
+/** Behavior lookup token: base spool letter (EA/EB → E, C46 → C). */
 export function rexrothWE6BehaviorLookupToken(functionToken: string): string | null {
   const parts = parseRexrothWE6FunctionTokenParts(functionToken);
   return parts?.baseSpoolSymbol ?? null;
+}
+
+/** Ordering-code spool segment for equivalent generation (ofset → C46). */
+export function rexrothWE6OrderingSpoolTokenForEquivalent(
+  functionToken: string | null | undefined
+): string | null {
+  const upper = functionToken?.trim().toUpperCase() ?? '';
+  if (!upper) {
+    return null;
+  }
+  if (isRexrothWE6SoftTransitionOrderingToken(upper)) {
+    return REXROTH_WE6_SOFT_TRANSITION_ORDERING_TOKEN;
+  }
+  const parts = parseRexrothWE6FunctionTokenParts(upper);
+  if (!parts) {
+    return null;
+  }
+  if (parts.baseSpoolSymbol === 'C') {
+    return REXROTH_WE6_SOFT_TRANSITION_ORDERING_TOKEN;
+  }
+  return parts.functionToken;
 }

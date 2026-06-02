@@ -25,6 +25,7 @@ export interface FindEquivalentsCandidateDto {
   summary: string;
   compatibleHighlights: string[];
   checkNotes: string[];
+  infoNotes?: string[];
 }
 
 export interface FindEquivalentsResponseDto {
@@ -110,6 +111,7 @@ export function mapComparisonToEquivalentCandidateSummary(
     summary: result.summary.summaryTr,
     compatibleHighlights: buildCompatibleHighlights(result),
     checkNotes: buildCheckNotes(result),
+    infoNotes: result.infoNotes ?? [],
   };
 
   assertNoForbiddenBackendResponseKeys(mapped);

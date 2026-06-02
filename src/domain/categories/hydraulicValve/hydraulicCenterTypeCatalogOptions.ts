@@ -5,6 +5,10 @@ import {
 } from '@/domain/catalogData/loadCatalogData';
 import type { CatalogPortState } from '@/domain/catalogData/types';
 import {
+  isRexrothWEOrderingSpoolSymbol,
+  rexrothWE6OrderingSpoolTokenForEquivalent,
+} from '@/domain/categories/hydraulicValve/manufacturers/rexroth/rexrothWE6SpoolSemantics';
+import {
   formatUnifiedCenterDisplay,
   portStateBehaviorSummary,
 } from '@/domain/presentation/formatCenterTypeDisplay';
@@ -104,6 +108,11 @@ function isAllPortsBlocked(portState: CatalogPortState): boolean {
   );
 }
 
+/** Creator/UI: skip only rows that cannot be labeled with a clear PTAB summary. */
+function isUsableCenterTypeOptionForCreator(option: HydraulicCenterTypeOption): boolean {
+  return canonicalCreatorLabel(option) !== null;
+}
+
 function isPreferredRexrothWe6Row(row: SpoolCatalogRow, portState: CatalogPortState): boolean {
   const family = row.sourceFamily?.trim().toUpperCase();
   const token = row.rawToken?.trim().toUpperCase() ?? '';
@@ -201,35 +210,135 @@ function ingestCatalog(
 }
 
 let cachedOptions: HydraulicCenterTypeOption[] | null = null;
+let cachedCreatorOptions: HydraulicCenterTypeOption[] | null = null;
 
 /** Test-only: bust in-memory option cache after catalog ingest rule changes. */
 export function clearHydraulicCenterTypeCatalogOptionsCache(): void {
   cachedOptions = null;
+  cachedCreatorOptions = null;
 }
 
-function ensureUniqueDisplayLabels(
-  options: HydraulicCenterTypeOption[]
-): HydraulicCenterTypeOption[] {
-  const labelUseCount = new Map<string, number>();
+function canonicalCreatorLabel(option: HydraulicCenterTypeOption): string | null {
+  if (!option.portState) {
+    return null;
+  }
 
-  return options.map((option) => {
-    const seen = labelUseCount.get(option.labelTr) ?? 0;
-    labelUseCount.set(option.labelTr, seen + 1);
-    if (seen === 0) {
-      return option;
+  const label = formatUnifiedCenterDisplay({
+    portState: option.portState,
+    centerConditionValue: option.centerCondition,
+  });
+
+  if (!label || /Belirsiz/i.test(label)) {
+    return null;
+  }
+
+  return label;
+}
+
+function creatorOptionScore(option: HydraulicCenterTypeOption): number {
+  let score = 0;
+
+  if (option.centerCondition) {
+    score += 4;
+  }
+
+  const rex = option.rexrothSpoolToken?.trim().toUpperCase() ?? '';
+  if (rex.length === 1 && isRexrothWEOrderingSpoolSymbol(rex)) {
+    score += 8;
+  } else if (rex) {
+    score += 2;
+  }
+
+  if (isYukenDsgOrderingFunctionToken(option.yukenFunctionToken)) {
+    score += 4;
+  } else if (option.yukenFunctionToken) {
+    score += 1;
+  }
+
+  if (option.vickersFunctionToken) {
+    score += 1;
+  }
+
+  const ports = [
+    option.portState?.P,
+    option.portState?.T,
+    option.portState?.A,
+    option.portState?.B,
+  ];
+  if (ports.every((state) => state === 'blocked' || /^connected_to_/i.test(state ?? ''))) {
+    score += 3;
+  }
+
+  return score;
+}
+
+function pickBestToken(
+  group: HydraulicCenterTypeOption[],
+  field: 'rexrothSpoolToken' | 'yukenFunctionToken' | 'vickersFunctionToken',
+  prefer: (token: string) => number
+): string | null {
+  const ranked = group
+    .map((option) => option[field]?.trim().toUpperCase() ?? '')
+    .filter(Boolean)
+    .sort((a, b) => prefer(b) - prefer(a));
+
+  return ranked[0] ?? null;
+}
+
+function mergeCenterTypeOptions(group: HydraulicCenterTypeOption[]): HydraulicCenterTypeOption {
+  const sorted = [...group].sort((a, b) => creatorOptionScore(b) - creatorOptionScore(a));
+  const primary = sorted[0]!;
+  const labelTr = canonicalCreatorLabel(primary)!;
+
+  return {
+    ...primary,
+    labelTr,
+    centerCondition:
+      group.find((option) => option.centerCondition)?.centerCondition ??
+      primary.centerCondition,
+    rexrothSpoolToken: pickBestToken(group, 'rexrothSpoolToken', (token) => {
+      if (token === 'C46') {
+        return 12;
+      }
+      if (token.length === 1 && isRexrothWEOrderingSpoolSymbol(token)) {
+        return 10;
+      }
+      return token.length === 1 ? 5 : 1;
+    }),
+    yukenFunctionToken: pickBestToken(group, 'yukenFunctionToken', (token) =>
+      isYukenDsgOrderingFunctionToken(token) ? 10 : 1
+    ),
+    vickersFunctionToken: pickBestToken(group, 'vickersFunctionToken', () => 1),
+  };
+}
+
+function buildHydraulicCenterTypeCreatorOptions(): HydraulicCenterTypeOption[] {
+  if (cachedCreatorOptions) {
+    return cachedCreatorOptions;
+  }
+
+  const groups = new Map<string, HydraulicCenterTypeOption[]>();
+
+  for (const option of buildHydraulicCenterTypeCatalogOptions()) {
+    if (!isUsableCenterTypeOptionForCreator(option)) {
+      continue;
     }
 
-    const hint =
-      option.rexrothSpoolToken ??
-      option.yukenFunctionToken ??
-      option.vickersFunctionToken ??
-      String(seen + 1);
+    const label = canonicalCreatorLabel(option);
+    if (!label) {
+      continue;
+    }
 
-    return {
-      ...option,
-      labelTr: `${option.labelTr} (${hint})`,
-    };
-  });
+    const group = groups.get(label) ?? [];
+    group.push(option);
+    groups.set(label, group);
+  }
+
+  cachedCreatorOptions = [...groups.values()]
+    .map(mergeCenterTypeOptions)
+    .sort((a, b) => a.labelTr.localeCompare(b.labelTr, 'tr'));
+
+  return cachedCreatorOptions;
 }
 
 /** PTAB port özetine göre katalogdan türetilmiş merkez tipi seçenekleri (port durumuna göre tekilleştirilmiş). */
@@ -244,7 +353,7 @@ export function buildHydraulicCenterTypeCatalogOptions(): HydraulicCenterTypeOpt
   ingestCatalog(byPortStateId, getYukenSpoolCatalog().spoolSymbolMeanings, 'yuken');
   ingestCatalog(byPortStateId, getEatonSpoolCatalog().spoolSymbolMeanings, 'eaton');
 
-  cachedOptions = ensureUniqueDisplayLabels([...byPortStateId.values()]).sort((a, b) =>
+  cachedOptions = [...byPortStateId.values()].sort((a, b) =>
     a.labelTr.localeCompare(b.labelTr, 'tr')
   );
 
@@ -252,7 +361,10 @@ export function buildHydraulicCenterTypeCatalogOptions(): HydraulicCenterTypeOpt
 }
 
 export function getHydraulicCenterTypeOption(id: string): HydraulicCenterTypeOption | undefined {
-  return buildHydraulicCenterTypeCatalogOptions().find((option) => option.id === id);
+  return (
+    buildHydraulicCenterTypeCreatorOptions().find((option) => option.id === id) ??
+    buildHydraulicCenterTypeCatalogOptions().find((option) => option.id === id)
+  );
 }
 
 const YUKEN_DSG_ORDERING_FUNCTION_PATTERN = /^[0-9][CBD]\d{1,2}$/i;
@@ -266,9 +378,14 @@ export function resolveYukenFunctionTokenForRexrothSpool(
   rexrothSpoolToken: string
 ): string | null {
   const token = rexrothSpoolToken.trim().toUpperCase();
-  const rexrothOption = buildHydraulicCenterTypeCatalogOptions().find(
+  let rexrothOption = buildHydraulicCenterTypeCatalogOptions().find(
     (entry) => entry.rexrothSpoolToken === token
   );
+  if (!rexrothOption && token === 'C') {
+    rexrothOption = buildHydraulicCenterTypeCatalogOptions().find(
+      (entry) => entry.rexrothSpoolToken === 'C46'
+    );
+  }
   if (!rexrothOption?.portState) {
     return null;
   }
@@ -299,14 +416,18 @@ export function resolveRexrothSpoolTokenForYukenFunction(
   const option = buildHydraulicCenterTypeCatalogOptions().find(
     (entry) => entry.yukenFunctionToken === token && entry.rexrothSpoolToken
   );
-  return option?.rexrothSpoolToken ?? null;
+  if (option?.rexrothSpoolToken) {
+    return rexrothWE6OrderingSpoolTokenForEquivalent(option.rexrothSpoolToken) ?? option.rexrothSpoolToken;
+  }
+
+  return null;
 }
 
 export function hydraulicCenterTypeOptionsForCreator(): Array<{
   value: string;
   labelTr: string;
 }> {
-  return buildHydraulicCenterTypeCatalogOptions().map((option) => ({
+  return buildHydraulicCenterTypeCreatorOptions().map((option) => ({
     value: option.id,
     labelTr: option.labelTr,
   }));

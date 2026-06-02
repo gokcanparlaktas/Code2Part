@@ -276,6 +276,16 @@ export function CompatibilityComparisonSections({
 
   return (
     <View style={isCompare ? styles.compareSections : styles.sections}>
+      {(result.infoNotes ?? []).length > 0 ? (
+        <View style={styles.infoNotesBlock}>
+          {(result.infoNotes ?? []).map((note) => (
+            <Text key={note} style={styles.infoNoteText}>
+              {note}
+            </Text>
+          ))}
+        </View>
+      ) : null}
+
       <CollapsibleSection
         title="Uyumlu"
         count={result.compatible.length}
@@ -392,6 +402,16 @@ const createStyles = (c: HomeColorPalette) =>
   StyleSheet.create({
   sections: {
     gap: spacing.sm,
+  },
+  infoNotesBlock: {
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  infoNoteText: {
+    color: c.textMuted,
+    fontSize: typography.caption.fontSize,
+    lineHeight: typography.caption.lineHeight,
   },
   nestedSections: {
     gap: spacing.sm,
