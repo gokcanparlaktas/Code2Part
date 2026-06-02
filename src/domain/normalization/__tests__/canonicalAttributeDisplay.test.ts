@@ -30,7 +30,7 @@ describe('canonicalAttributeDisplay', () => {
 
   it('maps K4 to DIN valve connector display', () => {
     const k4 = normalizeConnectorDisplay({ rawToken: 'K4', sourceManufacturer: 'Rexroth' });
-    expect(k4?.displayValue).toContain('DIN valf soketi');
+    expect(k4?.displayValue).toContain('DIN 43650');
     expect(k4?.displayValue).not.toBe('K4');
     expect(k4?.rawTokenLabel).toBeUndefined();
   });
@@ -102,7 +102,7 @@ describe('canonicalAttributeDisplay integration', () => {
     const id = identifyProduct('4WE6E-6X/EG24N9K4', normalizeCode('4WE6E-6X/EG24N9K4'));
     const rows = buildProductDetailRows(id);
     const connector = rows.find((r) => r.label === 'Konnektör tipi');
-    expect(connector?.value).toMatch(/DIN valf soketi|Connector 3-pole/i);
+    expect(connector?.value).toMatch(/DIN 43650|EN 175301-803/i);
     expect(connector?.value).not.toContain('Kod kanıtı:');
   });
 

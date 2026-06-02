@@ -21,11 +21,11 @@ function buildProfile(input: string) {
 }
 
 describe('parseRexrothWE (WE family)', () => {
-  it('isRexrothWECode matches 3WE4, 3WE6, 4WE6 and 4WE10', () => {
+  it('isRexrothWECode matches 3WE6, 4WE6 and 4WE10', () => {
     expect(isRexrothWECode('4WE6E-6X/EG24N9K4')).toBe(true);
     expect(isRexrothWECode('4WE10E-5X/EG24N9K4')).toBe(true);
     expect(isRexrothWECode('3WE6A-6X/EG24N9K4')).toBe(true);
-    expect(isRexrothWECode('3WE4A-4X/EG24N9K4')).toBe(true);
+    expect(isRexrothWECode('3WE4A-4X/EG24N9K4')).toBe(false);
     expect(isRexrothWECode('DSG-01-3C2-D24-N1-70')).toBe(false);
   });
 

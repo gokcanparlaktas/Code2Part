@@ -89,6 +89,32 @@ function buildOptionDifferenceWarning(
   return null;
 }
 
+const EQUIVALENT_CONNECTOR_STANDARD_KEYS: Record<string, string> = {
+  ISO4400_DIN43650: 'DIN_43650_FORM_A_EN_175301_803',
+  DIN_43650_FORM_A_EN_175301_803: 'DIN_43650_FORM_A_EN_175301_803',
+};
+
+export function normalizeConnectorStandardKey(
+  key: string | undefined
+): string | undefined {
+  if (!key) {
+    return undefined;
+  }
+  return EQUIVALENT_CONNECTOR_STANDARD_KEYS[key] ?? key;
+}
+
+function connectorStandardsEquivalent(
+  left: string | undefined,
+  right: string | undefined,
+): boolean {
+  const a = normalizeConnectorStandardKey(left);
+  const b = normalizeConnectorStandardKey(right);
+  if (!a || !b) {
+    return false;
+  }
+  return a === b;
+}
+
 function isGenericVsSpecificFamily(
   source: ConnectorCanonicalSnapshot,
   target: ConnectorCanonicalSnapshot,
@@ -203,6 +229,27 @@ export function compareConnectorCanonicalSnapshots(
   }
 
   if (source.canonicalKey === target.canonicalKey) {
+    const standardsDiffer =
+      source.connectorStandardKey &&
+      target.connectorStandardKey &&
+      !connectorStandardsEquivalent(
+        source.connectorStandardKey,
+        target.connectorStandardKey
+      );
+
+    if (standardsDiffer) {
+      return {
+        comparison: {
+          label,
+          sourceDisplay,
+          targetDisplay,
+          status: 'unknownOrCheck',
+        },
+        sentence:
+          'Aynı konnektör ailesinde görünüyor; form/pin/gövde detayı kontrol edilmeli.',
+      };
+    }
+
     const optionWarning = buildOptionDifferenceWarning(source, target);
     return {
       comparison: {
@@ -220,7 +267,10 @@ export function compareConnectorCanonicalSnapshots(
     const standardsDiffer =
       source.connectorStandardKey &&
       target.connectorStandardKey &&
-      source.connectorStandardKey !== target.connectorStandardKey;
+      !connectorStandardsEquivalent(
+        source.connectorStandardKey,
+        target.connectorStandardKey
+      );
 
     if (standardsDiffer) {
       return {

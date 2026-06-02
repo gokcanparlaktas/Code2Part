@@ -2,6 +2,7 @@ import {
   getDefaultCatalogDataProvider,
   type CatalogDataProvider,
 } from '@/domain/catalogData/CatalogDataProvider';
+import { isEatonVickersManufacturer } from '@/domain/catalogData/eatonVickersCatalogUtils';
 import type {
   CatalogCandidateConfidence,
   ProductResolverContext,
@@ -160,6 +161,87 @@ function resolveYukenDsgTechnicalData(
   return result;
 }
 
+function eatonSeriesColumnKey(sourceFamily: string): string {
+  const upper = sourceFamily.toUpperCase();
+  if (upper.startsWith('DG4V-5')) {
+    return 'DG4V-5';
+  }
+  return 'DG4V-3';
+}
+
+function resolveEatonDg4vTechnicalData(
+  context: ProductResolverContext,
+  catalogProvider: CatalogDataProvider
+): TechnicalDataResolved {
+  const catalog = catalogProvider.getEatonDg4vTechnicalDataCatalog();
+  const seriesKey = eatonSeriesColumnKey(context.sourceFamily);
+
+  const operatingEntry = catalog.entries?.find(
+    (row) =>
+      row.technicalGroup === 'operating_data' &&
+      String(row.sourceFamily ?? '')
+        .toUpperCase()
+        .includes(seriesKey)
+  );
+  const featureEntry = catalog.entries?.find(
+    (row) =>
+      row.technicalGroup === 'feature_summary' &&
+      String(row.sourceFamily ?? '').toUpperCase() === seriesKey
+  );
+
+  const operatingValues = operatingEntry?.values as Record<string, unknown> | undefined;
+  const pressureLimits = operatingValues?.pressureLimits as Record<string, unknown> | undefined;
+  const pPorts = pressureLimits?.pAandBPorts as Record<string, unknown> | undefined;
+  const pPortRow = pPorts?.[seriesKey] as { value?: number; unit?: string } | undefined;
+  const pressureQty = readQuantity(pPortRow);
+
+  const tPortLimits = pressureLimits?.tPort as Record<string, unknown> | undefined;
+  const tPortRow = tPortLimits?.[seriesKey] as { value?: number; unit?: string } | undefined;
+  const tankQty = readQuantity(tPortRow);
+
+  const featureValues = featureEntry?.values as Record<string, unknown> | undefined;
+  const flowSummary = featureValues?.flowPressureSummary as
+    | Array<{ maximumFlow?: { value?: number; unit?: string } }>
+    | undefined;
+  const highPerfFlow = flowSummary?.find((row) =>
+    String(row.maximumFlow?.unit ?? '').toLowerCase().includes('l/min')
+  );
+  const flowQty = readQuantity(highPerfFlow?.maximumFlow);
+
+  const reviewNotes = [
+    ...(Array.isArray(operatingEntry?.notes) ? operatingEntry.notes : []),
+    ...(Array.isArray(featureEntry?.notes) ? featureEntry.notes : []),
+  ];
+
+  const result: TechnicalDataResolved = {
+    found: Boolean(pressureQty || flowQty || tankQty),
+    needsReview: operatingEntry?.needsReview ?? featureEntry?.needsReview ?? true,
+    confidence: operatingEntry?.confidence ?? featureEntry?.confidence ?? 'medium',
+    reviewNotes: reviewNotes.length ? reviewNotes : undefined,
+  };
+
+  if (pressureQty) {
+    result.maxOperatingPressureBar = pressureToBar(pressureQty);
+    result.maxOperatingPressureDisplay = formatPressureCandidateDisplay(pressureQty, {
+      includeOriginalUnit: true,
+    });
+  }
+
+  if (flowQty) {
+    result.maxFlowLpm = flowToLpm(flowQty);
+    result.maxFlowDisplay = formatFlowCandidateDisplay(flowQty);
+  }
+
+  if (tankQty) {
+    result.tankPortMaxPressureBar = pressureToBar(tankQty);
+    result.tankPortMaxPressureDisplay = formatPressureCandidateDisplay(tankQty, {
+      includeOriginalUnit: true,
+    });
+  }
+
+  return result;
+}
+
 export function resolveTechnicalDataCandidate(
   context: ProductResolverContext,
   catalogProvider: CatalogDataProvider = getDefaultCatalogDataProvider()
@@ -170,6 +252,9 @@ export function resolveTechnicalDataCandidate(
   }
   if (manufacturer === 'yuken' && context.family.toUpperCase() === 'DSG') {
     return resolveYukenDsgTechnicalData(context, catalogProvider);
+  }
+  if (isEatonVickersManufacturer(context.manufacturer) && context.family.toUpperCase() === 'DG4V') {
+    return resolveEatonDg4vTechnicalData(context, catalogProvider);
   }
   return { found: false, needsReview: true, confidence: 'unknown' };
 }

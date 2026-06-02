@@ -81,11 +81,11 @@ describe('hydraulicValveAttributeDisplay', () => {
 
     expect(allText).not.toContain('Sürgü tipi 2, yay düzeni A');
     expect(allText).not.toContain('Kod kanıtı:');
-    expect(allText).toContain('24V DC');
+    expect(allText).toMatch(/24\s*V\s*DC/i);
     expect(allText).not.toContain('Voltaj değeri katalogdan doğrulanmalıdır.');
     expect(allText).toContain('207 bar');
     expect(allText).toContain('Basic design');
-    expect(allText).toContain('Yay ofsetli, uçtan uca');
+    expect(allText).toContain('Yay merkezlemeli');
   });
 
   it('G24 and D24 compare as same 24V DC without raw token mismatch', () => {

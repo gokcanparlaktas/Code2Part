@@ -1,6 +1,9 @@
 import type { TechnicalAttribute } from '@/types/technicalAttribute';
 
 import {
+  springCodeToLabelTr,
+} from '@/domain/categories/hydraulicValve/manufacturers/vickers/vickersDG4VSemantics';
+import {
   getCenterConditionDisplay,
   getCenteringDisplay,
   getMountingStandardDisplay,
@@ -21,6 +24,7 @@ import {
 import {
   catalogEvidenceDetailLines,
   catalogPrimaryFromField,
+  catalogSpoolLookupToken,
   isGenericPortStateFallback,
   resolveCenterDisplayFromCatalogEvidence,
 } from '@/domain/presentation/formatCatalogFieldDisplay';
@@ -245,6 +249,42 @@ function describeCenteringFromProfile(
   const isVickers = manufacturer.includes('vickers') || manufacturer.includes('eaton');
 
   if (isVickers) {
+    const hasCentering =
+      profile.centering.value && profile.centering.value !== 'unknown';
+
+    if (hasCentering) {
+      return {
+        title: 'Merkezleme',
+        primaryDescription: getCenteringDisplay(profile.centering.value),
+        details: [
+          ...(profile.rawFunctionCode ? [rawCodeLabel(profile.rawFunctionCode)].filter(Boolean) as string[] : []),
+          ...(readToken(map, 'spring_arrangement')
+            ? [rawCodeLabel(readToken(map, 'spring_arrangement')!)].filter(Boolean) as string[]
+            : []),
+        ],
+        rawCode: profile.rawFunctionCode,
+        confidence: profile.centering.evidence === 'code' ? 'medium' : profile.centering.confidence,
+        requiresCatalogCheck: Boolean(profile.centering.requiresCatalogCheck),
+        userEvidenceTr:
+          profile.centering.evidence === 'code'
+            ? USER_EVIDENCE_FROM_CODE_TR
+            : USER_EVIDENCE_FROM_CATALOG_TR,
+      };
+    }
+
+    const springToken = profile.rawFunctionCode?.trim().toUpperCase().match(/^\d([A-Z])$/)?.[1];
+    if (springToken) {
+      return {
+        title: 'Merkezleme',
+        primaryDescription: springCodeToLabelTr(springToken),
+        details: [rawCodeLabel(profile.rawFunctionCode!)].filter(Boolean) as string[],
+        rawCode: profile.rawFunctionCode,
+        confidence: 'medium',
+        requiresCatalogCheck: false,
+        userEvidenceTr: USER_EVIDENCE_FROM_CODE_TR,
+      };
+    }
+
     return {
       title: 'Merkezleme',
       primaryDescription: CATALOG_CENTERING_TR,
@@ -297,15 +337,29 @@ function describeCenteringFromProfile(
   };
 }
 
+function resolveSpoolTokenForCenterDisplay(
+  profile: HydraulicValveCanonicalProfile
+): string | undefined {
+  return (
+    catalogSpoolLookupToken({
+      rawSpoolSymbol: profile.rawSpoolSymbol,
+      rawFunctionCode: profile.rawFunctionCode,
+      manufacturer: profile.brand,
+    }) ?? undefined
+  );
+}
+
 function describeCenterConditionFromProfile(
   profile: HydraulicValveCanonicalProfile
 ): HydraulicBehaviorDescription {
   const catalog = profile.centerCondition.catalogEvidence;
+  const spoolToken = resolveSpoolTokenForCenterDisplay(profile);
   const hasResolvedCatalogDisplay = Boolean(
     catalog &&
       (resolveCenterDisplayFromCatalogEvidence({
         catalogEvidence: catalog,
         centerConditionValue: profile.centerCondition.value,
+        spoolToken,
         getCenterConditionDisplay,
         fallback: CATALOG_CENTER_CONDITION_TR,
       }) !== CATALOG_CENTER_CONDITION_TR)
@@ -316,12 +370,18 @@ function describeCenterConditionFromProfile(
     requiresCatalogCheck: profile.centerCondition.requiresCatalogCheck,
   });
   const fallback = verified
-    ? getCenterConditionDisplay(profile.centerCondition.value)
+    ? resolveCenterDisplayFromCatalogEvidence({
+        catalogEvidence: catalog,
+        centerConditionValue: profile.centerCondition.value,
+        spoolToken,
+        getCenterConditionDisplay,
+        fallback: getCenterConditionDisplay(profile.centerCondition.value),
+      })
     : CATALOG_CENTER_CONDITION_TR;
-  const spoolToken = profile.rawSpoolSymbol;
   const primaryDescription = resolveCenterDisplayFromCatalogEvidence({
     catalogEvidence: catalog,
     centerConditionValue: profile.centerCondition.value,
+    spoolToken,
     getCenterConditionDisplay,
     fallback,
   });
@@ -330,14 +390,12 @@ function describeCenterConditionFromProfile(
     title: 'Merkez tipi',
     primaryDescription,
     details: catalogDetailLines({
-      rawToken:
-        spoolToken && !isVickersSpoolFunctionToken(spoolToken) ? spoolToken : undefined,
       catalogEvidence: catalog,
     }),
     confidence: profile.centerCondition.confidence,
     requiresCatalogCheck:
-      Boolean(profile.centerCondition.requiresCatalogCheck || catalog?.needsReview) ||
-      (!verified && !hasResolvedCatalogDisplay),
+      Boolean(profile.centerCondition.requiresCatalogCheck || catalog?.needsReview) &&
+      !hasResolvedCatalogDisplay,
     userEvidenceTr: hasResolvedCatalogDisplay
       ? USER_EVIDENCE_FROM_CATALOG_TR
       : userEvidenceLabelForField({
@@ -426,9 +484,10 @@ function describeConnector(
   }
 
   const primary =
-    profile.connectorType.catalogEvidence?.needsReview
+    profile.connectorType.displayValue?.trim() ||
+    (profile.connectorType.catalogEvidence?.needsReview
       ? display.displayValue
-      : catalogPrimaryFromField(profile.connectorType, display.displayValue);
+      : catalogPrimaryFromField(profile.connectorType, display.displayValue));
 
   const hasCatalog = Boolean(profile.connectorType.catalogEvidence);
 
@@ -572,16 +631,7 @@ function describeVickersSpoolSpringFromAttributes(
     return null;
   }
   const spring = match[2];
-  const springMeaning =
-    spring === 'A'
-      ? 'Yay ofsetli, uçtan uca'
-      : spring === 'B'
-        ? 'Yay ofsetli, uçtan merkeze'
-        : spring === 'C'
-          ? 'Yay merkezlemeli'
-          : spring === 'N'
-            ? 'Yaysız, kilitlemeli (detent)'
-            : CATALOG_WAYS_TR;
+  const springMeaning = springCodeToLabelTr(spring);
 
   return {
     title: 'Sürgü / yay düzeni',
@@ -592,7 +642,7 @@ function describeVickersSpoolSpringFromAttributes(
       readAttr(map, 'function_code') ?? readAttr(map, 'function_token'),
       'medium',
     ),
-    requiresCatalogCheck: springMeaning === CATALOG_WAYS_TR,
+    requiresCatalogCheck: false,
   };
 }
 
@@ -769,6 +819,7 @@ export function summarizeCenterPortStateBehavior(
   const resolved = resolveCenterDisplayFromCatalogEvidence({
     catalogEvidence: profile.centerCondition.catalogEvidence,
     centerConditionValue: profile.centerCondition.value,
+    spoolToken: resolveSpoolTokenForCenterDisplay(profile),
     getCenterConditionDisplay,
     fallback: '',
   });

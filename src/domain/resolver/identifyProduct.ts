@@ -44,6 +44,10 @@ function findSeriesByCode(normalizedCode: string): ProductSeriesRecord | null {
     return null;
   }
 
+  if (/^3WE4/i.test(normalizedCode)) {
+    return null;
+  }
+
   const candidates = getAllProductSeries()
     .flatMap((series) =>
       getSeriesPrefixes(series).map((prefix) => ({ series, prefix }))

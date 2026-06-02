@@ -194,7 +194,7 @@ export const CONNECTOR_TYPE_DICTIONARY: Record<
 > = {
   DIN_VALVE_CONNECTOR: entry(
     "DIN_VALVE_CONNECTOR",
-    "DIN valf soketi / ISO 4400",
+    "DIN 43650, EN 175301-803",
     "important",
     {
       aliases: [

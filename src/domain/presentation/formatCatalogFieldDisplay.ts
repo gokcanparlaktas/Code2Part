@@ -1,9 +1,23 @@
 import type { CatalogFieldEvidence, CatalogPortState } from '@/domain/catalogData/types';
 
-export const CATALOG_CANDIDATE_META_TR = 'Katalog adayı — doğrulanmalı';
+import {
+  GENERIC_PORT_STATE_RESOLVED_TR,
+  isGenericPortStateFallback,
+  portStateBehaviorSummary,
+  resolveCenterTypeDisplay,
+} from '@/domain/presentation/formatCenterTypeDisplay';
 
-export const GENERIC_PORT_STATE_RESOLVED_TR =
-  'Port durumu katalog adayından çözümlendi';
+export {
+  centerTypePartsFromCondition,
+  centerTypePartsFromPortState,
+  catalogSpoolLookupToken,
+  formatCenterTypeSummary,
+  formatUnifiedCenterDisplay,
+  GENERIC_PORT_STATE_RESOLVED_TR,
+  resolveCenterTypeDisplay,
+} from '@/domain/presentation/formatCenterTypeDisplay';
+
+export const CATALOG_CANDIDATE_META_TR = 'Katalog adayı — doğrulanmalı';
 
 type FieldWithCatalogEvidence = {
   displayValue: string;
@@ -27,81 +41,33 @@ export function catalogPrimaryFromField(
   return fallback;
 }
 
-function isPortConnected(state: string | undefined): boolean {
-  return state != null && state !== 'blocked' && /connected/i.test(state);
-}
-
-export function portStateBehaviorSummary(
-  portState?: CatalogPortState | null
-): string | null {
-  if (!portState?.P || !portState.T || !portState.A || !portState.B) {
-    return null;
-  }
-
-  const allBlocked =
-    portState.P === 'blocked' &&
-    portState.T === 'blocked' &&
-    portState.A === 'blocked' &&
-    portState.B === 'blocked';
-
-  if (allBlocked) {
-    return 'Kapalı merkez — P, T, A ve B kapalı';
-  }
-
-  const pBlockedAbTConnected =
-    portState.P === 'blocked' &&
-    portState.A === 'connected_to_B_T' &&
-    portState.B === 'connected_to_A_T';
-
-  if (pBlockedAbTConnected) {
-    return 'Yüzer merkez — P kapalı, A-B-T bağlantılı';
-  }
-
-  const allConnected =
-    isPortConnected(portState.P) &&
-    isPortConnected(portState.T) &&
-    isPortConnected(portState.A) &&
-    isPortConnected(portState.B);
-
-  if (allConnected) {
-    return 'Açık merkez — P, T, A ve B bağlantılı';
-  }
-
-  return GENERIC_PORT_STATE_RESOLVED_TR;
-}
-
-export function isGenericPortStateFallback(summary: string | null | undefined): boolean {
-  return summary === GENERIC_PORT_STATE_RESOLVED_TR;
-}
+export { portStateBehaviorSummary, isGenericPortStateFallback };
 
 /** Prefer portState summary; avoid generic port placeholder when center enum is known. */
 export function resolveCenterDisplayFromCatalogEvidence(options: {
   catalogEvidence?: CatalogFieldEvidence;
   centerConditionValue?: string | null;
+  spoolToken?: string | null;
   getCenterConditionDisplay: (value: string) => string;
   fallback: string;
 }): string {
   const catalog = options.catalogEvidence;
-  const portSummary = portStateBehaviorSummary(catalog?.portState);
 
-  if (portSummary && !isGenericPortStateFallback(portSummary)) {
-    return portSummary;
-  }
+  const resolved = resolveCenterTypeDisplay({
+    portState: catalog?.portState,
+    centerConditionValue: options.centerConditionValue,
+    spoolToken: options.spoolToken,
+    getCenterConditionDisplay: options.getCenterConditionDisplay,
+    fallback: options.fallback,
+  });
 
-  if (
-    options.centerConditionValue &&
-    options.centerConditionValue !== 'unknown'
-  ) {
-    return options.getCenterConditionDisplay(options.centerConditionValue);
+  if (resolved !== options.fallback) {
+    return resolved;
   }
 
   const flow = catalog?.centerFlowDescription?.trim();
   if (flow && flow !== GENERIC_PORT_STATE_RESOLVED_TR) {
     return flow;
-  }
-
-  if (portSummary) {
-    return portSummary;
   }
 
   return catalogPrimaryFromField(
@@ -153,3 +119,5 @@ export function hasCatalogCandidateReview(
 ): boolean {
   return Boolean(catalogEvidence?.needsReview);
 }
+
+export type { CatalogPortState };

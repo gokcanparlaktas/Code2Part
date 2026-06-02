@@ -37,14 +37,15 @@ describe('connector canonical resolver', () => {
     const resolved = resolveConnector('K4', 'Rexroth', '4WE6');
     expect(resolved.canonicalKey).toBe('DIN_VALVE_CONNECTOR');
     expect(resolved.connectorFamilyKey).toBe('DIN_VALVE_CONNECTOR');
-    expect(resolved.displayValue).toContain('DIN valf soketi');
+    expect(resolved.displayValue).toContain('DIN 43650');
   });
 
   it('Vickers DG4V-3 U resolves to DIN_VALVE_CONNECTOR', () => {
     const resolved = resolveConnector('U', 'Vickers', 'DG4V-3');
     expect(resolved.canonicalKey).toBe('DIN_VALVE_CONNECTOR');
     expect(resolved.connectorFamilyKey).toBe('DIN_VALVE_CONNECTOR');
-    expect(resolved.displayValue).toContain('DIN valf soketi');
+    expect(resolved.connectorStandardKey).toBe('DIN_43650_FORM_A_EN_175301_803');
+    expect(resolved.displayValue).toContain('DIN 43650');
   });
 
   it('Vickers DG4V-5 U resolves to DIN_VALVE_CONNECTOR via seriesFamily', () => {
@@ -124,12 +125,32 @@ describe('connector canonical comparison', () => {
     expect(result.warning).toMatch(/PG11|opsiyon/i);
   });
 
-  it('Rexroth K4 vs Vickers U is same family check, not different', () => {
+  it('Rexroth K4 vs Vickers U is same DIN family (compatible without catalog text)', () => {
     const k4 = connectorSnapshotFromResolved(resolveConnector('K4', 'Rexroth', '4WE6'));
     const u = connectorSnapshotFromResolved(resolveConnector('U', 'Vickers', 'DG4V-3'));
+    expect(k4.connectorStandardKey).toBe('DIN_43650_FORM_A_EN_175301_803');
+    expect(u.connectorStandardKey).toBe('DIN_43650_FORM_A_EN_175301_803');
     const result = compareConnectorCanonicalSnapshots(k4, u);
+    expect(result.comparison.status).toBe('compatible');
     expect(result.comparison.status).not.toBe('different');
-    expect(['compatible', 'unknownOrCheck']).toContain(result.comparison.status);
+  });
+
+  it('Rexroth K4 vs Vickers U with differing catalog text stays compatible (same DIN family)', () => {
+    const k4 = connectorSnapshotFromResolved(resolveConnector('K4', 'Rexroth', '4WE6'));
+    const u = connectorSnapshotFromResolved(resolveConnector('U', 'Vickers', 'DG4V-3'));
+    const rexrothCatalog = {
+      ...k4,
+      displayValue:
+        'Connector 3 Pole (2+PE) according to DIN EN 175301-803',
+    };
+    const vickersCatalog = {
+      ...u,
+      displayValue: 'ISO 4400, DIN 43650',
+    };
+    const result = compareConnectorCanonicalSnapshots(rexrothCatalog, vickersCatalog);
+    expect(result.comparison.status).toBe('compatible');
+    expect(result.comparison.sourceDisplay).toContain('175301');
+    expect(result.comparison.targetDisplay).toContain('43650');
   });
 
   it('Vickers U vs KUP4 is different connector family', () => {
@@ -174,7 +195,7 @@ describe('connector canonical UI', () => {
     const id = identifyProduct('4WE6E-7X/HG24N9K4', normalizeCode('4WE6E-7X/HG24N9K4'));
     const rows = buildProductDetailRows(id);
     const connector = rows.find((r) => r.label === 'Konnektör tipi');
-    expect(connector?.value).toMatch(/DIN valf soketi|Connector 3-pole/i);
+    expect(connector?.value).toMatch(/DIN 43650|EN 175301-803/i);
     expect(connector?.value).not.toContain('K4');
     expect(connector?.value).not.toContain('Kod kanıtı');
   });

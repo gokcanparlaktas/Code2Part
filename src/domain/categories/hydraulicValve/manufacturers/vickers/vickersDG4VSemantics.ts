@@ -32,7 +32,10 @@ export const VICKERS_DG4V_CENTER_CONDITION_LABEL_TR: Record<
   unknown: 'Bilinmiyor',
 };
 
-export type VickersDG4VSpoolFunctionCode = '2A' | '4C' | '6C' | '6B';
+export type VickersDG4VSpoolFunctionCode = string;
+
+/** Catalog-backed closed-center spool types (same main portState as Rexroth WE E). */
+export const VICKERS_DG4V_CLOSED_CENTER_SPOOL_TYPES = new Set(['2', '22', '35']);
 
 export interface VickersDG4VSpoolSemantics {
   spoolFunctionCode: string;
@@ -52,9 +55,9 @@ const SPOOL_SEMANTICS: Record<string, VickersDG4VSpoolSemantics> = {
     springCode: 'A',
     numberOfPositions: 3,
     centering: 'spring_centered',
-    centerCondition: 'unknown',
+    centerCondition: 'closed_center',
     requiresCatalogCheck: true,
-    behaviorNoteTr: `Sürgü tipi 2, yay A (yay merkezlemeli tahmini). ${VICKERS_DG4V_CATALOG_NOTE_TR}`,
+    behaviorNoteTr: `Sürgü tipi 2, yay A, kapalı merkez (tahmini). ${VICKERS_DG4V_CATALOG_NOTE_TR}`,
   },
   '4C': {
     spoolFunctionCode: '4C',
@@ -107,8 +110,42 @@ export function springCodeToLabelTr(springCode: string): string {
   return VICKERS_DG4V_CENTERING_LABEL_TR[springCodeToCentering(springCode)];
 }
 
+export function parseVickersDG4VSpoolFunctionCode(
+  spoolFunctionCode: string
+): { spoolType: string; springCode: string } | null {
+  const match = spoolFunctionCode.trim().toUpperCase().match(/^(\d{1,3})([ABCD])$/);
+  if (!match) {
+    return null;
+  }
+  return { spoolType: match[1], springCode: match[2] };
+}
+
+export function isVickersDG4VClosedCenterSpoolType(spoolType: string): boolean {
+  return VICKERS_DG4V_CLOSED_CENTER_SPOOL_TYPES.has(spoolType.trim());
+}
+
 export function getVickersDG4VSpoolSemantics(
   spoolFunctionCode: string
 ): VickersDG4VSpoolSemantics | null {
-  return SPOOL_SEMANTICS[spoolFunctionCode.trim().toUpperCase()] ?? null;
+  const key = spoolFunctionCode.trim().toUpperCase();
+  const staticEntry = SPOOL_SEMANTICS[key];
+  if (staticEntry) {
+    return staticEntry;
+  }
+
+  const parsed = parseVickersDG4VSpoolFunctionCode(key);
+  if (!parsed || !isVickersDG4VClosedCenterSpoolType(parsed.spoolType)) {
+    return null;
+  }
+
+  return {
+    spoolFunctionCode: key,
+    spoolType: parsed.spoolType,
+    springCode: parsed.springCode,
+    numberOfPositions: 3,
+    centering: springCodeToCentering(parsed.springCode),
+    centerCondition: 'closed_center',
+    requiresCatalogCheck: true,
+    behaviorNoteTr: `Sürgü tipi ${parsed.spoolType}, yay ${parsed.springCode}, kapalı merkez (tahmini). ${VICKERS_DG4V_CATALOG_NOTE_TR}`,
+  };
 }

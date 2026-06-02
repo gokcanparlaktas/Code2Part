@@ -70,7 +70,7 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     const result = compareProducts(source, candidate);
     expect(result.compatible.some((c) => c.label === 'Merkez tipi')).toBe(true);
     expect(result.compatible.find((c) => c.label === 'Merkez tipi')?.sourceDisplay).toMatch(
-      /Kapalı merkez — P, T, A ve B kapalı|4 yollu, 3 konumlu|3 konumlu/
+      /P,T,A,B Kapalı \(Kapalı merkez\)|4 yollu, 3 konumlu|3 konumlu/
     );
     expect(result.compatible.find((c) => c.label === 'Merkez tipi')?.sourceDisplay).not.toContain(
       'Sürgü sembolü E'
@@ -112,7 +112,7 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     ).toBe(false);
 
     const spool = result.compatible.find((c) => c.label === 'Merkez tipi');
-    expect(spool?.sourceDisplay).toContain('Kapalı merkez — P, T, A ve B kapalı');
+    expect(spool?.sourceDisplay).toBe('P,T,A,B Kapalı (Kapalı merkez)');
     expect(spool?.sourceDisplay).not.toContain('Yay merkezlemeli');
 
     expect(
@@ -122,7 +122,7 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     ).toBe(true);
   });
 
-  it('Rexroth E vs Vickers 2A is unknownOrCheck with cautious message, not compatible', () => {
+  it('Rexroth E vs Vickers 2A is compatible by catalog portState when centers match', () => {
     const source = identify('4WE6E-6X/EG24N9K4');
     const targetSeries = getProductSeriesById('vickers_dg4v3')!;
     const targetCode = 'DG4V-3-2A-M-U-H7-60';
@@ -138,9 +138,58 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     };
 
     const result = compareProducts(source, candidate);
-    expect(result.compatible.some((c) => c.label === 'Merkez tipi')).toBe(false);
-    const spoolCheck = result.checkItems.find((c) => c.field === 'Merkez tipi');
-    expect(spoolCheck?.reasonTr).toContain('katalogdan kontrol edilmelidir');
+    expect(result.compatible.some((c) => c.label === 'Merkez tipi')).toBe(true);
+    expect(result.checkItems.find((c) => c.field === 'Merkez tipi')).toBeUndefined();
+    expect(
+      result.warnings.some((w) => w.includes('sürgü davranışı farklı olabilir'))
+    ).toBe(false);
+  });
+
+  it('Vickers U vs Rexroth K4: compatible DIN 43650 / EN 175301-803 family', () => {
+    const source = identify('DG4V-3-2A-M-U-D24-60');
+    const targetSeries = getProductSeriesById('rexroth_4we6')!;
+    const targetCode = '4WE6E-62/EG24N9K4';
+    const candidate = {
+      seriesId: targetSeries.id,
+      brand: targetSeries.brand,
+      series: targetSeries.series,
+      productType: targetSeries.productType,
+      productCategory: targetSeries.productCategory,
+      standardFamily: targetSeries.standardFamily,
+      suggestedCode: targetCode,
+      targetIdentification: identify(targetCode),
+    };
+
+    const result = compareProducts(source, candidate);
+    const connector = result.compatible.find((c) => c.label === 'Konnektör tipi');
+    expect(connector).toBeDefined();
+    expect(connector?.status).toBe('compatible');
+    expect(result.checkItems.find((c) => c.field === 'Konnektör tipi')).toBeUndefined();
+    const displays = `${connector?.sourceDisplay ?? ''} ${connector?.targetDisplay ?? ''}`;
+    expect(displays).toMatch(/175301|43650|4400/i);
+  });
+
+  it('Vickers 2A vs Rexroth E is compatible by catalog portState without spool mismatch warning', () => {
+    const source = identify('DG4V-3-2A-M-U-H7-60');
+    const targetSeries = getProductSeriesById('rexroth_4we6')!;
+    const targetCode = '4WE6E-6X/EG24N9K4';
+    const candidate = {
+      seriesId: targetSeries.id,
+      brand: targetSeries.brand,
+      series: targetSeries.series,
+      productType: targetSeries.productType,
+      productCategory: targetSeries.productCategory,
+      standardFamily: targetSeries.standardFamily,
+      suggestedCode: targetCode,
+      targetIdentification: identify(targetCode),
+    };
+
+    const result = compareProducts(source, candidate);
+    expect(result.compatible.some((c) => c.label === 'Merkez tipi')).toBe(true);
+    expect(result.checkItems.find((c) => c.field === 'Merkez tipi')).toBeUndefined();
+    expect(
+      result.warnings.some((w) => w.includes('sürgü davranışı farklı olabilir'))
+    ).toBe(false);
   });
 
   it('Rexroth E vs Atos 0711 is unknownOrCheck, not compatible', () => {

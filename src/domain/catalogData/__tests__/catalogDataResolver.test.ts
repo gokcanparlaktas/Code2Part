@@ -1,21 +1,27 @@
 import {
   buildProductResolverContext,
   getRawTokensForProductCode,
+  getEatonSpoolCatalog,
   getRexrothSpoolCatalog,
   getYukenDshgParserSpecCatalog,
   getYukenSpoolCatalog,
   portStatesMatch,
+  resolveConnectorCandidate,
   resolveMountingCandidate,
   resolveSpoolCandidate,
+  resolveTechnicalDataCandidate,
   resolveVoltageCandidate,
   toCatalogResolverContext,
 } from '@/domain/catalogData';
 import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
 
+const VICKERS_DG4V3 = 'DG4V-3-2A-M-U-H7-60';
+
 const PHASE_A_CODES = [
   '4WE6E-6X/EG24N9K4',
   '4WE10E-5X/EG24N9K4',
   'DSG-01-3C2-D24-N1-70',
+  VICKERS_DG4V3,
 ] as const;
 
 describe('catalogData Phase A', () => {
@@ -37,6 +43,12 @@ describe('catalogData Phase A', () => {
       expect(spec.seriesFamily).toBe('DSHG');
       expect(spec.knownSeries).toContain('DSHG-03');
       expect(spec.knownSeries).not.toContain('DSG-01');
+    });
+
+    it('loads Eaton/Vickers spool catalog-data with entries', () => {
+      const catalog = getEatonSpoolCatalog();
+      expect(catalog.manufacturer).toBe('Eaton');
+      expect(catalog.spoolSymbolMeanings?.length).toBeGreaterThan(0);
     });
   });
 
@@ -87,6 +99,18 @@ describe('catalogData Phase A', () => {
         nominalSize: '03',
       });
     });
+
+    it('DG4V-3 → Vickers / DG4V-3 / spring A', () => {
+      const ctx = buildProductResolverContext(VICKERS_DG4V3);
+      expect(ctx).toMatchObject({
+        manufacturer: 'Vickers',
+        family: 'DG4V',
+        series: 'DG4V-3',
+        sourceFamily: 'DG4V-3',
+        nominalSize: '3',
+        springArrangement: 'A',
+      });
+    });
   });
 
   describe('resolveVoltageCandidate', () => {
@@ -134,6 +158,42 @@ describe('catalogData Phase A', () => {
       expect(rexroth.voltageKind).toBe('DC');
       expect(yuken.voltageKind).toBe('DC');
     });
+
+    it('Vickers H → 24 V DC candidate from Eaton catalog-data', () => {
+      const product = buildProductResolverContext(VICKERS_DG4V3)!;
+      const tokens = getRawTokensForProductCode(VICKERS_DG4V3);
+      const ctx = toCatalogResolverContext(product, 'coil_rating', tokens.coil_rating ?? 'H');
+      const result = resolveVoltageCandidate(ctx);
+      expect(result.found).toBe(true);
+      expect(result.voltageValue).toBe(24);
+      expect(result.voltageKind).toBe('DC');
+      expect(result.needsReview).toBe(true);
+    });
+
+    it('Vickers D24 → 24 V DC candidate from Eaton catalog-data', () => {
+      const code = 'DG4V-3-2A-M-U-D24-60';
+      const product = buildProductResolverContext(code)!;
+      const tokens = getRawTokensForProductCode(code);
+      const ctx = toCatalogResolverContext(product, 'coil_rating', tokens.coil_rating ?? 'D24');
+      const result = resolveVoltageCandidate(ctx);
+      expect(result.found).toBe(true);
+      expect(result.voltageValue).toBe(24);
+      expect(result.voltageKind).toBe('DC');
+      expect(result.needsReview).toBe(false);
+    });
+  });
+
+  describe('resolveConnectorCandidate', () => {
+    it('Vickers U → ISO4400 DIN connector candidate', () => {
+      const product = buildProductResolverContext(VICKERS_DG4V3)!;
+      const tokens = getRawTokensForProductCode(VICKERS_DG4V3);
+      const result = resolveConnectorCandidate(
+        toCatalogResolverContext(product, 'connector_type', tokens.connector_type ?? 'U')
+      );
+      expect(result.found).toBe(true);
+      expect(result.displayCandidate).toMatch(/ISO4400|DIN 43650/i);
+      expect(result.needsReview).toBe(true);
+    });
   });
 
   describe('resolveMountingCandidate', () => {
@@ -157,6 +217,13 @@ describe('catalogData Phase A', () => {
       expect(result.found).toBe(true);
       expect(result.isoCode).toContain('ISO 4401-05');
     });
+
+    it('Vickers DG4V-3 → ISO 4401-03 class', () => {
+      const product = buildProductResolverContext(VICKERS_DG4V3)!;
+      const result = resolveMountingCandidate(product);
+      expect(result.found).toBe(true);
+      expect(result.isoCode).toContain('ISO 4401-03');
+    });
   });
 
   describe('resolveSpoolCandidate (portState)', () => {
@@ -171,6 +238,33 @@ describe('catalogData Phase A', () => {
         T: 'blocked',
         A: 'blocked',
         B: 'blocked',
+      });
+    });
+
+    it('Rexroth spool D/G/J @ WE6 match catalog portState patterns', () => {
+      const product = buildProductResolverContext('4WE6E-6X/EG24N9K4')!;
+      const d = resolveSpoolCandidate(toCatalogResolverContext(product, 'spool_symbol', 'D'));
+      expect(d.portState).toEqual({
+        P: 'connected_to_A',
+        A: 'connected_to_P',
+        B: 'connected_to_T',
+        T: 'connected_to_B',
+      });
+
+      const g = resolveSpoolCandidate(toCatalogResolverContext(product, 'spool_symbol', 'G'));
+      expect(g.portState).toEqual({
+        P: 'connected_to_T',
+        T: 'connected_to_P',
+        A: 'blocked',
+        B: 'blocked',
+      });
+
+      const j = resolveSpoolCandidate(toCatalogResolverContext(product, 'spool_symbol', 'J'));
+      expect(j.portState).toEqual({
+        P: 'blocked',
+        A: 'connected_to_B_T',
+        B: 'connected_to_A_T',
+        T: 'connected_to_A_B',
       });
     });
 
@@ -206,6 +300,66 @@ describe('catalogData Phase A', () => {
       expect(portStatesMatch(rexroth.portState, yuken.portState)).toBe(true);
     });
 
+    it('Vickers spool 2 @ DG4V-3 / spring A has closed-center portState', () => {
+      const product = buildProductResolverContext(VICKERS_DG4V3)!;
+      const tokens = getRawTokensForProductCode(VICKERS_DG4V3);
+      const result = resolveSpoolCandidate(
+        toCatalogResolverContext(product, 'spool_symbol', tokens.spool_symbol ?? '2')
+      );
+      expect(result.found).toBe(true);
+      expect(result.portState).toEqual({
+        P: 'blocked',
+        T: 'blocked',
+        A: 'blocked',
+        B: 'blocked',
+      });
+    });
+
+    it('Vickers spool 2 portState matches Rexroth E for cross-brand comparison', () => {
+      const rexroth = resolveSpoolCandidate(
+        toCatalogResolverContext(
+          buildProductResolverContext('4WE6E-6X/EG24N9K4')!,
+          'spool_symbol',
+          'E'
+        )
+      );
+      const vickers = resolveSpoolCandidate(
+        toCatalogResolverContext(
+          buildProductResolverContext(VICKERS_DG4V3)!,
+          'spool_symbol',
+          '2'
+        )
+      );
+      expect(portStatesMatch(rexroth.portState, vickers.portState)).toBe(true);
+    });
+
+    it('Vickers spool types 22 and 35 share closed-center portState with Rexroth E', () => {
+      const rexroth = resolveSpoolCandidate(
+        toCatalogResolverContext(
+          buildProductResolverContext('4WE6E-6X/EG24N9K4')!,
+          'spool_symbol',
+          'E'
+        )
+      );
+      const closedCenter = {
+        P: 'blocked',
+        T: 'blocked',
+        A: 'blocked',
+        B: 'blocked',
+      };
+
+      for (const code of ['DG4V-3-22A-M-U-H7-60', 'DG4V-3-35A-M-U-H7-60']) {
+        const product = buildProductResolverContext(code)!;
+        const tokens = getRawTokensForProductCode(code);
+        const vickers = resolveSpoolCandidate(
+          toCatalogResolverContext(product, 'spool_symbol', tokens.spool_symbol ?? '')
+        );
+        expect(vickers.found).toBe(true);
+        expect(vickers.portState).toEqual(closedCenter);
+        expect(portStatesMatch(rexroth.portState, vickers.portState)).toBe(true);
+      }
+    });
+
     it('DSHG spool 4 lookup via manual context (catalog only, not runtime)', () => {
       const manualContext = {
         manufacturer: 'Yuken',
@@ -220,6 +374,17 @@ describe('catalogData Phase A', () => {
       expect(result.found).toBe(true);
       expect(result.portState?.P).toBe('blocked');
       expect(result.portState?.A).toBe('connected_to_B_T');
+    });
+  });
+
+  describe('resolveTechnicalDataCandidate (Eaton/Vickers)', () => {
+    it('DG4V-3 reads 350 bar and 80 l/min from catalog-data', () => {
+      const ctx = buildProductResolverContext(VICKERS_DG4V3)!;
+      const technical = resolveTechnicalDataCandidate(ctx);
+      expect(technical.found).toBe(true);
+      expect(technical.maxOperatingPressureBar).toBe(350);
+      expect(technical.maxFlowLpm).toBe(80);
+      expect(technical.needsReview).toBe(true);
     });
   });
 });

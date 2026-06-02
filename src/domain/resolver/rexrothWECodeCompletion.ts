@@ -95,16 +95,6 @@ function buildDesignSeriesOptions(
     ];
   }
 
-  if (seriesPrefix === '3WE4') {
-    return [
-      { token: '42', displayValue: '42' },
-      { token: '45', displayValue: '45' },
-      { token: '41', displayValue: '41' },
-      { token: '52', displayValue: '52' },
-      UNCERTAIN_COMPLETION_OPTION,
-    ];
-  }
-
   return [
     { token: '62', displayValue: '62' },
     { token: '61', displayValue: '61' },

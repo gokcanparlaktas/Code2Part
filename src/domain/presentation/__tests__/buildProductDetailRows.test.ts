@@ -40,7 +40,7 @@ describe('buildProductDetailRows', () => {
     expect(voltage?.requiresCheck).toBe(false);
 
     const center = rows.find((r) => r.label === 'Merkez tipi');
-    expect(center?.value).toBe('Kapalı merkez — P, T, A ve B kapalı');
+    expect(center?.value).toBe('P,T,A,B Kapalı (Kapalı merkez)');
     expect(center?.evidence).toBe('Katalogdan');
     expect(center?.value).not.toContain('Port durumu katalog adayından');
 
@@ -54,7 +54,7 @@ describe('buildProductDetailRows', () => {
     const code = 'DSG-01-3C2-D24-N1-70';
     const rows = buildProductDetailRows(identifyProduct(code, normalizeCode(code)));
     const center = rows.find((r) => r.label === 'Merkez tipi');
-    expect(center?.value).toContain('Kapalı merkez — P, T, A ve B kapalı');
+    expect(center?.value).toBe('P,T,A,B Kapalı (Kapalı merkez)');
     expect(center?.evidence).toBe('Katalogdan');
   });
 

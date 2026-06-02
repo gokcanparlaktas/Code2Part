@@ -2,6 +2,7 @@ import {
   getDefaultCatalogDataProvider,
   type CatalogDataProvider,
 } from '@/domain/catalogData/CatalogDataProvider';
+import { isEatonVickersManufacturer } from '@/domain/catalogData/eatonVickersCatalogUtils';
 import type { CatalogResolvedCandidate, ProductResolverContext } from '@/domain/catalogData/types';
 
 function modelKeys(context: ProductResolverContext): string[] {
@@ -21,6 +22,9 @@ function modelKeys(context: ProductResolverContext): string[] {
       keys.add('WE6');
       keys.add('4WE6');
     }
+  }
+  if (context.family.toUpperCase() === 'DG4V') {
+    keys.add(`DG4V-${context.nominalSize ?? '3'}`);
   }
   return [...keys];
 }
@@ -99,6 +103,9 @@ export function resolveMountingCandidate(
   }
   if (manufacturer === 'yuken') {
     return resolveFromCatalog(context, catalogProvider.getYukenMountingCatalog());
+  }
+  if (isEatonVickersManufacturer(context.manufacturer)) {
+    return resolveFromCatalog(context, catalogProvider.getEatonMountingCatalog());
   }
   return {
     found: false,

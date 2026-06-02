@@ -563,13 +563,15 @@ export function buildHydraulicValveCanonicalProfile(
     }
   }
 
-  applyBehaviorDisplayToCanonicalProfile(profile, attributes);
-
-  return enrichHydraulicProfileFromCatalogData(
+  const enriched = enrichHydraulicProfileFromCatalogData(
     profile,
     options.identification,
     options.catalogProvider
   );
+
+  applyBehaviorDisplayToCanonicalProfile(enriched, attributes);
+
+  return enriched;
 }
 
 export function buildHydraulicValveCanonicalProfileFromCandidate(options: {

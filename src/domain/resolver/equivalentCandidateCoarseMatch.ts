@@ -154,3 +154,21 @@ export function isPneumaticCylinderCategory(
 ): category is typeof PNEUMATIC_CYLINDER_CATEGORY {
   return category === PNEUMATIC_CYLINDER_CATEGORY;
 }
+
+/** Rexroth 3WE6 is a 3-way NG6 family; not interchangeable with 4-way CETOP 03 valves. */
+export function isThreeWayHydraulicValveSeries(seriesId: string): boolean {
+  return seriesId === 'rexroth_3we6';
+}
+
+export function hydraulicValveWaysCompatible(
+  source: ProductIdentification,
+  targetSeries: ProductSeriesRecord
+): boolean {
+  if (!source.seriesId) {
+    return true;
+  }
+
+  const sourceThreeWay = isThreeWayHydraulicValveSeries(source.seriesId);
+  const targetThreeWay = isThreeWayHydraulicValveSeries(targetSeries.id);
+  return sourceThreeWay === targetThreeWay;
+}

@@ -31,7 +31,7 @@ describe('equivalence comparison UI dedup', () => {
       (c) => c.label === FIELD_LABELS.spoolFunctionCode
     );
     expect(merkezRows).toHaveLength(1);
-    expect(merkezRows[0]?.sourceDisplay).toContain('Kapalı merkez — P, T, A ve B kapalı');
+    expect(merkezRows[0]?.sourceDisplay).toBe('P,T,A,B Kapalı (Kapalı merkez)');
   });
 
   it('does not add generic Basınç değeri check when catalog pressure exists', () => {

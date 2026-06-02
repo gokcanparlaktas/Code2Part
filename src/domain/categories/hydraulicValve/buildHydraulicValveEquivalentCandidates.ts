@@ -9,10 +9,19 @@ import type { ProductIdentification, ProductSeriesRecord } from '@/types/product
 
 import { getHydraulicValveExampleCode } from './hydraulicValveExampleCodes';
 
-function isRexrothYukenPair(sourceSeriesId: string, targetSeriesId: string): boolean {
-  const rexroth = sourceSeriesId.startsWith('rexroth_4we') || targetSeriesId.startsWith('rexroth_4we');
-  const yuken = sourceSeriesId.startsWith('yuken_dsg') || targetSeriesId.startsWith('yuken_dsg');
-  return rexroth && yuken;
+function usesSmartCrossBrandGenerator(sourceSeriesId: string, targetSeriesId: string): boolean {
+  const ids = [sourceSeriesId, targetSeriesId];
+  const hasRexroth = ids.some(
+    (id) => id.startsWith('rexroth_4we') || id.startsWith('rexroth_3we')
+  );
+  const hasYuken = ids.some((id) => id.startsWith('yuken_dsg'));
+  const hasVickers = ids.some((id) => id.startsWith('vickers_dg4v'));
+
+  return (
+    (hasRexroth && hasYuken) ||
+    (hasVickers && hasRexroth) ||
+    (hasVickers && hasYuken)
+  );
 }
 
 function sharesEquivalenceGroup(
@@ -41,7 +50,7 @@ export function buildHydraulicValveEquivalentCandidates(
     return [];
   }
 
-  if (source.seriesId && isRexrothYukenPair(source.seriesId, targetSeries.id)) {
+  if (source.seriesId && usesSmartCrossBrandGenerator(source.seriesId, targetSeries.id)) {
     return generateHydraulicValveEquivalentCandidates(source, targetSeries);
   }
 
@@ -97,7 +106,7 @@ export function buildHydraulicValveSuggestedCode(
   source: ProductIdentification,
   targetSeries: ProductSeriesRecord
 ): string | null {
-  if (source.seriesId && isRexrothYukenPair(source.seriesId, targetSeries.id)) {
+  if (source.seriesId && usesSmartCrossBrandGenerator(source.seriesId, targetSeries.id)) {
     return generateBestHydraulicValveEquivalentCode(source, targetSeries)?.generatedCode ?? null;
   }
 

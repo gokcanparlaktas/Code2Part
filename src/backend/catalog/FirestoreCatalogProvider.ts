@@ -18,6 +18,10 @@ import type {
   YukenDshgParserSpecCatalog,
   YukenMountingCatalog,
   YukenSpoolCatalog,
+  EatonDg4vConnectorVoltageCatalog,
+  EatonDg4vTechnicalDataCatalog,
+  EatonMountingCatalog,
+  EatonSpoolCatalog,
 } from '@/domain/catalogData/loadCatalogData';
 
 import { activePointerFirestorePath } from '../../../scripts/catalog-data-firestore/buildImportPlan';
@@ -98,6 +102,7 @@ export class FirestoreCatalogProvider implements CatalogDataProvider {
   catalogVersion?: string;
 
   private readonly cache = new Map<PayloadCacheKey, unknown>();
+  private readonly localEatonFallback = new LocalCatalogDataProvider();
   private initialized = false;
 
   constructor(private readonly config: FirestoreCatalogProviderConfig) {}
@@ -226,6 +231,23 @@ export class FirestoreCatalogProvider implements CatalogDataProvider {
 
   getYukenDsgTechnicalDataCatalog(): YukenDsgTechnicalDataCatalog {
     return this.getCached('yukenDsgTechnicalData');
+  }
+
+  /** Eaton catalog-data is local JSON until Firestore import includes eaton/ paths. */
+  getEatonSpoolCatalog(): EatonSpoolCatalog {
+    return this.localEatonFallback.getEatonSpoolCatalog();
+  }
+
+  getEatonMountingCatalog(): EatonMountingCatalog {
+    return this.localEatonFallback.getEatonMountingCatalog();
+  }
+
+  getEatonDg4vConnectorVoltageCatalog(): EatonDg4vConnectorVoltageCatalog {
+    return this.localEatonFallback.getEatonDg4vConnectorVoltageCatalog();
+  }
+
+  getEatonDg4vTechnicalDataCatalog(): EatonDg4vTechnicalDataCatalog {
+    return this.localEatonFallback.getEatonDg4vTechnicalDataCatalog();
   }
 }
 

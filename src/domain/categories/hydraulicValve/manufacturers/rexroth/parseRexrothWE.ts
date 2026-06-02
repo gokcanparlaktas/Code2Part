@@ -1,5 +1,5 @@
 /**
- * Rexroth WE family parser (3WE4, 3WE6, 4WE6, 4WE10).
+ * Rexroth WE family parser (3WE6, 4WE6, 4WE10).
  * Raw structured fields only — canonical meanings come from resolver/catalog layers.
  */
 
@@ -293,13 +293,6 @@ function matchSeriesHeader(
 
 function matchWEHeader(normalized: string): HeaderMatch | null {
   return (
-    matchSeriesHeader(normalized, {
-      seriesPrefix: '3WE4',
-      sourceFamily: 'WE4',
-      nominalSize: '4',
-      numberOfMainPorts: 3,
-      componentSeriesDigits: '45',
-    }) ??
     matchSeriesHeader(normalized, {
       seriesPrefix: '3WE6',
       sourceFamily: 'WE6',

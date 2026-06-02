@@ -97,20 +97,83 @@ describe('catalogDataProfileBridge (Phase B)', () => {
     });
   });
 
-  describe('legacy fallback (no catalog product context)', () => {
-    it('Vickers DG4V still builds profile via legacy path without catalog mounting evidence', () => {
-      const profile = buildProfile('DG4V-3-2A-M-U-H7-60');
+  describe('Vickers DG4V-3-2A-M-U-H7-60', () => {
+    const profile = buildProfile('DG4V-3-2A-M-U-H7-60');
+
+    it('attaches catalog voltage evidence (H → 24 V DC candidate)', () => {
+      expect(profile.coilVoltage.catalogEvidence?.source).toBe('catalog_data');
+      expect(profile.coilVoltage.catalogEvidence?.displayCandidate).toMatch(/24.*DC/i);
       expect(profile.coilVoltage.value).toBe('DC_24V');
-      expect(profile.mountingStandard.catalogEvidence).toBeUndefined();
-      expect(profile.brand).toBe('Vickers');
+      expect(profile.coilVoltage.requiresCatalogCheck).toBe(true);
     });
 
+    it('attaches catalog mounting evidence (ISO 4401-03 class)', () => {
+      expect(profile.mountingStandard.catalogEvidence?.isoCode).toContain('ISO 4401-03');
+    });
+
+    it('attaches catalog spool portState (2 + spring A → closed center)', () => {
+      expect(profile.centerCondition.catalogEvidence?.portState).toEqual({
+        P: 'blocked',
+        T: 'blocked',
+        A: 'blocked',
+        B: 'blocked',
+      });
+      expect(profile.centerCondition.requiresCatalogCheck).toBe(true);
+    });
+
+    it('attaches catalog connector evidence (U)', () => {
+      expect(profile.connectorType.catalogEvidence?.displayCandidate).toMatch(/ISO4400|DIN 43650/i);
+    });
+
+    it('attaches catalog technical data (350 bar, 80 l/min)', () => {
+      expect(profile.maxPressureBar.catalogEvidence?.numericValueBar).toBe(350);
+      expect(profile.maxFlowLpm.catalogEvidence?.numericValueLpm).toBe(80);
+    });
+  });
+
+  describe('Vickers DG4V-3-2A-M-U-D24-60', () => {
+    const profile = buildProfile('DG4V-3-2A-M-U-D24-60');
+
+    it('attaches catalog voltage evidence (D24 → 24 V DC)', () => {
+      expect(profile.coilVoltage.catalogEvidence?.source).toBe('catalog_data');
+      expect(profile.coilVoltage.catalogEvidence?.displayCandidate).toMatch(/24.*DC/i);
+      expect(profile.coilVoltage.value).toBe('DC_24V');
+    });
+
+    it('attaches catalog spool portState and technical data', () => {
+      expect(profile.centerCondition.catalogEvidence?.portState).toEqual({
+        P: 'blocked',
+        T: 'blocked',
+        A: 'blocked',
+        B: 'blocked',
+      });
+      expect(profile.maxPressureBar.catalogEvidence?.numericValueBar).toBe(350);
+      expect(profile.maxFlowLpm.catalogEvidence?.numericValueLpm).toBe(80);
+    });
+
+    it('shows centering from code (spring A → yay merkezlemeli)', () => {
+      expect(profile.centering.value).toBe('spring_centered');
+      expect(profile.centering.displayValue).toMatch(/Yay merkezlemeli/i);
+    });
+  });
+
+  describe('cross-brand catalog spool matching', () => {
     it('cross-brand Rexroth E vs Yuken 2: spool compatible when catalog portStates match', () => {
       const rexroth = buildProfile('4WE6E-6X/EG24N9K4');
       const yuken = buildProfile('DSG-01-3C2-D24-N1-70');
       expect(catalogSpoolPortStatesMatch(rexroth, yuken)).toBe(true);
 
       const result = compareHydraulicValveCanonicalProfiles(rexroth, yuken);
+      const spool = result.comparisons.find((c) => c.label === FIELD_LABELS.spoolFunctionCode);
+      expect(spool?.status).toBe('compatible');
+    });
+
+    it('cross-brand Rexroth E vs Vickers 2A: spool compatible when catalog portStates match', () => {
+      const rexroth = buildProfile('4WE6E-6X/EG24N9K4');
+      const vickers = buildProfile('DG4V-3-2A-M-U-H7-60');
+      expect(catalogSpoolPortStatesMatch(rexroth, vickers)).toBe(true);
+
+      const result = compareHydraulicValveCanonicalProfiles(rexroth, vickers);
       const spool = result.comparisons.find((c) => c.label === FIELD_LABELS.spoolFunctionCode);
       expect(spool?.status).toBe('compatible');
     });

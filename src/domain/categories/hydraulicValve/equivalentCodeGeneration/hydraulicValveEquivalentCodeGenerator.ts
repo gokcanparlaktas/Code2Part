@@ -29,10 +29,22 @@ import {
   VALID_YUKEN_DSG_SPOOL_CODES,
   YUKEN_DSG_DEFAULT_DESIGN_NUMBER,
 } from './rexrothYukenGenerationMappings';
+import {
+  isConfidentVickersSpoolType,
+  mapVickersCoilToRexroth,
+  mapVickersCoilToYuken,
+  mapVickersConnectorToRexroth,
+  mapVickersConnectorToYuken,
+  resolveConfidentRexrothSpoolFromVickers,
+  resolveConfidentVickersFunctionFromRexroth,
+  resolveConfidentVickersFunctionFromYuken,
+  resolveConfidentYukenSpoolFromVickers,
+  resolveVickersSpoolType,
+  VICKERS_UNRESOLVED_SPOOL_NOTE_TR,
+} from './vickersCrossBrandGenerationMappings';
 
 function isRexrothWeSeries(seriesId: string): boolean {
   return (
-    seriesId === 'rexroth_3we4' ||
     seriesId === 'rexroth_3we6' ||
     seriesId === 'rexroth_4we6' ||
     seriesId === 'rexroth_4we10'
@@ -43,7 +55,15 @@ function isYukenDsgSeries(seriesId: string): boolean {
   return seriesId === 'yuken_dsg01' || seriesId === 'yuken_dsg03';
 }
 
+function isVickersDg4vSeries(seriesId: string): boolean {
+  return seriesId === 'vickers_dg4v3' || seriesId === 'vickers_dg4v5';
+}
+
 function mapCoilToYukenDsg(coilRating: string | null): string | null {
+  return mapVickersCoilToYuken(coilRating) ?? mapGenericCoilToYukenDsg(coilRating);
+}
+
+function mapGenericCoilToYukenDsg(coilRating: string | null): string | null {
   if (!coilRating) {
     return null;
   }
@@ -58,6 +78,10 @@ function mapCoilToYukenDsg(coilRating: string | null): string | null {
 }
 
 function mapCoilToRexroth(coilRating: string | null): string | null {
+  return mapVickersCoilToRexroth(coilRating) ?? mapGenericCoilToRexroth(coilRating);
+}
+
+function mapGenericCoilToRexroth(coilRating: string | null): string | null {
   if (!coilRating) {
     return null;
   }
@@ -81,17 +105,11 @@ function mapCoilToRexroth(coilRating: string | null): string | null {
 }
 
 function mapConnectorToYuken(connector: string | null): string {
-  if (connector === 'K4' || connector === 'N9' || connector === 'N') {
-    return 'N1';
-  }
-  return connector ?? 'N1';
+  return mapVickersConnectorToYuken(connector);
 }
 
 function mapConnectorToRexroth(connector: string | null): string {
-  if (connector === 'N1' || connector === 'N') {
-    return 'K4';
-  }
-  return connector ?? 'K4';
+  return mapVickersConnectorToRexroth(connector);
 }
 
 function buildYukenCode(
@@ -112,33 +130,28 @@ function resolveRexrothManualOverride(manualOverride: string | null): string {
   if (manualOverride === 'default' || manualOverride === 'C') {
     return 'N9';
   }
+  // Vickers DG4V electrical option M (manual override) is not a Rexroth ordering token.
+  if (manualOverride === 'M') {
+    return '';
+  }
   if (manualOverride === null || manualOverride === '' || manualOverride === 'none') {
     return '';
   }
   return manualOverride;
 }
 
-const REXROTH_WE4_DESIGN_SERIES = new Set(['41', '42', '45', '52']);
 const REXROTH_WE6_DESIGN_SERIES = new Set(['61', '62', '71', '72']);
 const REXROTH_WE10_DESIGN_SERIES = new Set(['31', '35', '51', '52']);
-const REXROTH_WE4_DEFAULT_DESIGN_SERIES = '42';
 
 function resolveRexrothDesignSeries(
   targetSeries: ProductSeriesRecord,
   tokens: HydraulicEquivalentTokens
 ): string {
   const isWe10 = targetSeries.id === 'rexroth_4we10';
-  const isWe4 = targetSeries.id === 'rexroth_3we4';
-  const validSeries = isWe10
-    ? REXROTH_WE10_DESIGN_SERIES
-    : isWe4
-      ? REXROTH_WE4_DESIGN_SERIES
-      : REXROTH_WE6_DESIGN_SERIES;
+  const validSeries = isWe10 ? REXROTH_WE10_DESIGN_SERIES : REXROTH_WE6_DESIGN_SERIES;
   const defaultSeries = isWe10
     ? REXROTH_WE10_DEFAULT_DESIGN_SERIES
-    : isWe4
-      ? REXROTH_WE4_DEFAULT_DESIGN_SERIES
-      : REXROTH_WE6_DEFAULT_DESIGN_SERIES;
+    : REXROTH_WE6_DEFAULT_DESIGN_SERIES;
 
   if (tokens.designSeries && validSeries.has(tokens.designSeries)) {
     return tokens.designSeries;
@@ -156,9 +169,53 @@ function buildRexrothCode(
   const design = resolveRexrothDesignSeries(targetSeries, tokens);
 
   const coil = mapCoilToRexroth(tokens.coilRating) ?? 'EG24';
-  const manual = resolveRexrothManualOverride(tokens.manualOverride);
+  let manual = resolveRexrothManualOverride(tokens.manualOverride);
+  if (!manual && /(?:EG24|CG24|HG24|G24)/i.test(coil)) {
+    manual = 'N9';
+  }
   const connector = mapConnectorToRexroth(tokens.connector);
   return `${prefix}${spool}-${design}/${coil}${manual}${connector}`;
+}
+
+function resolveVickersCoilSegment(coilRating: string | null): {
+  segment: string;
+  confident: boolean;
+} {
+  if (!coilRating) {
+    return { segment: 'H7', confident: false };
+  }
+
+  const upper = coilRating.toUpperCase();
+  if (upper === 'H') {
+    return { segment: 'H7', confident: true };
+  }
+  if (upper === 'D24') {
+    return { segment: 'D24', confident: true };
+  }
+  if (upper === 'D12') {
+    return { segment: 'D12', confident: true };
+  }
+  if (upper === 'D48') {
+    return { segment: 'D48', confident: true };
+  }
+  if (upper.includes('D24') || upper === 'EG24' || upper === 'G24' || upper === 'CG24') {
+    return { segment: 'H7', confident: true };
+  }
+  if (upper.includes('D12') || upper.includes('G12')) {
+    return { segment: 'D12', confident: true };
+  }
+
+  return { segment: 'H7', confident: false };
+}
+
+function buildVickersCode(
+  targetSeries: ProductSeriesRecord,
+  spoolFunctionCode: string,
+  coilSegment: string,
+  designNumber = '60'
+): string {
+  const size = targetSeries.id === 'vickers_dg4v5' ? '5' : '3';
+  return `DG4V-${size}-${spoolFunctionCode}-M-U-${coilSegment}-${designNumber}`;
 }
 
 function buildTrace(steps: CodeGenerationTraceStep[], summaryTr: string): CodeGenerationTrace {
@@ -202,6 +259,17 @@ function resolveYukenSpoolAlternatives(tokens: HydraulicEquivalentTokens): {
   checkNotes: string[];
   unresolvedFields: string[];
 } {
+  const vickersSpoolType = resolveVickersSpoolType(tokens);
+  const confidentVickersYuken = resolveConfidentYukenSpoolFromVickers(tokens);
+  if (confidentVickersYuken && isConfidentVickersSpoolType(vickersSpoolType)) {
+    return {
+      functionCodes: [confidentVickersYuken],
+      spoolConfident: true,
+      checkNotes: [],
+      unresolvedFields: [],
+    };
+  }
+
   const spool = tokens.spoolSymbol ?? rexrothWE6BehaviorLookupToken(tokens.functionCode ?? '');
   const checkNotes: string[] = [];
   const unresolvedFields: string[] = [];
@@ -251,6 +319,19 @@ function resolveRexrothSpoolAlternatives(tokens: HydraulicEquivalentTokens): {
   checkNotes: string[];
   unresolvedFields: string[];
 } {
+  const confidentVickersRexroth = resolveConfidentRexrothSpoolFromVickers(tokens);
+  if (
+    confidentVickersRexroth &&
+    isConfidentVickersSpoolType(resolveVickersSpoolType(tokens))
+  ) {
+    return {
+      spoolSymbols: [confidentVickersRexroth],
+      spoolConfident: true,
+      checkNotes: [],
+      unresolvedFields: [],
+    };
+  }
+
   const confident = resolveConfidentRexrothSpoolCode(tokens.functionCode);
   if (confident) {
     return {
@@ -432,6 +513,128 @@ function generateYukenToRexroth(
   return results;
 }
 
+function resolveVickersFunctionAlternatives(tokens: HydraulicEquivalentTokens): {
+  functionCodes: string[];
+  spoolConfident: boolean;
+  checkNotes: string[];
+  unresolvedFields: string[];
+} {
+  const rexrothSpool =
+    tokens.spoolSymbol ?? rexrothWE6BehaviorLookupToken(tokens.functionCode ?? '');
+  const fromRexroth = resolveConfidentVickersFunctionFromRexroth(rexrothSpool);
+  if (fromRexroth && rexrothSpool && isConfidentRexrothSpoolMapping(rexrothSpool)) {
+    return {
+      functionCodes: [fromRexroth],
+      spoolConfident: true,
+      checkNotes: [],
+      unresolvedFields: [],
+    };
+  }
+
+  const fromYuken = resolveConfidentVickersFunctionFromYuken(tokens.functionCode);
+  if (fromYuken) {
+    return {
+      functionCodes: [fromYuken],
+      spoolConfident: true,
+      checkNotes: [],
+      unresolvedFields: [],
+    };
+  }
+
+  const rexrothFromYuken = resolveConfidentRexrothSpoolCode(tokens.functionCode);
+  const vickersFromMappedRexroth = resolveConfidentVickersFunctionFromRexroth(rexrothFromYuken);
+  if (vickersFromMappedRexroth && rexrothFromYuken) {
+    return {
+      functionCodes: [vickersFromMappedRexroth],
+      spoolConfident: true,
+      checkNotes: [],
+      unresolvedFields: [],
+    };
+  }
+
+  return {
+    functionCodes: ['2A'],
+    spoolConfident: false,
+    checkNotes: [VICKERS_UNRESOLVED_SPOOL_NOTE_TR],
+    unresolvedFields: ['function_code'],
+  };
+}
+
+function generateToVickers(
+  source: ProductIdentification,
+  targetSeries: ProductSeriesRecord,
+  tokens: HydraulicEquivalentTokens
+): GeneratedEquivalentCandidate[] {
+  const spoolResolution = resolveVickersFunctionAlternatives(tokens);
+  const coilResolution = resolveVickersCoilSegment(tokens.coilRating);
+  const checkNotes = [...spoolResolution.checkNotes, CONNECTOR_CHECK_NOTE_TR];
+  const unresolvedFields = [...spoolResolution.unresolvedFields];
+  const mappedFields = ['mounting', 'target_family', 'connector'];
+
+  if (coilResolution.confident) {
+    mappedFields.push('voltage');
+  } else {
+    unresolvedFields.push('coil_rating');
+    checkNotes.push(MISSING_VOLTAGE_NOTE_TR);
+  }
+
+  const results: GeneratedEquivalentCandidate[] = [];
+
+  for (const functionCode of spoolResolution.functionCodes) {
+    const generatedCode = buildVickersCode(
+      targetSeries,
+      functionCode,
+      coilResolution.segment
+    );
+    const isFull = spoolResolution.spoolConfident && coilResolution.confident;
+
+    const candidate: GeneratedEquivalentCandidate = {
+      generatedCode,
+      manufacturer: targetSeries.brand,
+      series: targetSeries.series,
+      seriesId: targetSeries.id,
+      generationStatus: isFull ? 'generated_full' : 'generated_partial',
+      confidence: isFull ? 'high' : 'medium',
+      mappedFields,
+      unresolvedFields,
+      checkNotes,
+      requiresCheck: !isFull || checkNotes.length > 0,
+      generationTrace: buildTrace(
+        [
+          {
+            field: 'mounting',
+            action: 'map',
+            sourceValue: source.seriesId,
+            targetValue: targetSeries.id,
+          },
+          {
+            field: 'spool',
+            action: isFull ? 'map' : 'alternatives',
+            sourceValue: tokens.functionCode ?? tokens.spoolSymbol,
+            targetValue: functionCode,
+          },
+          {
+            field: 'voltage',
+            action: coilResolution.confident ? 'map' : 'default_check_required',
+            sourceValue: tokens.coilRating,
+            targetValue: coilResolution.segment,
+          },
+        ],
+        isFull
+          ? 'Tüm zorunlu alanlar eşlendi; Vickers sipariş kodu üretildi.'
+          : 'Bazı alanlar kesin eşleştirilemedi; alternatif Vickers adayı üretildi.'
+      ),
+    };
+
+    const finalized = finalizeCandidate(candidate);
+    if (finalized) {
+      results.push(finalized);
+    }
+  }
+
+  return results;
+}
+
 export function generateHydraulicValveEquivalentCandidates(
   source: ProductIdentification,
   targetSeries: ProductSeriesRecord
@@ -443,8 +646,10 @@ export function generateHydraulicValveEquivalentCandidates(
   const tokens = extractHydraulicEquivalentTokens(source);
   const sourceIsRexroth = isRexrothWeSeries(source.seriesId);
   const sourceIsYuken = isYukenDsgSeries(source.seriesId);
+  const sourceIsVickers = isVickersDg4vSeries(source.seriesId);
   const targetIsRexroth = isRexrothWeSeries(targetSeries.id);
   const targetIsYuken = isYukenDsgSeries(targetSeries.id);
+  const targetIsVickers = isVickersDg4vSeries(targetSeries.id);
 
   let candidates: GeneratedEquivalentCandidate[] = [];
 
@@ -452,6 +657,14 @@ export function generateHydraulicValveEquivalentCandidates(
     candidates = generateRexrothToYuken(source, targetSeries, tokens);
   } else if (sourceIsYuken && targetIsRexroth) {
     candidates = generateYukenToRexroth(source, targetSeries, tokens);
+  } else if (sourceIsVickers && targetIsRexroth) {
+    candidates = generateYukenToRexroth(source, targetSeries, tokens);
+  } else if (sourceIsVickers && targetIsYuken) {
+    candidates = generateRexrothToYuken(source, targetSeries, tokens);
+  } else if (sourceIsRexroth && targetIsVickers) {
+    candidates = generateToVickers(source, targetSeries, tokens);
+  } else if (sourceIsYuken && targetIsVickers) {
+    candidates = generateToVickers(source, targetSeries, tokens);
   }
 
   return candidates.sort((a, b) => {

@@ -2,6 +2,7 @@ import {
   getDefaultCatalogDataProvider,
   type CatalogDataProvider,
 } from '@/domain/catalogData/CatalogDataProvider';
+import { isEatonVickersManufacturer } from '@/domain/catalogData/eatonVickersCatalogUtils';
 import type { CatalogResolvedCandidate, CatalogResolverContext } from '@/domain/catalogData/types';
 
 function notFound(context: CatalogResolverContext): CatalogResolvedCandidate {
@@ -82,6 +83,28 @@ function resolveYukenConnector(
   };
 }
 
+function resolveEatonConnector(
+  context: CatalogResolverContext,
+  catalogProvider: CatalogDataProvider
+): CatalogResolvedCandidate {
+  const catalog = catalogProvider.getEatonDg4vConnectorVoltageCatalog();
+  const token = context.rawToken.trim().toUpperCase();
+  const entry = catalog.coilTypeMeanings?.find((row) => row.rawToken?.toUpperCase() === token);
+  if (!entry?.candidateMeaning) {
+    return notFound(context);
+  }
+  return {
+    found: true,
+    attributeKey: context.attributeKey,
+    rawToken: context.rawToken,
+    displayCandidate: entry.candidateMeaning,
+    confidence: entry.confidence ?? 'medium',
+    needsReview: entry.needsReview ?? true,
+    evidence: 'catalog_data',
+    sourceStatus: entry.sourceStatus,
+  };
+}
+
 export function resolveConnectorCandidate(
   context: CatalogResolverContext,
   catalogProvider: CatalogDataProvider = getDefaultCatalogDataProvider()
@@ -95,6 +118,9 @@ export function resolveConnectorCandidate(
   }
   if (manufacturer === 'yuken') {
     return resolveYukenConnector(context, catalogProvider);
+  }
+  if (isEatonVickersManufacturer(context.manufacturer)) {
+    return resolveEatonConnector(context, catalogProvider);
   }
   return notFound(context);
 }

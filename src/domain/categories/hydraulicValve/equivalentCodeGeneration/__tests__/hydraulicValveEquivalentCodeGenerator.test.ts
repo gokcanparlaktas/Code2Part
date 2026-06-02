@@ -92,4 +92,59 @@ describe('hydraulicValveEquivalentCodeGenerator', () => {
       )
     ).toBe(true);
   });
+
+  describe('Vickers DG4V cross-brand generation', () => {
+    const vickersSource = identifyProduct(
+      'DG4V-3-2A-M-U-H7-60',
+      normalizeCode('DG4V-3-2A-M-U-H7-60')
+    );
+
+    it('generates Rexroth 4WE6E-62/EG24N9K4 from Vickers closed-center 2A', () => {
+      const candidates = generateHydraulicValveEquivalentCandidates(vickersSource, rexroth4we6);
+      const codes = candidates.map((entry) => entry.generatedCode);
+      expect(codes).toContain('4WE6E-62/EG24N9K4');
+      expect(codes.some((code) => code.includes('EG24M'))).toBe(false);
+      const primary = candidates.find((entry) => entry.generatedCode === '4WE6E-62/EG24N9K4');
+      expect(primary?.generationStatus).toBe('generated_full');
+    });
+
+    it('generates Rexroth from Vickers D24 coil without invalid EG24M segment', () => {
+      const d24Source = identifyProduct(
+        'DG4V-3-2A-M-U-D24-60',
+        normalizeCode('DG4V-3-2A-M-U-D24-60')
+      );
+      const candidates = generateHydraulicValveEquivalentCandidates(d24Source, rexroth4we6);
+      expect(candidates.some((entry) => entry.generatedCode === '4WE6E-62/EG24N9K4')).toBe(true);
+    });
+
+    it('generates Yuken DSG-01-3C2-D24-N1-70 from Vickers closed-center 2A', () => {
+      const candidates = generateHydraulicValveEquivalentCandidates(vickersSource, yukenDsg01);
+      expect(candidates.some((entry) => entry.generatedCode === 'DSG-01-3C2-D24-N1-70')).toBe(true);
+      const primary = candidates.find((entry) => entry.generatedCode === 'DSG-01-3C2-D24-N1-70');
+      expect(primary?.generationStatus).toBe('generated_full');
+      expect(primary?.isExactKnownExample).toBe(true);
+    });
+
+    it('includes Yuken and Rexroth in resolveProductSearch for Vickers source', () => {
+      const resolved = resolveProductSearch('DG4V-3-2A-M-U-H7-60');
+      const brands = resolved.compatibilityResults.map((result) => result.candidate.brand);
+      expect(brands).toContain('Yuken');
+      expect(brands).toContain('Rexroth');
+      expect(
+        resolved.compatibilityResults.some(
+          (result) => result.candidate.suggestedCode === 'DSG-01-3C2-D24-N1-70'
+        )
+      ).toBe(true);
+      expect(
+        resolved.compatibilityResults.some(
+          (result) => result.candidate.suggestedCode === '4WE6E-62/EG24N9K4'
+        )
+      ).toBe(true);
+      expect(
+        resolved.compatibilityResults.some((result) =>
+          result.candidate.suggestedCode?.includes('3WE')
+        )
+      ).toBe(false);
+    });
+  });
 });

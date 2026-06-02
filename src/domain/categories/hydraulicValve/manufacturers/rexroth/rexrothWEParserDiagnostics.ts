@@ -217,7 +217,7 @@ export function parseRexrothWEHeaderOnly(normalized: string): {
   designDisplay: string;
 } | null {
   const header = normalized.split('/')[0] ?? normalized;
-  const prefixMatch = header.match(/^(3WE4|3WE6|4WE6|4WE10)(.+)$/);
+  const prefixMatch = header.match(/^(3WE6|4WE6|4WE10)(.+)$/);
   if (!prefixMatch) {
     return null;
   }
@@ -269,7 +269,7 @@ export function analyzePartialRexrothWE(normalized: string): RexrothWEParserDiag
 
   const header = normalized.slice(0, slashIndex);
   const coilSection = normalized.slice(slashIndex + 1);
-  const prefixMatch = header.match(/^(3WE4|3WE6|4WE6|4WE10)(.+)$/);
+  const prefixMatch = header.match(/^(3WE6|4WE6|4WE10)(.+)$/);
   if (!prefixMatch) {
     return {
       parseCompleteness: 'unknown',

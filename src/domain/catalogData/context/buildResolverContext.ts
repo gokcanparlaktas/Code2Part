@@ -11,6 +11,10 @@ import {
   isYukenDSHGCode,
   parseYukenDSHG,
 } from '@/domain/categories/hydraulicValve/manufacturers/yuken/parseYukenDSHG';
+import {
+  isVickersDG4VCode,
+  parseVickersDG4VProductCode,
+} from '@/domain/categories/hydraulicValve/manufacturers/vickers/parseVickersDG4V';
 import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
 
 import type { ProductResolverContext } from '@/domain/catalogData/types';
@@ -19,7 +23,8 @@ export type SupportedPhaseAProductCode =
   | '4WE6E-6X/EG24N9K4'
   | '4WE10E-5X/EG24N9K4'
   | 'DSG-01-3C2-D24-N1-70'
-  | 'DSHG-03-3C4-T-D24-14';
+  | 'DSHG-03-3C4-T-D24-14'
+  | 'DG4V-3-2A-M-U-H7-60';
 
 function readAttrValue(
   attrs: { key: string; value: string | number | boolean | null }[],
@@ -91,6 +96,25 @@ function buildYukenDshgContext(inputCode: string, normalized: string): ProductRe
   };
 }
 
+function buildVickersDG4VContext(_inputCode: string, normalized: string): ProductResolverContext | null {
+  if (!isVickersDG4VCode(normalized)) {
+    return null;
+  }
+  const parsed = parseVickersDG4VProductCode(normalized);
+  if (!parsed) {
+    return null;
+  }
+  return {
+    manufacturer: 'Vickers',
+    category: HYDRAULIC_VALVE_CATEGORY,
+    family: 'DG4V',
+    series: parsed.series,
+    sourceFamily: parsed.series,
+    nominalSize: parsed.valveSize,
+    springArrangement: parsed.springCode,
+  };
+}
+
 /**
  * Builds product-level resolver context from runtime parser output when available.
  */
@@ -100,6 +124,11 @@ export function buildProductResolverContext(inputCode: string): ProductResolverC
   const rexroth = buildRexrothWEContext(inputCode, normalized);
   if (rexroth) {
     return rexroth;
+  }
+
+  const vickers = buildVickersDG4VContext(inputCode, normalized);
+  if (vickers) {
+    return vickers;
   }
 
   const dsg = buildYukenDsgContext(inputCode, normalized);
@@ -147,6 +176,17 @@ export function getRawTokensForProductCode(inputCode: string): {
       spool_symbol: readAttrValue(attrs, 'spool_symbol') ?? undefined,
       coil_rating: readAttrValue(attrs, 'coil_rating') ?? undefined,
       connector_type: readAttrValue(attrs, 'connector_type') ?? undefined,
+    };
+  }
+  if (isVickersDG4VCode(normalized)) {
+    const parsed = parseVickersDG4VProductCode(normalized);
+    if (!parsed) {
+      return {};
+    }
+    return {
+      spool_symbol: parsed.spoolType,
+      coil_rating: parsed.coilRatingCode,
+      connector_type: parsed.connectorOption,
     };
   }
   return {};

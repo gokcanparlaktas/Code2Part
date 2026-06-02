@@ -40,7 +40,7 @@ export function isVickersDG4VCode(normalized: string): boolean {
 
 function matchDG4VSegments(normalized: string): RegExpMatchArray | null {
   const dashed = normalized.match(
-    /^DG4V-?(3|5)-(\d)([ABCD])-([A-Z])-([A-Z])-((?:H[4-7])|D12|D24|D48)(?:-(\d{2,3}))?$/
+    /^DG4V-?(3|5)-(\d{1,3})([ABCD])-([A-Z])-([A-Z])-((?:H[4-7])|D12|D24|D48)(?:-(\d{2,3}))?$/
   );
   if (dashed) {
     return dashed;
@@ -131,6 +131,26 @@ function appendSpoolRawFields(
         requiresCatalogCheck: true,
         sourceToken: parsed.spoolFunctionCode,
         category: HYDRAULIC_VALVE_CATEGORY,
+      }),
+      buildAttributeResult({
+        key: 'center_condition',
+        label: 'Merkez tipi',
+        value: semantics.centerCondition,
+        evidence: 'code',
+        confidence: semantics.centerCondition === 'unknown' ? 'low' : 'medium',
+        requiresCatalogCheck: semantics.requiresCatalogCheck,
+        sourceToken: parsed.spoolType,
+        category: HYDRAULIC_VALVE_CATEGORY,
+      }),
+      buildAttributeResult({
+        key: 'centering',
+        label: 'Merkezleme',
+        value: semantics.centering,
+        evidence: 'code',
+        confidence: semantics.centering === 'unknown' ? 'low' : 'medium',
+        requiresCatalogCheck: semantics.requiresCatalogCheck,
+        sourceToken: parsed.springCode,
+        category: HYDRAULIC_VALVE_CATEGORY,
       })
     );
   }
@@ -217,6 +237,22 @@ export function parseVickersDG4V(inputCode: string): TechnicalAttributeResult[] 
 
   appendCoilRatingFields(results, parsed);
   appendSpoolRawFields(results, parsed);
+
+  if (parsed.electricalOption.toUpperCase() === 'M') {
+    results.push(
+      buildAttributeResult({
+        key: PARSER_KEYS.manual_override,
+        label: 'Manuel kumanda',
+        value: 'M',
+        evidence: 'code',
+        confidence: 'medium',
+        requiresCatalogCheck: false,
+        sourceToken: 'M',
+        category: HYDRAULIC_VALVE_CATEGORY,
+        note: 'DG4V elektrik seçeneği M: manuel kumanda (kod kanıtı).',
+      })
+    );
+  }
 
   if (parsed.tankPressureRatingCode) {
     results.push(

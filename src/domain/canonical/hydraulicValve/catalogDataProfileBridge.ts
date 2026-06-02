@@ -10,6 +10,7 @@ import {
   toCatalogResolverContext,
 } from '@/domain/catalogData';
 import type { TechnicalDataResolved } from '@/domain/catalogData/resolvers/resolveTechnicalDataCandidate';
+import { formatConnectorUiLabel } from '@/domain/canonical/connector/formatConnectorDisplayValue';
 import type { CatalogFieldEvidence, CatalogResolvedCandidate } from '@/domain/catalogData/types';
 import type { ProductIdentification } from '@/types/product';
 
@@ -21,6 +22,11 @@ import type {
   HydraulicValveCanonicalProfile,
 } from './hydraulicValveCanonicalTypes';
 import { FIELD_LABELS } from './hydraulicValveCanonicalDictionary';
+import {
+  catalogSpoolLookupToken,
+  resolveCenterDisplayFromCatalogEvidence,
+} from '@/domain/presentation/formatCatalogFieldDisplay';
+
 import {
   getCenterConditionDisplay,
   getCoilVoltageDisplay,
@@ -149,8 +155,26 @@ function applySpool(
   const center = catalogCenterCondition(candidate);
   if (center && profile.centerCondition.value === 'unknown') {
     profile.centerCondition.value = center;
-    profile.centerCondition.displayValue = getCenterConditionDisplay(center);
-  } else if (candidate.centerFlowDescription && profile.centerCondition.value === 'unknown') {
+  }
+
+  const spoolToken = catalogSpoolLookupToken({
+    rawSpoolSymbol: profile.rawSpoolSymbol,
+    rawFunctionCode: profile.rawFunctionCode,
+    manufacturer: profile.brand,
+  });
+  const display = resolveCenterDisplayFromCatalogEvidence({
+    catalogEvidence: profile.centerCondition.catalogEvidence,
+    centerConditionValue: profile.centerCondition.value,
+    spoolToken,
+    getCenterConditionDisplay,
+    fallback: profile.centerCondition.displayValue,
+  });
+  if (display && display !== profile.centerCondition.displayValue) {
+    profile.centerCondition.displayValue = display;
+  } else if (
+    candidate.centerFlowDescription &&
+    profile.centerCondition.value === 'unknown'
+  ) {
     profile.centerCondition.displayValue = candidate.centerFlowDescription;
   }
 }
@@ -161,8 +185,14 @@ function applyConnector(
 ): void {
   attachEvidence(profile.connectorType, candidate, profile);
   if (candidate.displayCandidate) {
-    profile.connectorType.displayValue = candidate.displayCandidate;
-    profile.connectorType.displayDetail = candidate.displayCandidate;
+    profile.connectorType.displayValue = formatConnectorUiLabel({
+      catalogText: candidate.displayCandidate,
+      displayValue: profile.connectorType.displayValue,
+      displayDetail: profile.connectorType.displayDetail,
+      connectorFamilyKey: profile.connectorType.connectorFamilyKey,
+      connectorStandardKey: profile.connectorType.connectorStandardKey,
+      canonicalKey: profile.connectorType.value,
+    });
   }
 }
 
@@ -266,7 +296,11 @@ export function enrichHydraulicProfileFromCatalogData(
 
   applyMounting(profile, resolveMountingCandidate(productContext, catalogProvider));
 
-  const spoolToken = profile.rawSpoolSymbol ?? profile.rawFunctionCode;
+  const spoolToken = catalogSpoolLookupToken({
+    rawSpoolSymbol: profile.rawSpoolSymbol,
+    rawFunctionCode: profile.rawFunctionCode,
+    manufacturer: profile.brand,
+  });
   if (spoolToken) {
     applySpool(
       profile,

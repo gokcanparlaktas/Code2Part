@@ -65,6 +65,7 @@ const MANUAL_OVERRIDE_TOKEN_DETAIL: Record<string, string> = {
   DEFAULT: 'Manuel override pimi',
   BLANK: 'Manuel override pimi',
   C: 'Buton + kilitleme somunu',
+  M: 'Manuel override (M seçeneği)',
 };
 
 function manualOverrideUserPrimary(

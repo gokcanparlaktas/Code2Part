@@ -50,6 +50,19 @@ describe('findEquivalentCandidates', () => {
       expect(discoveries.length).toBeGreaterThan(4);
     });
 
+    it('does not include Rexroth 3WE6 (3-way) for 4-way Vickers source', () => {
+      const source = identify(sourceCode);
+      const discoveries = findEquivalentCandidates(source, sourceCode, catalog);
+
+      expect(candidateSeries(discoveries)).not.toContain('3WE6');
+      expect(candidateCodes(discoveries).some((code) => /^3WE4/i.test(code))).toBe(false);
+    });
+
+    it('does not suggest blocked 3WE4 codes', () => {
+      const blocked = identify('3WE4A-4X/EG24N9K4');
+      expect(blocked.outcome).toBe('not_found');
+    });
+
     it('does not include NG10 series as same_mounting_standard candidates', () => {
       const source = identify(sourceCode);
       const discoveries = findEquivalentCandidates(source, sourceCode, catalog);
@@ -143,16 +156,17 @@ describe('findEquivalentCandidates', () => {
   });
 
   describe('dedupe', () => {
-    it('merges equivalence group and profile hits for the same product code', () => {
+    it('includes generated Rexroth code from Vickers source in discovery pool', () => {
       const sourceCode = 'DG4V-3-2A-M-U-H7-60';
       const source = identify(sourceCode);
       const discoveries = findEquivalentCandidates(source, sourceCode, catalog);
 
-      const rexrothEg24 = discoveries.filter(
-        (d) => d.candidate.suggestedCode === '4WE6E-6X/EG24N9K4',
+      const generatedRexroth = discoveries.find(
+        (d) => d.candidate.suggestedCode === '4WE6E-62/EG24N9K4',
       );
-      expect(rexrothEg24).toHaveLength(1);
-      expect(rexrothEg24[0]?.reason).toBe('equivalence_group');
+      expect(generatedRexroth).toBeDefined();
+      expect(generatedRexroth?.reason).toBe('equivalence_group');
+      expect(generatedRexroth?.candidate.generation?.generationStatus).toBe('generated_full');
     });
   });
 

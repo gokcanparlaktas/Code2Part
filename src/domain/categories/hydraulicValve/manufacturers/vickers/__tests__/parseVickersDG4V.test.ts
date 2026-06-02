@@ -70,6 +70,35 @@ describe('parseVickersDG4V', () => {
     expect(parserMap('DG4V-3-6C-M-U-H7-60').get('function_code')?.value).toBe('6C');
   });
 
+  it('DG4V-3-22A and DG4V-3-35A parse multi-digit closed-center spool types', () => {
+    const map22 = parserMap('DG4V-3-22A-M-U-H7-60');
+    expect(map22.get('spool_symbol')?.value).toBe('22');
+    expect(map22.get('function_code')?.value).toBe('22A');
+
+    const map35 = parserMap('DG4V-3-35A-M-U-H7-60');
+    expect(map35.get('spool_symbol')?.value).toBe('35');
+    expect(map35.get('function_code')?.value).toBe('35A');
+  });
+
+  it('Rexroth E vs Vickers 22A compares as compatible closed center via full pipeline', () => {
+    const source = identifyProduct('4WE6E-6X/EG24N9K4', normalizeCode('4WE6E-6X/EG24N9K4'));
+    const series = getProductSeriesById('vickers_dg4v3')!;
+    const result = compareProducts(source, {
+      seriesId: series.id,
+      brand: series.brand,
+      series: series.series,
+      productType: series.productType,
+      productCategory: series.productCategory,
+      standardFamily: series.standardFamily,
+      suggestedCode: 'DG4V-3-22A-M-U-H7-60',
+      targetIdentification: identifyProduct(
+        'DG4V-3-22A-M-U-H7-60',
+        normalizeCode('DG4V-3-22A-M-U-H7-60')
+      ),
+    });
+    expect(result.compatible.some((c) => c.label === 'Merkez tipi')).toBe(true);
+  });
+
   it('compact form DG4V32AMUH760 parses', () => {
     const parsed = parseVickersDG4VProductCode('DG4V32AMUH760');
     expect(parsed?.series).toBe('DG4V-3');
@@ -77,6 +106,13 @@ describe('parseVickersDG4V', () => {
     expect(parsed?.coilRatingCode).toBe('H');
     expect(parsed?.tankPressureRatingCode).toBe('7');
     expect(parsed?.designNumber).toBe('60');
+  });
+
+  it('DG4V-3-2A-M-U-D24-60 emits manual override for M electrical option', () => {
+    const map = parserMap('DG4V-3-2A-M-U-D24-60');
+    expect(map.get('manual_override')?.value).toBe('M');
+    expect(map.get('centering')?.value).toBe('spring_centered');
+    expect(map.get('center_condition')?.value).toBe('closed_center');
   });
 
   it('D24 emits raw coil_rating token', () => {

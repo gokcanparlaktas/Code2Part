@@ -20,6 +20,7 @@ import type {
 import { buildSuggestedEquivalentCode } from './buildSuggestedEquivalentCode';
 import {
   hydraulicMountingRelation,
+  hydraulicValveWaysCompatible,
   isHydraulicValveCategory,
   isIso15552StandardFamily,
   isPneumaticCylinderCategory,
@@ -166,11 +167,33 @@ function buildEquivalentCandidate(
   };
 }
 
+function isBlockedHydraulicEquivalentTarget(
+  targetSeries: ProductSeriesRecord,
+  suggestedCode?: string | null
+): boolean {
+  if (targetSeries.id === 'rexroth_3we4' || targetSeries.codePrefix.startsWith('3WE4')) {
+    return true;
+  }
+  const code = suggestedCode?.trim().toUpperCase() ?? '';
+  return code.startsWith('3WE4');
+}
+
 function buildEquivalentCandidatesForTargetSeries(
   source: ProductIdentification,
   targetSeries: ProductSeriesRecord,
   suggestedCodeOverride?: string | null
 ): EquivalentCandidate[] {
+  if (isBlockedHydraulicEquivalentTarget(targetSeries, suggestedCodeOverride)) {
+    return [];
+  }
+
+  if (
+    isHydraulicValveCategory(source.resolverCategoryKey) &&
+    !hydraulicValveWaysCompatible(source, targetSeries)
+  ) {
+    return [];
+  }
+
   if (suggestedCodeOverride) {
     const candidate = buildEquivalentCandidate(source, targetSeries, suggestedCodeOverride, {
       generationStatus: 'exact_known',

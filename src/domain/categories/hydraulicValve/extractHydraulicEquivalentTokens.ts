@@ -7,6 +7,10 @@ import {
 import {
   REXROTH_WE_CODE_PREFIX_PATTERN,
 } from '@/domain/categories/hydraulicValve/manufacturers/rexroth/rexrothWESeriesPrefixes';
+import {
+  isVickersDG4VCode,
+  parseVickersDG4VProductCode,
+} from '@/domain/categories/hydraulicValve/manufacturers/vickers/parseVickersDG4V';
 import { isYukenDSGCode, parseYukenDSGProductCode } from '@/domain/categories/hydraulicValve/manufacturers/yuken/parseYukenDSG';
 import type { ProductIdentification } from '@/types/product';
 
@@ -78,6 +82,27 @@ function extractFromRexrothParser(normalized: string): HydraulicEquivalentTokens
   };
 }
 
+function extractFromVickersParser(normalized: string): HydraulicEquivalentTokens | null {
+  if (!isVickersDG4VCode(normalized)) {
+    return null;
+  }
+
+  const parsed = parseVickersDG4VProductCode(normalized);
+  if (!parsed) {
+    return null;
+  }
+
+  return {
+    spoolSymbol: parsed.spoolType,
+    functionCode: parsed.spoolFunctionCode,
+    coilRating: parsed.coilRatingCode,
+    manualOverride: null,
+    connector: parsed.connectorOption,
+    designSeries: parsed.designNumber,
+    designSeriesFamily: null,
+  };
+}
+
 function extractFromYukenParser(normalized: string): HydraulicEquivalentTokens | null {
   if (!isYukenDSGCode(normalized)) {
     return null;
@@ -141,6 +166,8 @@ export function extractHydraulicEquivalentTokens(
 
   return mergeTokens(
     fromAttributes,
-    extractFromRexrothParser(normalized) ?? extractFromYukenParser(normalized)
+    extractFromRexrothParser(normalized) ??
+      extractFromYukenParser(normalized) ??
+      extractFromVickersParser(normalized)
   );
 }

@@ -42,7 +42,37 @@
     "canonicalFunctionId": "closed_center_4_3",
     "confidence": "low",
     "requiresCatalogCheck": true,
-    "noteTr": "Vickers sembol kodları model yapısına göre değişebilir."
+    "noteTr": "Vickers sürgü tipi 2/22/35, Rexroth E ile aynı kapalı merkez davranışı."
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": null,
+    "id": "vickers_22a_closed_center",
+    "manufacturer": "Vickers",
+    "seriesFamily": "DG4V",
+    "token": "22A",
+    "canonicalFunctionId": "closed_center_4_3",
+    "confidence": "low",
+    "requiresCatalogCheck": true,
+    "noteTr": "Sürgü tipi 22, Rexroth E ve sürgü tipi 2 ile aynı kapalı merkez davranışı."
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": null,
+    "id": "vickers_35a_closed_center",
+    "manufacturer": "Vickers",
+    "seriesFamily": "DG4V",
+    "token": "35A",
+    "canonicalFunctionId": "closed_center_4_3",
+    "confidence": "low",
+    "requiresCatalogCheck": true,
+    "noteTr": "Sürgü tipi 35, Rexroth E ve sürgü tipi 2 ile aynı kapalı merkez davranışı."
   },
   {
     "verificationStatus": "manual_unverified",

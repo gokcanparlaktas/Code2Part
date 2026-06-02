@@ -27,11 +27,9 @@ export function getHydraulicValveAttributes(options: {
 }): TechnicalAttribute[] {
   const normalized = normalizeProductCode(options.inputCode);
   const isRexrothWE =
-    options.series?.id === 'rexroth_3we4' ||
     options.series?.id === 'rexroth_3we6' ||
     options.series?.id === 'rexroth_4we6' ||
     options.series?.id === 'rexroth_4we10' ||
-    options.series?.codePrefix.startsWith('3WE4') ||
     options.series?.codePrefix.startsWith('3WE6') ||
     options.series?.codePrefix.startsWith('4WE6') ||
     options.series?.codePrefix.startsWith('4WE10') ||

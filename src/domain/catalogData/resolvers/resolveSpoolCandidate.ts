@@ -2,6 +2,10 @@ import {
   getDefaultCatalogDataProvider,
   type CatalogDataProvider,
 } from '@/domain/catalogData/CatalogDataProvider';
+import {
+  isEatonVickersManufacturer,
+  springArrangementToSpoolContext,
+} from '@/domain/catalogData/eatonVickersCatalogUtils';
 import type { CatalogPortState, CatalogResolvedCandidate, CatalogResolverContext } from '@/domain/catalogData/types';
 
 function notFound(context: CatalogResolverContext): CatalogResolvedCandidate {
@@ -112,6 +116,51 @@ function resolveYukenSpool(
   };
 }
 
+function resolveEatonSpool(
+  context: CatalogResolverContext,
+  catalogProvider: CatalogDataProvider
+): CatalogResolvedCandidate {
+  const catalog = catalogProvider.getEatonSpoolCatalog();
+  const token = context.rawToken.trim();
+  const arrangementContext = context.springArrangement
+    ? springArrangementToSpoolContext(context.springArrangement)
+    : undefined;
+
+  const entry = catalog.spoolSymbolMeanings?.find((row) => {
+    if (row.attributeKey !== 'spool_type' || row.rawToken !== token) {
+      return false;
+    }
+    if (row.sourceFamily && context.sourceFamily) {
+      if (row.sourceFamily.toUpperCase() !== context.sourceFamily.toUpperCase()) {
+        return false;
+      }
+    }
+    const contexts = row.arrangementContexts as string[] | undefined;
+    if (arrangementContext && contexts?.length) {
+      return contexts.includes(arrangementContext);
+    }
+    return true;
+  });
+
+  if (!entry) {
+    return notFound(context);
+  }
+  return {
+    found: true,
+    attributeKey: context.attributeKey,
+    rawToken: context.rawToken,
+    portState: toPortState(entry),
+    centerCondition: entry.centerCondition,
+    centerFlowDescription: entry.centerFlowDescription,
+    displayCandidate: entry.centerFlowDescription ?? entry.centerCondition,
+    confidence: entry.confidence ?? 'medium',
+    needsReview: entry.needsReview ?? true,
+    evidence: 'catalog_data',
+    reviewReason: entry.reviewReason,
+    sourceStatus: entry.sourceStatus,
+  };
+}
+
 export function resolveSpoolCandidate(
   context: CatalogResolverContext,
   catalogProvider: CatalogDataProvider = getDefaultCatalogDataProvider()
@@ -125,6 +174,9 @@ export function resolveSpoolCandidate(
   }
   if (manufacturer === 'yuken') {
     return resolveYukenSpool(context, catalogProvider);
+  }
+  if (isEatonVickersManufacturer(context.manufacturer)) {
+    return resolveEatonSpool(context, catalogProvider);
   }
   return notFound(context);
 }

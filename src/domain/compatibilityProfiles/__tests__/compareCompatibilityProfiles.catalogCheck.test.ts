@@ -106,11 +106,11 @@ describe('DG4V product detail and comparison', () => {
     const rows = buildProductDetailRows(identify(code));
     const allText = rows.map((r) => `${r.label}: ${r.value}`).join('\n');
 
-    expect(allText).toContain('Sürgü / yay düzeni: Yay ofsetli, uçtan uca');
+    expect(allText).toContain('Sürgü / yay düzeni: Yay merkezlemeli');
     expect(allText).toContain('Bobin voltajı');
-    expect(allText).toContain('24V DC');
+    expect(allText).toMatch(/24\s*V\s*DC/i);
     expect(allText).toContain('Konnektör tipi');
-    expect(allText).toContain('DIN valf soketi');
+    expect(allText).toMatch(/DIN 43650|EN 175301-803/);
     expect(allText).toContain('Tank hattı basınç sınıfı');
     expect(allText).toContain('207 bar');
     expect(allText).toContain('Tasarım serisi');
@@ -132,7 +132,7 @@ describe('DG4V product detail and comparison', () => {
     expect(connector?.requiresCheck).toBe(false);
   });
 
-  it('unknown center type for both products is unknownOrCheck not compatible', () => {
+  it('same DG4V code compares center type as compatible when catalog portState matches', () => {
     const left = buildHydraulicValveCanonicalProfile({
       identification: identify(code),
       attributes: getTechnicalAttributes(identify(code)),
@@ -143,8 +143,8 @@ describe('DG4V product detail and comparison', () => {
     });
     const result = compareHydraulicValveCanonicalProfiles(left, right);
     const center = result.comparisons.find((c) => c.label === 'Merkez tipi');
-    expect(center?.status).toBe('unknownOrCheck');
-    expect(result.compatible.some((line) => line.includes('Merkez tipi'))).toBe(false);
+    expect(center?.status).toBe('compatible');
+    expect(result.compatible.some((line) => line.includes('Merkez tipi'))).toBe(true);
   });
 
   it('does not duplicate Merkezleme row when Vickers spring arrangement is decoded', () => {

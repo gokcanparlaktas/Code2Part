@@ -26,18 +26,18 @@ function primaryValuesForCode(code: string): string[] {
 }
 
 describe('hydraulicValveBehaviorDescriptions', () => {
-  it('4WE6E-6X/EG24N9K4 Merkez tipi uses portState summary with E as kod kanıtı', () => {
+  it('4WE6E-6X/EG24N9K4 Merkez tipi uses unified P,T,A,B port summary', () => {
     const id = identify('4WE6E-6X/EG24N9K4');
     const descriptions = buildHydraulicValveBehaviorDescriptions({
       identification: id,
       attributes: getTechnicalAttributes(id),
     });
     const center = descriptions.find((d) => d.title === 'Merkez tipi');
-    expect(center?.primaryDescription).toBe('Kapalı merkez — P, T, A ve B kapalı');
-    expect(center?.details).toEqual(expect.arrayContaining(['Kod kanıtı: E']));
+    expect(center?.primaryDescription).toBe('P,T,A,B Kapalı (Kapalı merkez)');
+    expect(center?.details).toEqual([]);
     expect(center?.userEvidenceTr).toBe('Katalogdan');
     expect(formatBehaviorDescriptionForUi(center!)).toBe(
-      'Kapalı merkez — P, T, A ve B kapalı'
+      'P,T,A,B Kapalı (Kapalı merkez)'
     );
   });
 
@@ -54,27 +54,29 @@ describe('hydraulicValveBehaviorDescriptions', () => {
       identification: identify(code),
       attributes: getTechnicalAttributes(identify(code)),
     }).find((d) => d.title === 'Merkez tipi');
-    expect(center?.primaryDescription).toContain('Kapalı merkez — P, T, A ve B kapalı');
+    expect(center?.primaryDescription).toBe('P,T,A,B Kapalı (Kapalı merkez)');
 
     const allText = rows.map((r) => r.value).join('\n');
     expect(allText).not.toContain('Kod kanıtı:');
   });
 
-  it('DG4V-3-2A-M-U-H7-60 shows catalog check wording and splits H7 into H + 7', () => {
+  it('DG4V-3-2A-M-U-H7-60 shows center type from catalog and splits H7 into H + 7', () => {
     const code = 'DG4V-3-2A-M-U-H7-60';
     const primaries = primaryValuesForCode(code);
     const rows = buildProductDetailRows(identify(code));
 
     expect(primaries.some((value) => value.includes('Sürgü tipi 2'))).toBe(false);
     expect(primaries.some((value) => value.includes('yay düzeni A'))).toBe(false);
-    expect(primaries.some((value) => value.includes('Katalog'))).toBe(true);
+    expect(primaries.some((value) => value.includes('P,T,A,B Kapalı (Kapalı merkez)'))).toBe(
+      true
+    );
 
     const voltage = rows.find((r) => r.label === 'Bobin voltajı');
     expect(voltage?.value).toMatch(/24\s*V\s*DC/i);
     expect(voltage?.requiresCheck).toBe(false);
 
     const connector = rows.find((r) => r.label === 'Konnektör tipi');
-    expect(connector?.value).toContain('DIN valf soketi');
+    expect(connector?.value).toMatch(/DIN 43650|EN 175301-803/);
     expect(connector?.requiresCheck).toBe(false);
 
     const tank = rows.find((r) => r.label === 'Tank hattı basınç sınıfı');

@@ -97,11 +97,6 @@ export function parseHydraulicSpoolFunction(
     return attributeFromCode(`Spool ${rexroth3Match[1]}`);
   }
 
-  const rexroth3we4Match = normalizedCode.match(/^3WE4([A-Z])/);
-  if (rexroth3we4Match && series.codePrefix.startsWith('3WE4')) {
-    return attributeFromCode(`Spool ${rexroth3we4Match[1]}`);
-  }
-
   const rexroth10Match = normalizedCode.match(/^4WE10([A-Z])/);
   if (rexroth10Match && series.codePrefix.startsWith('4WE10')) {
     return attributeFromCode(`Spool ${rexroth10Match[1]}`);
@@ -128,7 +123,6 @@ export function canFullyParseHydraulicProductCode(
   const normalized = normalizeProductCode(inputCode);
 
   if (
-    series.codePrefix.startsWith('3WE4') ||
     series.codePrefix.startsWith('3WE6') ||
     series.codePrefix.startsWith('4WE6') ||
     series.codePrefix.startsWith('4WE10') ||

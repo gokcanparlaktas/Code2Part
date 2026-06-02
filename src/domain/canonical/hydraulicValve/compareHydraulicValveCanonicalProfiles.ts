@@ -35,6 +35,7 @@ import {
 import { filterCheckItemsForResolvedIncompatibilities } from '@/domain/presentation/filterCheckItemsForResolvedIncompatibilities';
 import { deriveSummaryRiskLevelFromMetadata } from '@/domain/presentation/formatCompatibilityMetadata';
 import { consolidateCatalogWarningsForUi } from '@/domain/presentation/formatUserFacingCatalogDisplay';
+import { formatConnectorUiLabel } from '@/domain/canonical/connector/formatConnectorDisplayValue';
 import { portStateBehaviorSummary } from '@/domain/presentation/formatCatalogFieldDisplay';
 
 import {
@@ -316,7 +317,14 @@ function connectorSnapshotFromProfileField(
   if (field.catalogEvidence?.displayCandidate?.trim()) {
     return {
       canonicalKey: field.value ?? 'unknown',
-      displayValue: field.catalogEvidence.displayCandidate.trim(),
+      displayValue: formatConnectorUiLabel({
+        catalogText: field.catalogEvidence.displayCandidate,
+        displayValue: field.displayValue,
+        displayDetail: field.displayDetail,
+        connectorFamilyKey: field.connectorFamilyKey,
+        connectorStandardKey: field.connectorStandardKey,
+        canonicalKey: field.value,
+      }),
       connectorFamilyKey: field.connectorFamilyKey,
       connectorStandardKey: field.connectorStandardKey,
       connectorOptions: field.connectorOptions,
@@ -393,8 +401,18 @@ function compareConnectorFields(
     const sourceLabel = source.brand?.trim() || 'Kaynak';
     const targetLabel = target.brand?.trim() || 'Hedef';
     const evidenceDisplays = {
-      sourceDisplay: sourceCatalog,
-      targetDisplay: targetCatalog,
+      sourceDisplay: formatConnectorUiLabel({
+        catalogText: sourceCatalog,
+        connectorFamilyKey: sourceSnapshot.connectorFamilyKey,
+        connectorStandardKey: sourceSnapshot.connectorStandardKey,
+        canonicalKey: sourceSnapshot.canonicalKey,
+      }),
+      targetDisplay: formatConnectorUiLabel({
+        catalogText: targetCatalog,
+        connectorFamilyKey: targetSnapshot.connectorFamilyKey,
+        connectorStandardKey: targetSnapshot.connectorStandardKey,
+        canonicalKey: targetSnapshot.canonicalKey,
+      }),
     };
     const physicalCheckReason =
       `${sourceLabel}: ${sourceCatalog}. ` +
@@ -420,6 +438,23 @@ function compareConnectorFields(
       };
     }
 
+    const bothDinValveConnector =
+      sourceSnapshot.connectorFamilyKey === 'DIN_VALVE_CONNECTOR' &&
+      targetSnapshot.connectorFamilyKey === 'DIN_VALVE_CONNECTOR';
+
+    if (result.comparison.status === 'unknownOrCheck' && bothDinValveConnector) {
+      return {
+        ...result,
+        comparison: {
+          ...result.comparison,
+          ...evidenceDisplays,
+          status: 'compatible',
+        },
+        sentence:
+          'Konnektör aynı DIN/ISO valf soketi ailesi (DIN 43650 / EN 175301-803 / ISO 4400).',
+      };
+    }
+
     if (result.comparison.status === 'unknownOrCheck') {
       return {
         ...result,
@@ -429,6 +464,19 @@ function compareConnectorFields(
           checkReasonTr: physicalCheckReason,
         },
         checkReasonTr: physicalCheckReason,
+      };
+    }
+
+    if (result.comparison.status === 'compatible') {
+      return {
+        ...result,
+        comparison: {
+          ...result.comparison,
+          ...evidenceDisplays,
+        },
+        sentence:
+          result.sentence ??
+          'Konnektör aynı DIN/ISO valf soketi ailesi (DIN 43650 / EN 175301-803 / ISO 4400).',
       };
     }
   }
@@ -813,7 +861,11 @@ export function compareHydraulicValveCanonicalProfiles(
     if (crossBrand) {
       functionMatch = resolveFunctionMatch();
     }
-    if (functionMatch && preferFunctionCheckOverPortState(functionMatch)) {
+    if (
+      functionMatch &&
+      preferFunctionCheckOverPortState(functionMatch) &&
+      portStateSpool.comparison.status !== 'compatible'
+    ) {
       spoolComparison = {
         ...functionMatch.comparison,
         label: FIELD_LABELS.spoolFunctionCode,
@@ -917,7 +969,8 @@ export function compareHydraulicValveCanonicalProfiles(
   if (
     crossBrand &&
     functionMatch?.requiresCatalogCheck &&
-    spoolComparison.status === 'different'
+    spoolComparison.status === 'different' &&
+    !result.portStateCenterResolved
   ) {
     spoolComparison = {
       ...spoolComparison,
@@ -926,7 +979,7 @@ export function compareHydraulicValveCanonicalProfiles(
     };
   }
 
-  if (crossBrand && !usedPortStateComparison) {
+  if (crossBrand && !usedPortStateComparison && !result.portStateCenterResolved) {
     const sameCenter =
       !isUnknownCanonicalValue(source.centerCondition.value) &&
       !isUnknownCanonicalValue(target.centerCondition.value) &&
@@ -951,7 +1004,8 @@ export function compareHydraulicValveCanonicalProfiles(
   if (
     functionMatch?.requiresCatalogCheck &&
     functionMatch.statusMessageTr &&
-    spoolComparison.status === 'different'
+    spoolComparison.status === 'different' &&
+    !result.portStateCenterResolved
   ) {
     result.warnings.push(functionMatch.statusMessageTr);
   }
@@ -964,8 +1018,11 @@ export function compareHydraulicValveCanonicalProfiles(
 
   let merkezUiComparison: AttributeComparison;
   if (hideCenterInEquivalenceUi) {
-    merkezUiComparison = spoolComparison;
-    pushResult(result, spoolComparison, spoolSentence, 'optional');
+    merkezUiComparison = {
+      ...center.comparison,
+      label: FIELD_LABELS.centerCondition,
+    };
+    pushResult(result, merkezUiComparison, center.sentence, 'critical');
   } else {
     const preferSpoolForMerkez =
       merkezStatusRank[spoolComparison.status] > merkezStatusRank[center.comparison.status];
@@ -976,7 +1033,7 @@ export function compareHydraulicValveCanonicalProfiles(
     pushResult(result, merkezUiComparison, merkezSentence, 'critical');
   }
 
-  if (merkezUiComparison.status === 'unknownOrCheck') {
+  if (merkezUiComparison.status === 'unknownOrCheck' && !result.portStateCenterResolved) {
     result.spoolDynamicCheck = {
       source: merkezUiComparison.sourceDisplay,
       target: merkezUiComparison.targetDisplay,

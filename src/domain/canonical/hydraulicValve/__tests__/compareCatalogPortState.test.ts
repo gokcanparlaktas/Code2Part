@@ -145,8 +145,8 @@ describe('compareHydraulicValveCanonicalProfiles portState integration', () => {
 
     const spool = result.comparisons.find((c) => c.label === FIELD_LABELS.spoolFunctionCode);
     expect(spool?.status).toBe('compatible');
-    expect(spool?.sourceDisplay).toContain('Kapalı merkez — P, T, A ve B kapalı');
-    expect(spool?.targetDisplay).toContain('Kapalı merkez — P, T, A ve B kapalı');
+    expect(spool?.sourceDisplay).toBe('P,T,A,B Kapalı (Kapalı merkez)');
+    expect(spool?.targetDisplay).toBe('P,T,A,B Kapalı (Kapalı merkez)');
 
     expect(result.portStateCenterResolved).toBe(true);
     expect(

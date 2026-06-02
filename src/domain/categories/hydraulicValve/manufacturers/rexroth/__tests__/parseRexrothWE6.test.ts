@@ -2,6 +2,12 @@ import { getTechnicalAttributes } from '@/domain/attributes/getTechnicalAttribut
 import { compareValveFunctionBehavior } from '@/domain/categories/hydraulicValve/functionMappings/compareValveFunctionBehavior';
 import { resolveHydraulicFunctionBehavior } from '@/domain/categories/hydraulicValve/functionMappings/hydraulicFunctionBehavior';
 import {
+  buildProductResolverContext,
+  resolveSpoolCandidate,
+  portStatesMatch,
+  toCatalogResolverContext,
+} from '@/domain/catalogData';
+import {
   parseRexrothWE6,
   parseRexrothWE6ProductCode,
 } from '@/domain/categories/hydraulicValve/manufacturers/rexroth/parseRexrothWE6';
@@ -149,8 +155,31 @@ describe('parseRexrothWE6 (RE 23164)', () => {
       token: 'J',
     });
     expect(e?.centerCondition).toBe('closed_center');
-    expect(j?.centerCondition).toBe('partially_open');
-    expect(e?.centerCondition).not.toBe(j?.centerCondition);
+    expect(j?.centerCondition).toBe('open_center');
+  });
+
+  it('D, G and J carry distinct port-behavior notes', () => {
+    const d = resolveHydraulicFunctionBehavior({
+      manufacturer: 'Rexroth',
+      series: '4WE6',
+      token: 'D',
+    });
+    const g = resolveHydraulicFunctionBehavior({
+      manufacturer: 'Rexroth',
+      series: '4WE6',
+      token: 'G',
+    });
+    const j = resolveHydraulicFunctionBehavior({
+      manufacturer: 'Rexroth',
+      series: '4WE6',
+      token: 'J',
+    });
+    expect(d?.centerCondition).toBe('unknown');
+    expect(d?.note).toContain('P-A');
+    expect(g?.centerCondition).toBe('open_center');
+    expect(g?.note).toContain('P-T');
+    expect(j?.centerCondition).toBe('open_center');
+    expect(j?.note).toContain('A-B-T');
   });
 
   it('EA ordering token resolves to E base semantics', () => {
@@ -166,14 +195,17 @@ describe('parseRexrothWE6 (RE 23164)', () => {
 });
 
 describe('Rexroth WE6 spool behavior comparison', () => {
-  it('Rexroth C vs Rexroth D => different center (closed vs partially_open)', () => {
-    const result = compareValveFunctionBehavior({
-      label: 'Sürgü / fonksiyon kodu',
-      source: { manufacturer: 'Rexroth', series: '4WE6', token: 'C' },
-      target: { manufacturer: 'Rexroth', series: '4WE6', token: 'D' },
+  it('Rexroth E vs Rexroth D => different center via catalog portState', () => {
+    const product = buildProductResolverContext('4WE6E-6X/EG24N9K4')!;
+    const e = resolveSpoolCandidate(toCatalogResolverContext(product, 'spool_symbol', 'E'));
+    const d = resolveSpoolCandidate(toCatalogResolverContext(product, 'spool_symbol', 'D'));
+    expect(portStatesMatch(e.portState, d.portState)).toBe(false);
+    expect(d.portState).toEqual({
+      P: 'connected_to_A',
+      A: 'connected_to_P',
+      B: 'connected_to_T',
+      T: 'connected_to_B',
     });
-    expect(result.comparison.status).toBe('different');
-    expect(result.statusMessageTr).toContain('Merkez konumu');
   });
 
   it('cross-brand Rexroth E vs Yuken 3C2 stays cautious check', () => {

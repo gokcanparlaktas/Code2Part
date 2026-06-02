@@ -241,11 +241,9 @@ export function extractHydraulicAttributes(
   const series = options.seriesId ? getCatalogSeriesById(options.seriesId) : undefined;
 
   const useRexrothWEParser =
-    series?.id === 'rexroth_3we4' ||
     series?.id === 'rexroth_3we6' ||
     series?.id === 'rexroth_4we6' ||
     series?.id === 'rexroth_4we10' ||
-    series?.codePrefix.startsWith('3WE4') ||
     series?.codePrefix.startsWith('3WE6') ||
     series?.codePrefix.startsWith('4WE6') ||
     series?.codePrefix.startsWith('4WE10') ||

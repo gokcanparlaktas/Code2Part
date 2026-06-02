@@ -2,7 +2,6 @@ import type { ProductSeriesRecord } from '@/types/product';
 
 const SERIES_EXAMPLE_CODES: Record<string, string> = {
   rexroth_4we6: '4WE6E-6X/EG24N9K4',
-  rexroth_3we4: '3WE4E-4X/EG24N9K4',
   rexroth_3we6: '3WE6A-6X/EG24N9K4',
   yuken_dsg01: 'DSG-01-3C2-D24-N1-70',
   vickers_dg4v3: 'DG4V-3-2A-M-U-H7-60',

@@ -74,17 +74,5 @@
       "atos_dhu",
       "parker_d3w"
     ]
-  },
-  {
-    "verificationStatus": "manual_unverified",
-    "sourceType": "manual",
-    "sourceUrl": null,
-    "lastReviewedAt": "2026-05-26",
-    "notesTr": "CETOP 02 / NG4 hidrolik yön kontrol valfleri için manuel muadil grubu (şimdilik yalnızca Rexroth 3WE4).",
-    "id": "hydraulic_cetop_02_ng4_valve",
-    "name": "CETOP 02 / NG4 hidrolik yön kontrol valfi",
-    "seriesIds": [
-      "rexroth_3we4"
-    ]
   }
 ]

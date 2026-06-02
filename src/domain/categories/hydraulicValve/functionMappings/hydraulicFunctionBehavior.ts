@@ -263,6 +263,27 @@ const behaviorByKey = new Map<string, HydraulicFunctionBehavior>(
   HYDRAULIC_FUNCTION_BEHAVIORS.map((b) => [behaviorKey(b.manufacturer, b.series, b.rawToken), b])
 );
 
+function vickersDG4VBehaviorFromToken(
+  manufacturer: string,
+  series: string,
+  token: string
+): HydraulicFunctionBehavior | null {
+  const sem = getVickersDG4VSpoolSemantics(token);
+  if (!sem) {
+    return null;
+  }
+
+  return entry(manufacturer, series, token, {
+    positions: sem.numberOfPositions,
+    centering: sem.centering,
+    centerCondition: sem.centerCondition,
+    normallyState: 'unknown',
+    confidence: 'low',
+    requiresCatalogCheck: true,
+    note: sem.behaviorNoteTr,
+  });
+}
+
 function rexrothBehaviorFromOrderingToken(
   manufacturer: string,
   series: string,
@@ -313,6 +334,13 @@ export function resolveHydraulicFunctionBehavior(options: {
     }
   }
 
+  if (normalizeManufacturer(options.manufacturer) === 'vickers') {
+    const family = normalizeSeriesFamily(options.series);
+    if (family === 'DG4V') {
+      return vickersDG4VBehaviorFromToken(options.manufacturer, options.series, token);
+    }
+  }
+
   // Parker D1VW numeric tokens — no behavior table yet
   return null;
 }
@@ -321,29 +349,26 @@ export function getAllHydraulicFunctionBehaviors(): HydraulicFunctionBehavior[] 
   return [...HYDRAULIC_FUNCTION_BEHAVIORS];
 }
 
-/** Center conditions that may be treated as cautiously similar for cross-brand check only. */
-const CAUTIOUS_CENTER_ALIASES: Partial<
-  Record<HydraulicFunctionCenterCondition, HydraulicFunctionCenterCondition[]>
-> = {
-  closed_center: ['closed_center', 'partially_open'],
-  partially_open: ['closed_center', 'partially_open', 'open_center', 'tandem_center'],
-  open_center: ['open_center', 'partially_open'],
-  tandem_center: ['tandem_center', 'partially_open'],
-};
+/** Kısmi açık merkez, karşılaştırmada kapalı merkez ile eşdeğer kabul edilir. */
+export function normalizeCenterConditionForComparison(
+  center: HydraulicFunctionCenterCondition
+): HydraulicFunctionCenterCondition {
+  if (center === 'partially_open') {
+    return 'closed_center';
+  }
+  return center;
+}
 
 export function centerConditionsAreCompatibleForSimilarity(
   a: HydraulicFunctionCenterCondition,
   b: HydraulicFunctionCenterCondition
 ): boolean {
-  if (a === b) {
-    return true;
-  }
-  if (a === 'unknown' || b === 'unknown') {
+  const normalizedA = normalizeCenterConditionForComparison(a);
+  const normalizedB = normalizeCenterConditionForComparison(b);
+  if (normalizedA === 'unknown' || normalizedB === 'unknown') {
     return false;
   }
-  const aliasesA = CAUTIOUS_CENTER_ALIASES[a] ?? [a];
-  const aliasesB = CAUTIOUS_CENTER_ALIASES[b] ?? [b];
-  return aliasesA.some((x) => aliasesB.includes(x));
+  return normalizedA === normalizedB;
 }
 
 export function behaviorsHaveSimilarTags(
@@ -385,7 +410,10 @@ export function behaviorsHaveDifferentCenter(
     return false;
   }
 
-  return sourceCenter !== targetCenter;
+  return (
+    normalizeCenterConditionForComparison(sourceCenter) !==
+    normalizeCenterConditionForComparison(targetCenter)
+  );
 }
 
 export function normalizeSeriesForExactMatch(series: string): string {

@@ -2,6 +2,7 @@ import {
   getDefaultCatalogDataProvider,
   type CatalogDataProvider,
 } from '@/domain/catalogData/CatalogDataProvider';
+import { isEatonVickersManufacturer } from '@/domain/catalogData/eatonVickersCatalogUtils';
 import type {
   CatalogResolvedCandidate,
   CatalogResolverContext,
@@ -120,6 +121,48 @@ function resolveYukenVoltage(
   };
 }
 
+function resolveEatonVoltage(
+  context: CatalogResolverContext,
+  catalogProvider: CatalogDataProvider
+): CatalogResolvedCandidate {
+  const catalog = catalogProvider.getEatonDg4vConnectorVoltageCatalog();
+  const token = context.rawToken.trim().toUpperCase();
+  const entry = catalog.voltageTokenMeanings?.find(
+    (row) => row.rawVoltageToken?.toUpperCase() === token
+  );
+  if (!entry) {
+    return notFound(context);
+  }
+
+  const dcUsage = entry.contextualUsages?.find((u) => u.voltage != null) ?? null;
+  const voltageValue = entry.voltage ?? dcUsage?.voltage;
+  const voltageUnit = entry.unit ?? dcUsage?.unit;
+  const voltageKind = entry.baseVoltageKind;
+
+  let displayCandidate: string;
+  if (voltageKind === 'DC' && voltageValue != null && voltageUnit) {
+    displayCandidate = `${voltageValue} ${voltageUnit} ${voltageKind}`;
+  } else if (dcUsage?.voltage != null && dcUsage.unit) {
+    displayCandidate = `${dcUsage.voltage} ${dcUsage.unit} AC`;
+  } else {
+    displayCandidate = token;
+  }
+
+  return {
+    found: true,
+    attributeKey: context.attributeKey,
+    rawToken: context.rawToken,
+    displayCandidate,
+    voltageKind,
+    voltageValue,
+    voltageUnit,
+    confidence: entry.confidence ?? 'medium',
+    needsReview: entry.needsReview ?? true,
+    evidence: 'catalog_data',
+    sourceStatus: entry.sourceStatus,
+  };
+}
+
 export function resolveVoltageCandidate(
   context: CatalogResolverContext,
   catalogProvider: CatalogDataProvider = getDefaultCatalogDataProvider()
@@ -133,6 +176,9 @@ export function resolveVoltageCandidate(
   }
   if (manufacturer === 'yuken') {
     return resolveYukenVoltage(context, catalogProvider);
+  }
+  if (isEatonVickersManufacturer(context.manufacturer)) {
+    return resolveEatonVoltage(context, catalogProvider);
   }
   return notFound(context);
 }

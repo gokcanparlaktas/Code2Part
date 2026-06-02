@@ -22,6 +22,8 @@ export interface ProductResolverContext {
   sourceFamily: string;
   /** Rexroth nominal size as string: "6" | "10" */
   nominalSize?: string;
+  /** Eaton/Vickers DG4V spring arrangement raw token (A, B, N, AL, BL, C). */
+  springArrangement?: string;
 }
 
 /** Attribute-level context passed into catalog resolvers. */

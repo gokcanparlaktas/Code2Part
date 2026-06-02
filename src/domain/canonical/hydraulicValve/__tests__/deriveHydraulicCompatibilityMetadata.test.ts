@@ -137,7 +137,7 @@ describe('deriveHydraulicCompatibilityMetadata', () => {
     ).toBe(false);
 
     const spool = result.compatible.find((c) => c.label === FIELD_LABELS.spoolFunctionCode);
-    expect(spool?.sourceDisplay).toContain('Kapalı merkez — P, T, A ve B kapalı');
+    expect(spool?.sourceDisplay).toBe('P,T,A,B Kapalı (Kapalı merkez)');
     expect(spool?.sourceDisplay).not.toContain('Yay merkezlemeli');
   });
 

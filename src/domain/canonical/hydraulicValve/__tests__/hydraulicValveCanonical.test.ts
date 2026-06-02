@@ -42,7 +42,7 @@ describe("normalizeHydraulicValveAttribute", () => {
   it("K4 displays DIN valve connector family", () => {
     const canonical = normalizeConnectorType({ rawToken: "K4", manufacturer: "Rexroth", series: "4WE6" });
     expect(canonical).toBe("DIN_VALVE_CONNECTOR");
-    expect(getConnectorTypeDisplay(canonical)).toContain("DIN valf soketi");
+    expect(getConnectorTypeDisplay(canonical)).toContain("DIN 43650");
   });
 
   it("C4Z displays AMP Junior-Timer", () => {
@@ -172,7 +172,7 @@ describe("compareHydraulicValveCanonicalProfiles", () => {
     const result = compareHydraulicValveCanonicalProfiles(closed, tandem);
 
     const merkez = result.comparisons.find((c) => c.label === "Merkez tipi");
-    expect(merkez?.status).toBe("unknownOrCheck");
+    expect(merkez?.status).toBe("different");
   });
 
   it("unknown center condition creates unknown/check", () => {

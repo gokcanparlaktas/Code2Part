@@ -268,30 +268,6 @@ describe('completeProductCode', () => {
     expect(resolved.identification.brand.value).toBe('Rexroth');
   });
 
-  it('identifies 3WE4 in product search as partial Rexroth series', () => {
-    const resolved = resolveProductSearch('3WE4');
-
-    expect(resolved.identification.outcome).toBe('series_only');
-    expect(resolved.identification.series.value).toBe('3WE4');
-    expect(resolved.identification.brand.value).toBe('Rexroth');
-  });
-
-  it('builds full 3WE4 code from series-only input', () => {
-    const result = completeProductCode('3WE4', {
-      spool_symbol: 'E',
-      design_series: '42',
-      coil_voltage: 'EG24',
-      manual_override: 'N9',
-      connector_type: 'K4',
-    });
-
-    expect(result.completedCode).toBe('3WE4E-42/EG24N9K4');
-    expect(result.completionStatus).toBe('completed_full');
-    expect(identifyProduct(result.completedCode!, normalizeCode(result.completedCode!)).brand.value).toBe(
-      'Rexroth'
-    );
-  });
-
   it('maps Kapalı merkez to Rexroth E spool for best Yuken equivalent', () => {
     const canComplete = completeProductCode('4WE6');
     const closedCenter = canComplete.missingFields

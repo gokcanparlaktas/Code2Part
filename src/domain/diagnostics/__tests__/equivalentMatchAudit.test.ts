@@ -39,10 +39,22 @@ describe('buildEquivalentMatchAudit', () => {
 describe('equivalentMatchAudit coil voltage regression', () => {
   it('DG4V-3 vs Rexroth EG24 does not list Bobin voltajı as unknownOrCheck', () => {
     const audit = buildEquivalentMatchAudit('DG4V-3-2A-M-U-H7-60');
-    const first = audit.candidates[0]!;
-    expect(first.code).toBe('4WE6E-6X/EG24N9K4');
-    expect(first.compatible).toContain('Bobin voltajı');
-    expect(first.unknownOrCheck).not.toContain('Bobin voltajı');
+    const rexroth = audit.candidates.find((c) => c.code === '4WE6E-6X/EG24N9K4');
+    expect(rexroth).toBeDefined();
+    expect(rexroth!.compatible).toContain('Bobin voltajı');
+    expect(rexroth!.unknownOrCheck).not.toContain('Bobin voltajı');
+  });
+
+  it('DG4V-3-2A-M-U-D24-60 suggests Rexroth/Yuken with match above 58% and no 3WE6', () => {
+    const audit = buildEquivalentMatchAudit('DG4V-3-2A-M-U-D24-60');
+    expect(audit.candidates.some((c) => c.code.includes('3WE'))).toBe(false);
+
+    const rexroth = audit.candidates.find((c) => c.code === '4WE6E-62/EG24N9K4');
+    const yuken = audit.candidates.find((c) => c.code === 'DSG-01-3C2-D24-N1-70');
+    expect(rexroth).toBeDefined();
+    expect(yuken).toBeDefined();
+    expect(rexroth!.matchPercentage).toBeGreaterThan(58);
+    expect(yuken!.matchPercentage).toBeGreaterThan(58);
   });
 });
 
