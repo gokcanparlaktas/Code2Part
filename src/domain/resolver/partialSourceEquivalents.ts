@@ -1,4 +1,5 @@
 import type { CompatibilityResult } from '@/types/compatibility';
+import { ROLLING_BEARING_CATEGORY } from '@/types/category';
 import type { IdentificationOutcome, ProductIdentification } from '@/types/product';
 
 import { calculateMatchPercentage } from '@/domain/scoring/calculateMatchPercentage';
@@ -19,13 +20,23 @@ export function canSearchEquivalentsForIdentification(
   return identification.outcome === 'full' || identification.outcome === 'series_only';
 }
 
+export const ROLLING_BEARING_EQUIVALENCE_DISCLAIMER_TR =
+  'Taban kod tanındı; conta/metal kapak veya tam üretici kodu için aramayı daraltın.';
+
 export function getEquivalenceWarningsForIdentification(
   identification: ProductIdentification
 ): string[] {
+  const warnings: string[] = [];
   if (identification.outcome === 'series_only') {
-    return [PARTIAL_SOURCE_EQUIVALENTS_WARNING_TR];
+    warnings.push(PARTIAL_SOURCE_EQUIVALENTS_WARNING_TR);
   }
-  return [];
+  if (
+    identification.resolverCategoryKey === ROLLING_BEARING_CATEGORY &&
+    identification.outcome === 'series_only'
+  ) {
+    warnings.push(ROLLING_BEARING_EQUIVALENCE_DISCLAIMER_TR);
+  }
+  return warnings;
 }
 
 const PARTIAL_SOURCE_MAX_MATCH_PERCENT = 95;

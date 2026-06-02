@@ -1,0 +1,33 @@
+import type { HydraulicCenterTypeOption } from '@/domain/categories/hydraulicValve/hydraulicCenterTypeCatalogOptions';
+import type { HydraulicFunctionCenterCondition } from '@/domain/categories/hydraulicValve/functionMappings/hydraulicFunctionBehavior';
+import { REXROTH_PREFERRED_SPOOL_BY_CENTER } from '@/domain/categories/hydraulicValve/hydraulicValveCenterTypeSelection';
+import {
+  isRexrothWEOrderingSpoolSymbol,
+  rexrothWE6BehaviorLookupToken,
+} from '@/domain/categories/hydraulicValve/manufacturers/rexroth/rexrothWE6SpoolSemantics';
+
+/**
+ * Resolves the Rexroth ordering-code spool letter for code generation from a PTAB
+ * center-type option. Catalog tokens (F, P, L, …) are valid RE 23178 symbols and are
+ * kept when recognized; otherwise falls back to the closest classic letter (E, C, D…).
+ */
+export function resolveRexrothSpoolForGeneration(
+  centerOption: HydraulicCenterTypeOption | undefined
+): string | null {
+  const raw = centerOption?.rexrothSpoolToken?.trim().toUpperCase() ?? '';
+  if (raw) {
+    const letter = raw.length === 1 ? raw : (rexrothWE6BehaviorLookupToken(raw) ?? null);
+    if (letter && isRexrothWEOrderingSpoolSymbol(letter)) {
+      return letter;
+    }
+  }
+
+  const center = centerOption?.centerCondition as
+    | HydraulicFunctionCenterCondition
+    | undefined;
+  if (center && REXROTH_PREFERRED_SPOOL_BY_CENTER[center]) {
+    return REXROTH_PREFERRED_SPOOL_BY_CENTER[center]!;
+  }
+
+  return null;
+}

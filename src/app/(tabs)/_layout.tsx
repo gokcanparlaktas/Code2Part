@@ -40,6 +40,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="code-creator"
+        options={{
+          title: 'Kod yarat',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="construct-outline" size={20} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="compare"
         options={{
           title: 'Karşılaştır',

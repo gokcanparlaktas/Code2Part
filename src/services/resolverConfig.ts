@@ -10,7 +10,10 @@ function readPublicEnv(key: string): string | undefined {
 
 export function getResolverMode(): ResolverMode {
   const raw = readPublicEnv('EXPO_PUBLIC_RESOLVER_MODE')?.toLowerCase();
-  return raw === 'backend' ? 'backend' : 'local';
+  if (raw === 'local') {
+    return 'local';
+  }
+  return 'backend';
 }
 
 export function isBackendResolverMode(): boolean {
@@ -29,9 +32,10 @@ export function getResolverRequestTimeoutMs(): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 30_000;
 }
 
+/** Opt-in dev-only escape hatch; production always uses backend only. */
 export function shouldFallbackToLocalResolverOnBackendError(): boolean {
   if (!__DEV__) {
     return false;
   }
-  return readPublicEnv('EXPO_PUBLIC_RESOLVER_BACKEND_FALLBACK') !== 'false';
+  return readPublicEnv('EXPO_PUBLIC_RESOLVER_BACKEND_FALLBACK') === 'true';
 }

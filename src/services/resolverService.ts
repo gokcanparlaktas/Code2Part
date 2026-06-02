@@ -2,7 +2,7 @@ import {
   CompareTwoProductCodesError,
   prepareTwoProductCodeComparison,
 } from '@/domain/resolver/compareTwoProductCodes';
-import { compareProducts, resolveResolverCategory } from '@/domain/resolver/compareProducts';
+import { compareProducts } from '@/domain/resolver/compareProducts';
 import { buildProductDetailRows } from '@/domain/presentation/buildProductDetailRows';
 import { resolveProductSearch } from '@/domain/resolver/resolveProductSearch';
 import { identifyProduct } from '@/domain/resolver/identifyProduct';
@@ -12,7 +12,6 @@ import {
   getEquivalenceWarningsForIdentification,
 } from '@/domain/resolver/partialSourceEquivalents';
 import { normalizeCode } from '@/domain/resolver/normalizeCode';
-import { PNEUMATIC_CYLINDER_CATEGORY } from '@/types/category';
 import type { CompatibilityResult } from '@/types/compatibility';
 
 import {
@@ -111,15 +110,6 @@ function mapCompareTwoProductCodesError(error: unknown): never {
   throw error;
 }
 
-function shouldUseLocalTwoCodeCompare(sourceCode: string): boolean {
-  if (getResolverMode() === 'local') {
-    return true;
-  }
-
-  const source = identifyProduct(sourceCode, normalizeCode(sourceCode));
-  return resolveResolverCategory(source) === PNEUMATIC_CYLINDER_CATEGORY;
-}
-
 export async function compareTwoProductsResolved(
   sourceCode: string,
   candidateCode: string
@@ -130,17 +120,23 @@ export async function compareTwoProductsResolved(
     throw new ResolverApiError('Karşılaştırma için iki ürün kodu gerekli.', 'validation');
   }
 
-  try {
-    const prepared = prepareTwoProductCodeComparison(source, candidate);
-
-    if (shouldUseLocalTwoCodeCompare(source)) {
+  if (getResolverMode() === 'local') {
+    try {
+      const prepared = prepareTwoProductCodeComparison(source, candidate);
       return compareProducts(prepared.source, prepared.candidate);
+    } catch (error) {
+      mapCompareTwoProductCodesError(error);
     }
+  }
 
-    return withOptionalLocalFallback(async () => {
+  try {
+    return await withOptionalLocalFallback(async () => {
       const dto = await compareProductsRemote(source, candidate);
       return mapCompareProductsDtoToCompatibilityResult(dto);
-    }, () => compareProducts(prepared.source, prepared.candidate));
+    }, () => {
+      const prepared = prepareTwoProductCodeComparison(source, candidate);
+      return compareProducts(prepared.source, prepared.candidate);
+    });
   } catch (error) {
     mapCompareTwoProductCodesError(error);
   }

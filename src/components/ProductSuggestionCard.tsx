@@ -37,6 +37,9 @@ export function ProductSuggestionCard({
 
   const statusLine = !isExactCodeMatch ? formatSuggestionMissingStatus(suggestion) : null;
   const hasBore = detectedAttributes.boreMm !== undefined;
+  const hasOutsideDiameter = detectedAttributes.outsideDiameterMm !== undefined;
+  const hasWidth = detectedAttributes.widthMm !== undefined;
+  const hasBearingDimensions = hasBore || hasOutsideDiameter || hasWidth;
   const hasStroke = detectedAttributes.strokeMm !== undefined;
   const hintText = formatSuggestionCardHint(suggestion.suggestionTextTr ?? '');
 
@@ -79,7 +82,25 @@ export function ProductSuggestionCard({
           Standart: {suggestion.standardFamily}
         </Text>
 
-        {hasBore || hasStroke ? (
+        {hasBearingDimensions ? (
+          <View style={styles.attrRow}>
+            {hasBore ? (
+              <Text style={styles.attrText}>İç çap: {detectedAttributes.boreMm} mm</Text>
+            ) : null}
+            {hasBore && hasOutsideDiameter ? <Text style={styles.attrSep}>·</Text> : null}
+            {hasOutsideDiameter ? (
+              <Text style={styles.attrText}>
+                Dış çap: {detectedAttributes.outsideDiameterMm} mm
+              </Text>
+            ) : null}
+            {(hasBore || hasOutsideDiameter) && hasWidth ? (
+              <Text style={styles.attrSep}>·</Text>
+            ) : null}
+            {hasWidth ? (
+              <Text style={styles.attrText}>Kalınlık: {detectedAttributes.widthMm} mm</Text>
+            ) : null}
+          </View>
+        ) : hasBore || hasStroke ? (
           <View style={styles.attrRow}>
             {hasBore ? (
               <Text style={styles.attrText}>Çap: {detectedAttributes.boreMm} mm</Text>

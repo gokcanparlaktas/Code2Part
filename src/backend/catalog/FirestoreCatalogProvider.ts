@@ -249,6 +249,51 @@ export class FirestoreCatalogProvider implements CatalogDataProvider {
   getEatonDg4vTechnicalDataCatalog(): EatonDg4vTechnicalDataCatalog {
     return this.localEatonFallback.getEatonDg4vTechnicalDataCatalog();
   }
+
+  /** Bearings catalog-data is local JSON until a dedicated Firestore release is published. */
+  getRollingBearingFamilyIndexCatalog() {
+    return this.localEatonFallback.getRollingBearingFamilyIndexCatalog();
+  }
+
+  getRollingBearingManufacturerIndexCatalog() {
+    return this.localEatonFallback.getRollingBearingManufacturerIndexCatalog();
+  }
+
+  getRollingBearingBrandDetectionCatalog() {
+    return this.localEatonFallback.getRollingBearingBrandDetectionCatalog();
+  }
+
+  getRollingBearingBoreCodeCatalog() {
+    return this.localEatonFallback.getRollingBearingBoreCodeCatalog();
+  }
+
+  getRollingBearingDimensionCatalog() {
+    return this.localEatonFallback.getRollingBearingDimensionCatalog();
+  }
+
+  getRollingBearingSeriesCatalog() {
+    return this.localEatonFallback.getRollingBearingSeriesCatalog();
+  }
+
+  getRollingBearingSuffixCatalog() {
+    return this.localEatonFallback.getRollingBearingSuffixCatalog();
+  }
+
+  getRollingBearingParserSpecCatalog() {
+    return this.localEatonFallback.getRollingBearingParserSpecCatalog();
+  }
+
+  getRollingBearingGenerationSpecCatalog() {
+    return this.localEatonFallback.getRollingBearingGenerationSpecCatalog();
+  }
+
+  getRollingBearingMappingCatalog() {
+    return this.localEatonFallback.getRollingBearingMappingCatalog();
+  }
+
+  getRollingBearingUnknownOrReviewCatalog() {
+    return this.localEatonFallback.getRollingBearingUnknownOrReviewCatalog();
+  }
 }
 
 /** Test helper: same payloads as local JSON, tagged as mock Firestore. */

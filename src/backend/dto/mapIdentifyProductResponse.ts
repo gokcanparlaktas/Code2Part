@@ -14,6 +14,7 @@ import type { ProductIdentification } from '@/types/product';
 import type { TechnicalAttribute } from '@/types/technicalAttribute';
 
 import { assertNoForbiddenBackendResponseKeys } from './backendResponseSecurity';
+import { mapIdentificationSnapshot } from './mapIdentificationSnapshot';
 
 export interface IdentifyProductTechnicalAttributeDto {
   key: string;
@@ -37,6 +38,14 @@ export interface IdentifyProductResponseDto {
   category: string | null;
   outcome: ProductIdentification['outcome'];
   confidence: ProductIdentification['confidence'];
+  matched: boolean;
+  resolverCategoryKey: string | null;
+  seriesId: string | null;
+  productType: string | null;
+  standardFamily: string | null;
+  boreMm: number | null;
+  outsideDiameterMm: number | null;
+  widthMm: number | null;
   technicalAttributes: IdentifyProductTechnicalAttributeDto[];
   productDetailRows: IdentifyProductDetailRowDto[];
   warnings: string[];
@@ -116,6 +125,8 @@ export function mapIdentifyProductResponse(options: {
     catalogProvider: options.catalogProvider,
   });
 
+  const snapshot = mapIdentificationSnapshot(options.identification);
+
   const dto: IdentifyProductResponseDto = {
     normalizedCode: options.identification.normalizedCode,
     manufacturer: options.identification.brand.value,
@@ -123,6 +134,7 @@ export function mapIdentifyProductResponse(options: {
     category: options.identification.productCategory.value,
     outcome: options.identification.outcome,
     confidence: options.identification.confidence,
+    ...snapshot,
     technicalAttributes: mapTechnicalAttributes(attributes),
     productDetailRows: productDetailRows.map((row) => ({
       label: row.label,

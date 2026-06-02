@@ -77,7 +77,7 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     );
   });
 
-  it('Rexroth E vs Yuken 3C2: spool compatible by catalog portState, connector stays unknownOrCheck', () => {
+  it('Rexroth E vs Yuken 3C2: spool and DIN connector compatible by catalog', () => {
     const source = identify('4WE6E-6X/EG24N9K4');
     const targetSeries = getProductSeriesById('yuken_dsg01')!;
     const targetCode = 'DSG-01-3C2-D24-N1-70';
@@ -98,9 +98,8 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     expect(result.compatible.some((c) => c.label === 'Bobin voltajı')).toBe(true);
     expect(result.compatible.some((c) => c.label === 'Merkez tipi')).toBe(true);
 
-    expect(result.compatible.some((c) => c.label === 'Konnektör tipi')).toBe(false);
-    expect(result.different.some((c) => c.label === 'Konnektör tipi')).toBe(false);
-    expect(result.checkItems.some((c) => c.field === 'Konnektör tipi')).toBe(true);
+    expect(result.compatible.some((c) => c.label === 'Konnektör tipi')).toBe(true);
+    expect(result.checkItems.find((c) => c.field === 'Konnektör tipi')).toBeUndefined();
 
     expect(result.different.some((c) => c.label === 'Merkez tipi')).toBe(false);
     expect(result.checkItems.some((c) => c.field === 'Merkez tipi')).toBe(false);

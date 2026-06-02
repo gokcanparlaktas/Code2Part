@@ -6,6 +6,7 @@ import type {
 } from '@/types/compatibility';
 import type { ProductIdentification } from '@/types/product';
 
+import { mapIdentificationFromDto } from './mapIdentificationFromDto';
 import type {
   CompareProductsResponseDto,
   FindEquivalentsResponseDto,
@@ -30,14 +31,6 @@ export interface ResolvedProductSearch extends ResolvedIdentifyProduct {
   compatibilityResults: CompatibilityResult[];
   hasEquivalents: boolean;
   equivalenceWarnings: string[];
-}
-
-function emptyAttribute<T = string>(value: T | null = null): ProductIdentification['brand'] {
-  return {
-    value,
-    evidence: 'unknown',
-    requiresCheck: value === null,
-  };
 }
 
 function metadataToMatchLevel(metadata: CompatibilityResult['metadata']): MatchLevelTr {
@@ -95,34 +88,7 @@ export function mapIdentifyProductDtoToResolved(
   dto: IdentifyProductResponseDto,
   inputCode: string
 ): ResolvedIdentifyProduct {
-  const identification: ProductIdentification = {
-    inputCode,
-    normalizedCode: dto.normalizedCode,
-    seriesId: null,
-    resolverCategoryKey: null,
-    matched: dto.outcome === 'full',
-    outcome: dto.outcome,
-    brand: {
-      value: dto.manufacturer,
-      evidence: dto.manufacturer ? 'series_table' : 'unknown',
-      requiresCheck: !dto.manufacturer,
-    },
-    series: {
-      value: dto.series,
-      evidence: dto.series ? 'series_table' : 'unknown',
-      requiresCheck: !dto.series,
-    },
-    productType: emptyAttribute(null),
-    productCategory: {
-      value: dto.category,
-      evidence: dto.category ? 'series_table' : 'unknown',
-      requiresCheck: !dto.category,
-    },
-    standardFamily: emptyAttribute(null),
-    bore: emptyAttribute<number>(null),
-    stroke: emptyAttribute<number>(null),
-    confidence: dto.confidence,
-  };
+  const identification = mapIdentificationFromDto(inputCode, dto);
 
   return {
     identification,

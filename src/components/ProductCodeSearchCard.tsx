@@ -3,7 +3,6 @@ import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   Platform,
   Pressable,
   StyleSheet,
@@ -12,8 +11,7 @@ import {
   View,
 } from 'react-native';
 
-import { HowItWorksHelp } from '@/components/HowItWorksHelp';
-import { ThemeModeToggle } from '@/components/ThemeModeToggle';
+import { AppBrandHeader } from '@/components/AppBrandHeader';
 import {
   DEFAULT_SUGGESTION_LIMIT,
   suggestProductsDetailed,
@@ -29,8 +27,6 @@ import { openProductCodeScan } from '@/utils/openProductCodeScan';
 
 import { PartialSuggestionsPanel } from './PartialSuggestionsPanel';
 import { RecentSearchHistoryPanel } from './RecentSearchHistoryPanel';
-
-const ICON = require('../../assets/images/icon.png');
 
 const EXAMPLES = [
   '4WE6G-6X/EG24N9K4',
@@ -110,22 +106,7 @@ export function ProductCodeSearchCard() {
 
   return (
     <View style={styles.root}>
-      <View style={styles.headerRow}>
-        <View style={styles.headerSide}>
-          <Image source={ICON} style={styles.logoIcon} accessibilityLabel="Code2Part logo" />
-        </View>
-
-        <Text style={styles.brandName}>
-          <Text style={styles.brandNamePrimary}>Code</Text>
-          <Text style={styles.brandNameBlue}>2</Text>
-          <Text style={styles.brandNameOrange}>Part</Text>
-        </Text>
-
-        <View style={styles.headerSideRight}>
-          <HowItWorksHelp compact />
-          <ThemeModeToggle compact />
-        </View>
-      </View>
+      <AppBrandHeader />
 
       <View style={styles.fieldHeader}>
         <Text style={styles.label}>Ürün kodu</Text>
@@ -208,6 +189,16 @@ export function ProductCodeSearchCard() {
         )}
       </Pressable>
 
+      <Pressable
+        style={({ pressed }) => [styles.creatorLink, pressed && styles.creatorLinkPressed]}
+        onPress={() => router.push('/(tabs)/code-creator')}
+        accessibilityRole="link"
+      >
+        <Ionicons name="construct-outline" size={16} color={homeColors.accent} />
+        <Text style={styles.creatorLinkText}>Kod yok mu? Kod yaratıcı ile oluştur</Text>
+        <Ionicons name="chevron-forward" size={16} color={homeColors.textSecondary} />
+      </Pressable>
+
       <RecentSearchHistoryPanel limit={3} showDivider />
 
       <View style={styles.examplesSection}>
@@ -242,48 +233,6 @@ const createStyles = (c: HomeColorPalette) =>
     root: {
       flex: 1,
       gap: 16,
-    },
-    headerRow: {
-      alignItems: 'center',
-      flexDirection: 'row',
-      marginBottom: 20,
-    },
-    headerSide: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 0,
-      width: 44,
-    },
-    headerSideRight: {
-      alignItems: 'center',
-      flexDirection: 'row',
-      gap: 8,
-      justifyContent: 'flex-end',
-      minWidth: 96,
-    },
-    logoIcon: {
-      borderColor: c.border,
-      borderRadius: 10,
-      borderWidth: 1,
-      height: 44,
-      padding: 0,
-      resizeMode: 'cover',
-      width: 44,
-    },
-    brandName: {
-      flex: 1,
-      fontSize: 20,
-      fontWeight: '500',
-      textAlign: 'center',
-    },
-    brandNamePrimary: {
-      color: c.headerTitle,
-    },
-    brandNameBlue: {
-      color: c.brandAccentBlue,
-    },
-    brandNameOrange: {
-      color: c.accent,
     },
     fieldHeader: {
       marginBottom: 12,
@@ -371,6 +320,22 @@ const createStyles = (c: HomeColorPalette) =>
     buttonText: {
       color: '#fff',
       fontSize: 15,
+      fontWeight: '500',
+    },
+    creatorLink: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 6,
+      justifyContent: 'center',
+      marginTop: 4,
+      paddingVertical: 8,
+    },
+    creatorLinkPressed: {
+      opacity: 0.85,
+    },
+    creatorLinkText: {
+      color: c.accent,
+      fontSize: 14,
       fontWeight: '500',
     },
     examplesSection: {

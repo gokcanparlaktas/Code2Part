@@ -14,7 +14,8 @@ export type RexrothWE6BaseSpoolSymbol = 'A' | 'B' | 'C' | 'D' | 'E' | 'G' | 'H' 
 export type RexrothWE6SwitchingPositionVariant = 'a' | 'b';
 
 export interface RexrothWE6SpoolSemantics {
-  baseSpoolSymbol: RexrothWE6BaseSpoolSymbol;
+  /** Ordering-code spool letter (core A–Y or extended catalog letters such as F, P, L). */
+  baseSpoolSymbol: string;
   numberOfPositions: 2 | 3;
   centering: HydraulicFunctionCentering;
   centerCondition: HydraulicFunctionCenterCondition;
@@ -38,7 +39,7 @@ export const REXROTH_WE6_CENTER_CONDITION_LABEL_TR: Record<
   open_center: 'Açık merkez',
   tandem_center: 'Tandem merkez',
   float_center: 'Yüzer merkez',
-  partially_open: 'Kısmi açık / katalogdan kontrol edilmeli',
+  partially_open: 'Kısmen açık merkez',
   unknown: 'Bilinmiyor',
 };
 
@@ -50,6 +51,8 @@ export const REXROTH_WE6_NORMALLY_STATE_LABEL_TR: Record<
   normally_closed: 'Normalde kapalı',
   unknown: 'Bilinmiyor',
 };
+
+import { REXROTH_WE6_EXTENDED_SPOOL_SEMANTICS } from './rexrothWE6CatalogSpoolSymbols';
 
 const CATALOG_HINT = 'RE 23164 sembol tablosu; kesin hidrolik davranış katalogdan doğrulanmalıdır.';
 
@@ -147,11 +150,35 @@ export function isRexrothWE6BaseSpoolSymbol(value: string): value is RexrothWE6B
   return value in BASE_SPOOL_SEMANTICS;
 }
 
+export function isRexrothWEOrderingSpoolSymbol(value: string): boolean {
+  const upper = value.trim().toUpperCase();
+  if (upper.length !== 1) {
+    return false;
+  }
+  return isRexrothWE6BaseSpoolSymbol(upper) || upper in REXROTH_WE6_EXTENDED_SPOOL_SEMANTICS;
+}
+
 export function getRexrothWE6SpoolSemantics(
-  baseSymbol: RexrothWE6BaseSpoolSymbol,
+  baseSymbol: RexrothWE6BaseSpoolSymbol | string,
   options?: { detentOption?: boolean }
 ): RexrothWE6SpoolSemantics {
-  const base = BASE_SPOOL_SEMANTICS[baseSymbol];
+  const upper = String(baseSymbol).trim().toUpperCase();
+  const base = isRexrothWE6BaseSpoolSymbol(upper)
+    ? BASE_SPOOL_SEMANTICS[upper]
+    : REXROTH_WE6_EXTENDED_SPOOL_SEMANTICS[upper];
+
+  if (!base) {
+    return {
+      baseSpoolSymbol: upper,
+      numberOfPositions: 3,
+      centering: 'unknown',
+      centerCondition: 'unknown',
+      normallyState: 'unknown',
+      requiresCatalogCheck: true,
+      behaviorNoteTr: CATALOG_HINT,
+    };
+  }
+
   if (!options?.detentOption) {
     return base;
   }
@@ -194,7 +221,7 @@ export function parseRexrothWE6FunctionTokenParts(
       switchingPositionVariant: 'b',
     };
   }
-  if (upper.length === 1 && isRexrothWE6BaseSpoolSymbol(upper)) {
+  if (upper.length === 1 && isRexrothWEOrderingSpoolSymbol(upper)) {
     return {
       baseSpoolSymbol: upper,
       functionToken: upper,

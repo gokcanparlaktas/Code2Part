@@ -3742,5 +3742,74 @@
       ],
       "functionToken": []
     }
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": "2026-06-02",
+    "notesTr": "Yuvarlanma tipi rulman MVP. Kod çözümleme catalog-data kurallarına dayanır; üretici kılavuzu ile doğrulanmalıdır.",
+    "id": "rolling_bearing_metric",
+    "brand": "Çok markalı",
+    "series": "Metrik rulman",
+    "category": "Rulman",
+    "resolverCategory": "rolling_bearing",
+    "productTypeLabel": "Metrik rulman (seri tipine göre)",
+    "productCategoryLabel": "Rulman (yuvarlanma tipi)",
+    "standardFamily": "Metrik rulman tip tanımları",
+    "technology": "Rulman",
+    "equivalenceGroupId": "rolling_bearing_metric_group",
+    "codePrefix": "62",
+    "matchPrefixes": [
+      "60",
+      "62",
+      "63",
+      "22",
+      "23",
+      "24",
+      "21",
+      "30",
+      "31",
+      "32",
+      "33",
+      "29",
+      "13"
+    ],
+    "confidenceWhenMatched": "medium",
+    "searchAliases": [
+      "rulman",
+      "bearing",
+      "SKF",
+      "FAG",
+      "NSK",
+      "NTN",
+      "Koyo",
+      "Timken",
+      "6205",
+      "6308",
+      "6308-ZZ",
+      "6308-2Z",
+      "22205",
+      "30205"
+    ],
+    "exampleCodes": [
+      "6308-ZZ",
+      "SKF 6308-2Z",
+      "6205-2RS1/C3",
+      "FAG 6205-2RSR-C3",
+      "22205",
+      "30205"
+    ],
+    "checkRuleRefs": [],
+    "functionMappingRefs": [],
+    "parsingRules": [],
+    "tokenRules": {
+      "bore": [],
+      "stroke": [],
+      "variant": [],
+      "revision": [],
+      "inferredVoltage": [],
+      "functionToken": []
+    }
   }
 ]

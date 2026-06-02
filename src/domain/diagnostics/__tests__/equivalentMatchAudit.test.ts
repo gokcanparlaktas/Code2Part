@@ -45,6 +45,15 @@ describe('equivalentMatchAudit coil voltage regression', () => {
     expect(rexroth!.unknownOrCheck).not.toContain('Bobin voltajı');
   });
 
+  it('4WE6F-62 suggests Yuken with match above 58%', () => {
+    const audit = buildEquivalentMatchAudit('4WE6F-62/EG24N9K4');
+    const yukenCandidates = audit.candidates.filter((c) => c.code.startsWith('DSG-01'));
+    expect(yukenCandidates.length).toBeGreaterThan(0);
+    expect(yukenCandidates.some((c) => c.matchPercentage > 58)).toBe(true);
+    expect(yukenCandidates.some((c) => c.code.includes('3C9'))).toBe(true);
+    expect(audit.candidates.some((c) => c.code.includes('3WE'))).toBe(false);
+  });
+
   it('DG4V-3-2A-M-U-D24-60 suggests Rexroth/Yuken with match above 58% and no 3WE6', () => {
     const audit = buildEquivalentMatchAudit('DG4V-3-2A-M-U-D24-60');
     expect(audit.candidates.some((c) => c.code.includes('3WE'))).toBe(false);

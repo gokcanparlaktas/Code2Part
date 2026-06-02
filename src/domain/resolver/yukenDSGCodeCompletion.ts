@@ -1,10 +1,8 @@
 import { normalizeProductCode } from '@/domain/attributes/extractors/attributeNormalization';
 import { buildYukenCenterTypeCompletionOptions } from '@/domain/categories/hydraulicValve/hydraulicValveCenterTypeSelection';
 import { parseYukenDSGProductCode } from '@/domain/categories/hydraulicValve/manufacturers/yuken/parseYukenDSG';
-import {
-  getYukenDSGSpoolSemantics,
-  YUKEN_DSG_CENTER_CONDITION_LABEL_TR,
-} from '@/domain/categories/hydraulicValve/manufacturers/yuken/yukenDSGSpoolSemantics';
+import { getYukenDSGSpoolSemantics } from '@/domain/categories/hydraulicValve/manufacturers/yuken/yukenDSGSpoolSemantics';
+import { formatCenterConditionSelectionLabel } from '@/domain/presentation/formatCenterTypeDisplay';
 import { identifyProduct } from '@/domain/resolver/identifyProduct';
 import { normalizeCode } from '@/domain/resolver/normalizeCode';
 import type {
@@ -229,7 +227,7 @@ function buildRecognizedFields(partial: YukenDSGPartialParse): ProductCodeComple
       key: 'function_code',
       labelTr: 'Merkez Tipi',
       value: semantics
-        ? YUKEN_DSG_CENTER_CONDITION_LABEL_TR[semantics.centerCondition]
+        ? formatCenterConditionSelectionLabel(semantics.centerCondition)
         : 'Katalogdan kontrol',
     });
   }

@@ -3,6 +3,7 @@ import { normalizeCode } from '@/domain/resolver/normalizeCode';
 import {
   HYDRAULIC_VALVE_CATEGORY,
   PNEUMATIC_CYLINDER_CATEGORY,
+  ROLLING_BEARING_CATEGORY,
   type ProductResolverCategory,
 } from '@/types/category';
 import type { CatalogV2Bundle } from '@/types/catalog';
@@ -20,6 +21,7 @@ import {
 const VALID_RESOLVER_CATEGORIES: ProductResolverCategory[] = [
   PNEUMATIC_CYLINDER_CATEGORY,
   HYDRAULIC_VALVE_CATEGORY,
+  ROLLING_BEARING_CATEGORY,
 ];
 
 function issue(

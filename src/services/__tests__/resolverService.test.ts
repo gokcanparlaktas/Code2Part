@@ -1,3 +1,4 @@
+import { mapIdentifyProductResponse } from '@/backend/dto/mapIdentifyProductResponse';
 import {
   compareProductsRemote,
   findEquivalentsRemote,
@@ -5,9 +6,12 @@ import {
 } from '@/services/resolverApiClient';
 import {
   compareProductsResolved,
+  compareTwoProductsResolved,
   findEquivalentsResolved,
   identifyProductResolved,
 } from '@/services/resolverService';
+import { identifyProduct } from '@/domain/resolver/identifyProduct';
+import { normalizeCode } from '@/domain/resolver/normalizeCode';
 import { resolveProductSearch } from '@/domain/resolver/resolveProductSearch';
 
 jest.mock('@/services/resolverApiClient', () => ({
@@ -19,12 +23,20 @@ jest.mock('@/services/resolverApiClient', () => ({
 
 const REXROTH = '4WE6E-6X/EG24N9K4';
 const YUKEN = 'DSG-01-3C2-D24-N1-70';
+const BEARING = '6005-2RS';
+
+function mockIdentifyDto(code: string) {
+  const identification = identifyProduct(code, normalizeCode(code));
+  return mapIdentifyProductResponse({ identification, inputCode: code });
+}
 
 describe('resolverService', () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
     process.env = { ...originalEnv };
+    delete process.env.EXPO_PUBLIC_RESOLVER_MODE;
+    delete process.env.EXPO_PUBLIC_RESOLVER_BACKEND_FALLBACK;
     jest.clearAllMocks();
   });
 
@@ -32,36 +44,44 @@ describe('resolverService', () => {
     process.env = originalEnv;
   });
 
-  it('uses local identify flow by default', async () => {
-    const local = await identifyProductResolved(REXROTH);
-    expect(local.source).toBe('local');
-    expect(local.identification.brand.value).toBe('Rexroth');
-    expect(identifyProductRemote).not.toHaveBeenCalled();
-  });
-
-  it('uses remote identify flow in backend mode', async () => {
-    process.env.EXPO_PUBLIC_RESOLVER_MODE = 'backend';
-    process.env.EXPO_PUBLIC_RESOLVER_BACKEND_FALLBACK = 'false';
-
-    (identifyProductRemote as jest.Mock).mockResolvedValue({
-      normalizedCode: REXROTH,
-      manufacturer: 'Rexroth',
-      series: '4WE6',
-      category: 'CETOP 03 / NG6 hidrolik yön kontrol valfi',
-      outcome: 'full',
-      confidence: 'high',
-      technicalAttributes: [],
-      productDetailRows: [{ label: 'Marka', value: 'Rexroth', evidence: 'x', requiresCheck: false }],
-      warnings: [],
-    });
+  it('uses backend identify flow by default', async () => {
+    (identifyProductRemote as jest.Mock).mockResolvedValue(mockIdentifyDto(REXROTH));
 
     const resolved = await identifyProductResolved(REXROTH);
     expect(identifyProductRemote).toHaveBeenCalledWith(REXROTH);
     expect(resolved.source).toBe('backend');
-    expect(resolved.productDetailRows).toHaveLength(1);
+    expect(resolved.identification.brand.value).toBe('Rexroth');
   });
 
-  it('uses local product search by default', async () => {
+  it('uses local identify flow when EXPO_PUBLIC_RESOLVER_MODE=local', async () => {
+    process.env.EXPO_PUBLIC_RESOLVER_MODE = 'local';
+
+    const resolved = await identifyProductResolved(REXROTH);
+    expect(resolved.source).toBe('local');
+    expect(identifyProductRemote).not.toHaveBeenCalled();
+  });
+
+  it('uses backend product search by default', async () => {
+    (identifyProductRemote as jest.Mock).mockResolvedValue(mockIdentifyDto(REXROTH));
+    (findEquivalentsRemote as jest.Mock).mockResolvedValue({
+      source: {
+        code: REXROTH,
+        normalizedCode: REXROTH,
+        manufacturer: 'Rexroth',
+        series: '4WE6',
+      },
+      candidates: [],
+    });
+
+    const resolved = await findEquivalentsResolved(REXROTH);
+    expect(identifyProductRemote).toHaveBeenCalledWith(REXROTH);
+    expect(findEquivalentsRemote).toHaveBeenCalledWith(REXROTH);
+    expect(resolved.source).toBe('backend');
+  });
+
+  it('uses local product search when mode is local', async () => {
+    process.env.EXPO_PUBLIC_RESOLVER_MODE = 'local';
+
     const local = await findEquivalentsResolved(REXROTH);
     const expected = resolveProductSearch(REXROTH);
 
@@ -70,31 +90,44 @@ describe('resolverService', () => {
     expect(findEquivalentsRemote).not.toHaveBeenCalled();
   });
 
-  it('fully identifies Rexroth nameplate codes after component series normalization', async () => {
-    const local = await findEquivalentsResolved('4WE 6 J62/EG24N9K4');
+  it('uses backend for rolling bearing codes', async () => {
+    (identifyProductRemote as jest.Mock).mockResolvedValue(mockIdentifyDto(BEARING));
+    (findEquivalentsRemote as jest.Mock).mockResolvedValue({
+      source: {
+        code: BEARING,
+        normalizedCode: BEARING,
+        manufacturer: null,
+        series: '6005',
+      },
+      candidates: [
+        {
+          code: 'SKF 6005-2RS',
+          manufacturer: 'SKF',
+          series: '6005',
+          matchPercentage: 80,
+          metadata: {
+            compatibilityLevel: 'medium',
+            confidenceLevel: 'medium',
+            dataCompleteness: 'medium',
+          },
+          summary: 'Özet',
+          compatibleHighlights: [],
+          checkNotes: [],
+        },
+      ],
+    });
 
-    expect(local.identification.outcome).toBe('full');
-    expect(local.productDetailRows.length).toBeGreaterThan(0);
-    expect(local.productDetailRows.some((row) => row.label === 'Bobin voltajı')).toBe(true);
-    expect(local.hasEquivalents).toBe(true);
+    const resolved = await findEquivalentsResolved(BEARING);
+
+    expect(resolved.source).toBe('backend');
+    expect(resolved.identification.outcome).toBe('full');
+    expect(resolved.identification.resolverCategoryKey).toBe('rolling_bearing');
+    expect(identifyProductRemote).toHaveBeenCalledWith(BEARING);
+    expect(findEquivalentsRemote).toHaveBeenCalledWith(BEARING);
   });
 
   it('uses remote equivalents flow in backend mode', async () => {
-    process.env.EXPO_PUBLIC_RESOLVER_MODE = 'backend';
-    process.env.EXPO_PUBLIC_RESOLVER_BACKEND_FALLBACK = 'false';
-
-    (identifyProductRemote as jest.Mock).mockResolvedValue({
-      normalizedCode: REXROTH,
-      manufacturer: 'Rexroth',
-      series: '4WE6',
-      category: 'Valf',
-      outcome: 'full',
-      confidence: 'high',
-      technicalAttributes: [],
-      productDetailRows: [],
-      warnings: [],
-    });
-
+    (identifyProductRemote as jest.Mock).mockResolvedValue(mockIdentifyDto(REXROTH));
     (findEquivalentsRemote as jest.Mock).mockResolvedValue({
       source: {
         code: REXROTH,
@@ -129,9 +162,6 @@ describe('resolverService', () => {
   });
 
   it('uses remote compare in backend mode', async () => {
-    process.env.EXPO_PUBLIC_RESOLVER_MODE = 'backend';
-    process.env.EXPO_PUBLIC_RESOLVER_BACKEND_FALLBACK = 'false';
-
     (compareProductsRemote as jest.Mock).mockResolvedValue({
       sourceCode: REXROTH,
       candidateCode: YUKEN,
@@ -155,6 +185,32 @@ describe('resolverService', () => {
     const result = await compareProductsResolved(REXROTH, YUKEN);
     expect(compareProductsRemote).toHaveBeenCalledWith(REXROTH, YUKEN);
     expect(result.serverMatchPercentage).toBe(86);
+  });
+
+  it('uses remote two-code compare in backend mode', async () => {
+    (compareProductsRemote as jest.Mock).mockResolvedValue({
+      sourceCode: BEARING,
+      candidateCode: 'SKF 6005-2RS',
+      metadata: {
+        compatibilityLevel: 'medium',
+        confidenceLevel: 'medium',
+        dataCompleteness: 'medium',
+      },
+      summary: {
+        matchLevelTr: 'Mekanik muadil adayı',
+        summaryTr: 'Özet',
+        riskLevel: 'medium',
+        matchPercentage: 75,
+      },
+      compatible: [],
+      different: [],
+      unknownOrCheck: [],
+      warnings: [],
+    });
+
+    const result = await compareTwoProductsResolved(BEARING, 'SKF 6005-2RS');
+    expect(compareProductsRemote).toHaveBeenCalledWith(BEARING, 'SKF 6005-2RS');
+    expect(result.serverMatchPercentage).toBe(75);
   });
 
   it('does not import firebase client SDK in service layer', () => {

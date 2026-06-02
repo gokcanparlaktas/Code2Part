@@ -74,5 +74,17 @@
       "atos_dhu",
       "parker_d3w"
     ]
+  },
+  {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": "Metrik yuvarlanma tipi rulmanlar için çok markalı muadil öneri grubu. d/D/B eşleşmesi zorunludur; suffix üretici tercihine göre önerilir.",
+    "id": "rolling_bearing_metric_group",
+    "name": "Metrik yuvarlanma tipi rulman",
+    "seriesIds": [
+      "rolling_bearing_metric"
+    ]
   }
 ]

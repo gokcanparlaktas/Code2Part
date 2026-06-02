@@ -15,11 +15,17 @@ import { ProductCard } from '@/components/ProductCard';
 import { PartialSuggestionsPanel } from '@/components/PartialSuggestionsPanel';
 import { UnresolvedResultCard } from '@/components/UnresolvedResultCard';
 import { calculateProductReliability } from '@/domain/reliability/calculateProductReliability';
-import { PARTIAL_SOURCE_EQUIVALENTS_WARNING_TR } from '@/domain/resolver/partialSourceEquivalents';
+import {
+  PARTIAL_SOURCE_EQUIVALENTS_WARNING_TR,
+  ROLLING_BEARING_EQUIVALENCE_DISCLAIMER_TR,
+} from '@/domain/resolver/partialSourceEquivalents';
+import { isRollingBearingCode } from '@/domain/categories/rollingBearing/isRollingBearingCode';
 import {
   completeProductCode,
   shouldSuppressWeakPartialSuggestions,
 } from '@/domain/resolver/completeProductCode';
+import { identifyProduct } from '@/domain/resolver/identifyProduct';
+import { normalizeCode } from '@/domain/resolver/normalizeCode';
 import { suggestProducts } from '@/domain/resolver/suggestProducts';
 import { useResolvedProductSearch } from '@/hooks/useResolvedProductSearch';
 import {
@@ -88,7 +94,16 @@ export default function ResultScreen() {
 
     const notFound = data.identification.outcome === 'not_found';
     const partial = data.identification.outcome === 'series_only';
-    const partialSuggestions = notFound || partial ? suggestProducts(inputCode) : [];
+    let partialSuggestions = notFound || partial ? suggestProducts(inputCode) : [];
+
+    if (notFound && isRollingBearingCode(normalizeCode(inputCode))) {
+      const localIdentification = identifyProduct(inputCode, normalizeCode(inputCode));
+      if (localIdentification.outcome === 'full') {
+        partialSuggestions = partialSuggestions.filter(
+          (suggestion) => suggestion.matchedBy !== 'exact_match'
+        );
+      }
+    }
 
     return {
       identification: data.identification,
@@ -108,6 +123,7 @@ export default function ResultScreen() {
 
   const showCodeCompletionPanel = Boolean(
     codeCompletion &&
+      identification?.outcome !== 'full' &&
       (codeCompletion.completionStatus === 'can_complete' ||
         codeCompletion.completionStatus === 'already_complete')
   );
@@ -187,11 +203,19 @@ export default function ResultScreen() {
     <View style={styles.stateContainer}>{content}</View>
   );
 
-  const partialNoticeText =
-    equivalenceWarnings[0] ??
-    reliability?.seriesOnlyNoticeTr ??
-    reliability?.warningMessageTr ??
-    PARTIAL_IDENTIFICATION_NOTICE_FALLBACK;
+  const partialNoticeText = useMemo(() => {
+    const partialWarning = equivalenceWarnings.find(
+      (warning) =>
+        warning !== ROLLING_BEARING_EQUIVALENCE_DISCLAIMER_TR &&
+        warning !== PARTIAL_SOURCE_EQUIVALENTS_WARNING_TR
+    );
+    return (
+      partialWarning ??
+      reliability?.seriesOnlyNoticeTr ??
+      reliability?.warningMessageTr ??
+      PARTIAL_IDENTIFICATION_NOTICE_FALLBACK
+    );
+  }, [equivalenceWarnings, reliability]);
 
   let body: ReactNode;
 

@@ -1,4 +1,5 @@
 import { buildHydraulicValveEquivalentCandidates } from '@/domain/categories/hydraulicValve/buildHydraulicValveEquivalentCandidates';
+import { buildRollingBearingEquivalentCandidates } from '@/domain/categories/rollingBearing/buildRollingBearingEquivalentCandidates';
 import {
   getAllCatalogExampleCodes,
   getLegacyEquivalentGroups,
@@ -7,6 +8,7 @@ import {
 import {
   HYDRAULIC_VALVE_CATEGORY,
   PNEUMATIC_CYLINDER_CATEGORY,
+  ROLLING_BEARING_CATEGORY,
   type ProductResolverCategory,
 } from '@/types/category';
 import type { EquivalentCandidate } from '@/types/compatibility';
@@ -206,6 +208,15 @@ function buildEquivalentCandidatesForTargetSeries(
 
   if (isHydraulicValveCategory(source.resolverCategoryKey)) {
     const generated = buildHydraulicValveEquivalentCandidates(source, targetSeries);
+    if (generated.length > 0) {
+      return generated
+        .map((entry) => buildEquivalentCandidateFromGenerated(source, targetSeries, entry))
+        .filter((candidate): candidate is EquivalentCandidate => candidate !== null);
+    }
+  }
+
+  if (source.resolverCategoryKey === ROLLING_BEARING_CATEGORY) {
+    const generated = buildRollingBearingEquivalentCandidates(source);
     if (generated.length > 0) {
       return generated
         .map((entry) => buildEquivalentCandidateFromGenerated(source, targetSeries, entry))
@@ -522,6 +533,66 @@ function collectCatalogExampleCandidates(
   }
 }
 
+function buildRollingBearingEquivalentCandidate(
+  source: ProductIdentification,
+  generated: GeneratedEquivalentCandidate
+): EquivalentCandidate | null {
+  const series = getProductSeriesById(source.seriesId ?? '');
+  if (!series) {
+    return null;
+  }
+
+  if (normalizeCode(generated.generatedCode) === normalizeCode(source.inputCode)) {
+    return null;
+  }
+
+  const targetIdentification = identifyProduct(
+    generated.generatedCode,
+    normalizeCode(generated.generatedCode)
+  );
+  if (
+    !targetIdentification.matched ||
+    targetIdentification.bearingDecode?.dimensions.status !== 'complete'
+  ) {
+    return null;
+  }
+
+  return {
+    seriesId: series.id,
+    brand: generated.manufacturer,
+    series: generated.series,
+    productType: targetIdentification.productType.value ?? series.productType,
+    productCategory: series.productCategory,
+    standardFamily: series.standardFamily,
+    suggestedCode: generated.generatedCode,
+    targetIdentification,
+    generation: generationToCandidateMetadata(generated),
+  };
+}
+
+function collectRollingBearingCrossBrandCandidates(
+  source: ProductIdentification,
+  pool: Map<string, DiscoveredEquivalentCandidate>
+): void {
+  if (source.resolverCategoryKey !== ROLLING_BEARING_CATEGORY || !source.seriesId) {
+    return;
+  }
+
+  const generated = buildRollingBearingEquivalentCandidates(source);
+  for (const entry of generated) {
+    const candidate = buildRollingBearingEquivalentCandidate(source, entry);
+    if (!candidate) {
+      continue;
+    }
+    upsertCandidate(pool, {
+      candidate,
+      reason: 'same_category_profile',
+      coarseMatchConfidence: 'medium',
+      notes: entry.checkNotes,
+    });
+  }
+}
+
 export function findEquivalentCandidates(
   sourceIdentification: ProductIdentification,
   sourceCode: string,
@@ -532,6 +603,17 @@ export function findEquivalentCandidates(
   }
 
   const pool = new Map<string, DiscoveredEquivalentCandidate>();
+
+  if (sourceIdentification.resolverCategoryKey === ROLLING_BEARING_CATEGORY) {
+    collectRollingBearingCrossBrandCandidates(sourceIdentification, pool);
+    return Array.from(pool.values()).sort((a, b) => {
+      const rankDiff = reasonRank(b.reason) - reasonRank(a.reason);
+      if (rankDiff !== 0) {
+        return rankDiff;
+      }
+      return confidenceRank(b.coarseMatchConfidence) - confidenceRank(a.coarseMatchConfidence);
+    });
+  }
 
   collectEquivalenceGroupCandidates(sourceIdentification, catalog, pool);
   collectSeriesProfileCandidates(sourceIdentification, catalog, pool);

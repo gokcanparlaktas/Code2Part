@@ -1,14 +1,13 @@
 import type { HydraulicFunctionCenterCondition } from '@/domain/categories/hydraulicValve/functionMappings/hydraulicFunctionBehavior';
 import {
   getRexrothWE6SpoolSemantics,
-  REXROTH_WE6_CENTER_CONDITION_LABEL_TR,
   type RexrothWE6BaseSpoolSymbol,
 } from '@/domain/categories/hydraulicValve/manufacturers/rexroth/rexrothWE6SpoolSemantics';
 import {
   getYukenDSGSpoolSemantics,
-  YUKEN_DSG_CENTER_CONDITION_LABEL_TR,
   type YukenDSGSpoolFunctionCode,
 } from '@/domain/categories/hydraulicValve/manufacturers/yuken/yukenDSGSpoolSemantics';
+import { formatCenterConditionSelectionLabel } from '@/domain/presentation/formatCenterTypeDisplay';
 
 /** User-facing center types in stable order for completion chips. */
 export const HYDRAULIC_CENTER_TYPE_SELECTION_ORDER: HydraulicFunctionCenterCondition[] = [
@@ -58,7 +57,7 @@ export function buildRexrothCenterTypeCompletionOptions(): Array<{
     return [
       {
         token,
-        displayValue: REXROTH_WE6_CENTER_CONDITION_LABEL_TR[centerCondition],
+        displayValue: formatCenterConditionSelectionLabel(centerCondition),
       },
     ];
   });
@@ -71,15 +70,15 @@ export function formatRexrothSpoolDisplayLabel(token: string): string {
     >
   ).find(([, spool]) => spool === token);
   if (fromPreferred) {
-    return REXROTH_WE6_CENTER_CONDITION_LABEL_TR[fromPreferred[0]];
+    return formatCenterConditionSelectionLabel(fromPreferred[0]);
   }
 
-  const semantics = getRexrothWE6SpoolSemantics(token as RexrothWE6BaseSpoolSymbol);
+  const semantics = getRexrothWE6SpoolSemantics(token);
   if (!semantics) {
     return 'Katalogdan kontrol';
   }
 
-  return REXROTH_WE6_CENTER_CONDITION_LABEL_TR[semantics.centerCondition];
+  return formatCenterConditionSelectionLabel(semantics.centerCondition);
 }
 
 export function buildYukenCenterTypeCompletionOptions(): Array<{
@@ -100,7 +99,7 @@ export function buildYukenCenterTypeCompletionOptions(): Array<{
     return [
       {
         token,
-        displayValue: YUKEN_DSG_CENTER_CONDITION_LABEL_TR[centerCondition],
+        displayValue: formatCenterConditionSelectionLabel(centerCondition),
       },
     ];
   });

@@ -16,7 +16,7 @@ export type HydraulicFunctionNormallyState = 'normally_open' | 'normally_closed'
 
 import {
   getRexrothWE6SpoolSemantics,
-  isRexrothWE6BaseSpoolSymbol,
+  isRexrothWEOrderingSpoolSymbol,
   rexrothWE6BehaviorLookupToken,
 } from '@/domain/categories/hydraulicValve/manufacturers/rexroth/rexrothWE6SpoolSemantics';
 import { getVickersDG4VSpoolSemantics } from '@/domain/categories/hydraulicValve/manufacturers/vickers/vickersDG4VSemantics';
@@ -289,26 +289,36 @@ function rexrothBehaviorFromOrderingToken(
   series: string,
   orderingToken: string
 ): HydraulicFunctionBehavior | null {
-  const baseToken = rexrothWE6BehaviorLookupToken(orderingToken);
-  if (!baseToken || !isRexrothWE6BaseSpoolSymbol(baseToken)) {
+  const lookupToken = rexrothWE6BehaviorLookupToken(orderingToken);
+  if (!lookupToken || !isRexrothWEOrderingSpoolSymbol(lookupToken)) {
     return null;
   }
 
-  const baseKey = behaviorKey(manufacturer, series, baseToken);
-  const base = behaviorByKey.get(baseKey);
-  if (!base) {
-    return null;
+  const baseKey = behaviorKey(manufacturer, series, lookupToken);
+  const fromTable = behaviorByKey.get(baseKey);
+  const sem = getRexrothWE6SpoolSemantics(lookupToken);
+
+  const requiresCatalogCheck =
+    sem.centering === 'unknown' ||
+    sem.centerCondition === 'unknown' ||
+    sem.normallyState === 'unknown';
+
+  if (fromTable && orderingToken === lookupToken) {
+    return {
+      ...fromTable,
+      requiresCatalogCheck,
+    };
   }
 
-  if (orderingToken === baseToken) {
-    return base;
-  }
-
-  return {
-    ...base,
-    rawToken: orderingToken,
-    note: `${orderingToken} → ${baseToken} temel sembolü; ${base.note ?? ''}`.trim(),
-  };
+  return entry(manufacturer, series, orderingToken, {
+    positions: sem.numberOfPositions,
+    centering: sem.centering,
+    centerCondition: sem.centerCondition,
+    normallyState: sem.normallyState,
+    confidence: fromTable?.confidence ?? 'medium',
+    requiresCatalogCheck,
+    note: fromTable?.note ?? sem.behaviorNoteTr,
+  });
 }
 
 export function resolveHydraulicFunctionBehavior(options: {

@@ -1,6 +1,11 @@
 import { calculateHydraulicValveReliability } from '@/domain/categories/hydraulicValve/hydraulicValveReliability';
 import { calculatePneumaticCylinderReliability } from '@/domain/categories/pneumaticCylinder/pneumaticCylinderReliability';
-import { HYDRAULIC_VALVE_CATEGORY, PNEUMATIC_CYLINDER_CATEGORY } from '@/types/category';
+import { calculateRollingBearingReliability } from '@/domain/categories/rollingBearing/rollingBearingReliability';
+import {
+  HYDRAULIC_VALVE_CATEGORY,
+  PNEUMATIC_CYLINDER_CATEGORY,
+  ROLLING_BEARING_CATEGORY,
+} from '@/types/category';
 import type { ConfidenceLevel, ProductIdentification } from '@/types/product';
 import { isLowConfidence } from '@/utils/confidenceScore';
 
@@ -22,6 +27,11 @@ export function calculateProductReliability(
 
   if (identification.resolverCategoryKey === HYDRAULIC_VALVE_CATEGORY) {
     const result = calculateHydraulicValveReliability(identification);
+    return { ...result, isLowConfidence: isLowConfidence(result.confidence) };
+  }
+
+  if (identification.resolverCategoryKey === ROLLING_BEARING_CATEGORY) {
+    const result = calculateRollingBearingReliability(identification);
     return { ...result, isLowConfidence: isLowConfidence(result.confidence) };
   }
 

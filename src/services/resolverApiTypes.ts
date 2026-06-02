@@ -8,6 +8,14 @@ export interface IdentifyProductResponseDto {
   category: string | null;
   outcome: ProductIdentification['outcome'];
   confidence: ProductIdentification['confidence'];
+  matched: boolean;
+  resolverCategoryKey: string | null;
+  seriesId: string | null;
+  productType: string | null;
+  standardFamily: string | null;
+  boreMm: number | null;
+  outsideDiameterMm: number | null;
+  widthMm: number | null;
   technicalAttributes: Array<{
     key: string;
     label: string;

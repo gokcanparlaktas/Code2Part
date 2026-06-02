@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { ROLLING_BEARING_CATEGORY } from '@/types/category';
 import type { ProductIdentification } from '@/types/product';
 import { buildProductDetailRows } from '@/domain/presentation/buildProductDetailRows';
 import type { ProductDetailRowView } from '@/services/mapBackendResolverDtos';
@@ -29,9 +30,21 @@ interface DetailRowProps {
 const PRIMARY_LABELS = new Set([
   'Marka',
   'Seri',
+  'Seri kodu',
   'Ürün kategorisi',
   'Ürün tipi',
+  'İç çap',
+  'Dış çap',
+  'Kalınlık',
+  'Sızdırmazlık',
 ]);
+
+function isHiddenBearingDetailRow(row: { label: string; evidence: string }): boolean {
+  if (row.label === 'Not') {
+    return true;
+  }
+  return row.evidence.toLowerCase().includes('katalog verisi');
+}
 
 const HIGHLIGHT_KEYWORDS = [
   'MONTAJ',
@@ -132,21 +145,29 @@ export function ProductCard({
   const { homeColors } = useTheme();
   const [detailsVisible, setDetailsVisible] = useState(false);
   const isFullMatch = identification.outcome === 'full';
+  const isRollingBearing = identification.resolverCategoryKey === ROLLING_BEARING_CATEGORY;
 
-  const rows: DetailRowProps[] = useMemo(
-    () =>
-      (detailRows && detailRows.length > 0 ? detailRows : buildProductDetailRows(identification)).map(
-        (row) => ({
-          ...row,
-          highlighted: isHighlightedRow(row.label),
-        })
-      ),
-    [detailRows, identification]
-  );
+  const rows: DetailRowProps[] = useMemo(() => {
+    const built =
+      detailRows && detailRows.length > 0
+        ? detailRows
+        : buildProductDetailRows(identification);
+    const visible = isRollingBearing
+      ? built.filter((row) => !isHiddenBearingDetailRow(row))
+      : built;
+    return visible.map((row) => ({
+      ...row,
+      highlighted: isHighlightedRow(row.label),
+    }));
+  }, [detailRows, identification, isRollingBearing]);
 
   const primaryRows = rows.filter((row) => row.highlighted);
   const secondaryRows = rows.filter((row) => !row.highlighted);
-  const technicalRows = isFullMatch ? rows : [];
+  const modalRows = isRollingBearing ? secondaryRows : rows;
+  const showTechnicalDetailsModal =
+    modalRows.length > 0 &&
+    (isFullMatch || (isRollingBearing && identification.outcome !== 'not_found'));
+  const technicalRows = showTechnicalDetailsModal ? modalRows : [];
 
   return (
     <View style={styles.root}>
@@ -192,7 +213,7 @@ export function ProductCard({
         <TechnicalDetailsSection rows={secondaryRows} styles={styles} />
       ) : null}
 
-      {isFullMatch && technicalRows.length > 0 ? (
+      {showTechnicalDetailsModal ? (
         <Pressable
           style={({ pressed }) => [styles.allDetailsLink, pressed && styles.pressed]}
           onPress={() => setDetailsVisible(true)}

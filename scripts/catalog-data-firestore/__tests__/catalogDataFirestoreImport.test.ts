@@ -20,6 +20,9 @@ import {
 } from '../firestoreDocumentPath';
 import { inferDocumentMeta, inferDocumentTypeFromFileName } from '../inferDocumentMeta';
 import { loadImportCliEnv } from '../loadImportCliEnv';
+import { buildBearingsImportPlan } from '../buildBearingsImportPlan';
+import { BEARINGS_CATALOG_RELATIVE_PATHS } from '../bearingsDocuments';
+import { inferBearingDocumentMeta } from '../inferBearingDocumentMeta';
 import { MVP_CATALOG_RELATIVE_PATHS, RUNTIME_USED_RELATIVE_PATHS } from '../mvpDocuments';
 import {
   assertNoUndefinedFirestoreValues,
@@ -95,6 +98,52 @@ describe('inferDocumentMeta', () => {
   it('maps file names to document types', () => {
     expect(inferDocumentTypeFromFileName('family-index.json')).toBe('family_index');
     expect(inferDocumentTypeFromFileName('unknown-or-review.json')).toBe('unknown_or_review');
+  });
+});
+
+describe('inferBearingDocumentMeta', () => {
+  it('infers shared bore-code document', () => {
+    const meta = inferBearingDocumentMeta(
+      'bearings/rolling-bearings/shared/bore-code-candidates.json'
+    );
+    expect(meta.documentType).toBe('bore_code_candidates');
+    expect(meta.scope).toBe('shared');
+    expect(meta.sourceGroup).toBe('rolling-bearings');
+  });
+
+  it('infers standard-series parser spec', () => {
+    const meta = inferBearingDocumentMeta(
+      'bearings/rolling-bearings/standard-series/parser-spec-candidate.json'
+    );
+    expect(meta.documentType).toBe('parser_spec_candidate');
+    expect(meta.scope).toBe('family');
+    expect(meta.familyId).toBe('standard-series');
+  });
+});
+
+describe('buildBearingsImportPlan', () => {
+  it('builds envelopes for all bearings documents without errors', () => {
+    const plan = buildBearingsImportPlan({
+      sourceRoot: CATALOG_ROOT,
+      catalogVersion: 'bearings.test',
+      importedAt: '2026-06-01T00:00:00.000Z',
+    });
+
+    expect(plan.issues.filter((i) => i.level === 'error')).toEqual([]);
+    expect(plan.envelopes).toHaveLength(BEARINGS_CATALOG_RELATIVE_PATHS.length);
+    expect(plan.release.runtimeUsedCount).toBe(0);
+  });
+
+  it('dimension payload stays under Firestore size limit', () => {
+    const plan = buildBearingsImportPlan({
+      sourceRoot: CATALOG_ROOT,
+      catalogVersion: 'bearings.size.test',
+    });
+    const dimension = plan.envelopes.find((e) =>
+      e.relativePath.endsWith('dimension-candidates.json')
+    );
+    expect(dimension).toBeDefined();
+    expect(dimension!.payloadByteSize).toBeLessThan(900 * 1024);
   });
 });
 

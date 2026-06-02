@@ -11,11 +11,12 @@ import type { TechnicalAttributeResult } from '@/types/technicalAttributeResult'
 
 import {
   getRexrothWE6SpoolSemantics,
-  isRexrothWE6BaseSpoolSymbol,
+  isRexrothWEOrderingSpoolSymbol,
   REXROTH_WE6_INVALID_OF_WARNING_TR,
   type RexrothWE6BaseSpoolSymbol,
   type RexrothWE6SwitchingPositionVariant,
 } from './rexrothWE6SpoolSemantics';
+import { rexrothWE6OrderingSpoolPattern } from './rexrothWE6CatalogSpoolSymbols';
 import {
   formatRexrothWEDesignSeriesDisplay,
   parseRexrothWEDesignSeriesToken,
@@ -66,7 +67,7 @@ export interface RexrothWEParsedCode {
 /** @deprecated Use RexrothWEParsedCode */
 export type RexrothWE6ParsedCode = RexrothWEParsedCode;
 
-const SPOOL_LETTERS = '[ABCDEGHJY]';
+const SPOOL_LETTERS = rexrothWE6OrderingSpoolPattern();
 
 function normalizeCoilRatingToken(voltageToken: string): string {
   const upper = voltageToken.trim().toUpperCase();
@@ -150,6 +151,33 @@ function parseLegacyCoilSection(section: string): {
     voltageToken: match[1],
     manualOverrideToken: match[2] ?? null,
     connectorToken: match[3] ?? null,
+  };
+}
+
+export type RexrothWECoilSectionTokens = {
+  voltageToken: string | null;
+  manualOverrideToken: string | null;
+  connectorToken: string | null;
+};
+
+/** Parses Rexroth WE coil suffix (e.g. EG24N9K4) for completion and validation. */
+export function parseRexrothWECoilSectionTokens(
+  coilSection: string
+): RexrothWECoilSectionTokens | null {
+  const trimmed = coilSection.trim().toUpperCase();
+  if (!trimmed) {
+    return null;
+  }
+
+  const coil = parseRe23164CoilSection(trimmed) ?? parseLegacyCoilSection(trimmed);
+  if (!coil?.voltageToken) {
+    return null;
+  }
+
+  return {
+    voltageToken: coil.voltageToken,
+    manualOverrideToken: coil.manualOverrideToken,
+    connectorToken: coil.connectorToken,
   };
 }
 
@@ -270,7 +298,7 @@ function matchSeriesHeader(
       const single = new RegExp(
         `^${seriesPrefix}(${spool})(?:${separator})(${designPattern})\\/(.+)$`
       ).exec(normalized);
-      if (single?.[1] && isRexrothWE6BaseSpoolSymbol(single[1])) {
+      if (single?.[1] && isRexrothWEOrderingSpoolSymbol(single[1])) {
         const match = buildHeaderMatch(
           {
             baseSpoolSymbol: single[1],
@@ -418,7 +446,7 @@ function appendSpoolRawFields(
       value: parsed.spoolSymbol,
       evidence: 'code',
       confidence: 'medium',
-      requiresCatalogCheck: true,
+      requiresCatalogCheck: false,
       sourceToken: parsed.spoolSymbol,
       category: HYDRAULIC_VALVE_CATEGORY,
     }),

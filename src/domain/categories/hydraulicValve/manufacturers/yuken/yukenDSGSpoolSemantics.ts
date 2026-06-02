@@ -24,7 +24,7 @@ export const YUKEN_DSG_CENTER_CONDITION_LABEL_TR: Record<
   open_center: 'Açık merkez',
   tandem_center: 'Tandem merkez',
   float_center: 'Yüzer merkez',
-  partially_open: 'Kısmi açık / katalogdan kontrol edilmeli',
+  partially_open: 'Kapalı merkez',
   unknown: 'Bilinmiyor',
 };
 

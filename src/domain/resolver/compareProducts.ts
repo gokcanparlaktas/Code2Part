@@ -1,6 +1,11 @@
 import { compareHydraulicValves } from '@/domain/categories/hydraulicValve/hydraulicValveComparison';
 import { comparePneumaticCylinders } from '@/domain/categories/pneumaticCylinder/pneumaticCylinderComparison';
-import { HYDRAULIC_VALVE_CATEGORY, PNEUMATIC_CYLINDER_CATEGORY } from '@/types/category';
+import { compareRollingBearings } from '@/domain/categories/rollingBearing/compareRollingBearings';
+import {
+  HYDRAULIC_VALVE_CATEGORY,
+  PNEUMATIC_CYLINDER_CATEGORY,
+  ROLLING_BEARING_CATEGORY,
+} from '@/types/category';
 import type {
   AttributeComparison,
   CompatibilityResult,
@@ -60,6 +65,9 @@ function formatResolverCategoryDisplay(
   if (categoryKey === HYDRAULIC_VALVE_CATEGORY) {
     return 'Hidrolik valf';
   }
+  if (categoryKey === ROLLING_BEARING_CATEGORY) {
+    return 'Rulman';
+  }
 
   return categoryKey ?? 'Bilinmiyor';
 }
@@ -71,7 +79,9 @@ export function isCrossCategoryComparison(
   const category = resolveResolverCategory(source);
   const targetCategory = resolveTargetResolverCategory(candidate);
   const isSupportedCategory =
-    category === PNEUMATIC_CYLINDER_CATEGORY || category === HYDRAULIC_VALVE_CATEGORY;
+    category === PNEUMATIC_CYLINDER_CATEGORY ||
+    category === HYDRAULIC_VALVE_CATEGORY ||
+    category === ROLLING_BEARING_CATEGORY;
 
   return Boolean(isSupportedCategory && targetCategory && category !== targetCategory);
 }
@@ -195,6 +205,14 @@ export function compareProducts(
   if (category === HYDRAULIC_VALVE_CATEGORY) {
     return enrichWithGenerationMetadata(
       compareHydraulicValves(source, candidate, {
+        catalogProvider: options?.catalogProvider,
+      })
+    );
+  }
+
+  if (category === ROLLING_BEARING_CATEGORY) {
+    return enrichWithGenerationMetadata(
+      compareRollingBearings(source, candidate, {
         catalogProvider: options?.catalogProvider,
       })
     );

@@ -13,46 +13,103 @@ import type { HomeColorPalette } from '@/theme/homePalettes';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useHomeStyles } from '@/theme/useHomeStyles';
 
+export type HowItWorksVariant = 'identify' | 'code-creator';
+
 interface HowItWorksHelpProps {
   /** Icon-only trigger for compact headers (e.g. home screen). */
   compact?: boolean;
+  /** Which tab flow to explain in the modal. */
+  variant?: HowItWorksVariant;
 }
 
-export function HowItWorksHelp({ compact = false }: HowItWorksHelpProps) {
+function buildSteps(
+  variant: HowItWorksVariant,
+  homeColors: HomeColorPalette,
+  isDark: boolean
+) {
+  if (variant === 'code-creator') {
+    return [
+      {
+        title: 'Ürün tipini seçin',
+        description:
+          'Hidrolik valf veya pnömatik silindir seçin. Hidrolik valflerde CETOP montaj ölçüsünü (NG6 / NG10) belirleyin.',
+        icon: 'list-outline' as const,
+        iconColor: homeColors.accent,
+        iconBorder: 'rgba(249, 115, 22, 0.35)',
+        iconBg: 'rgba(249, 115, 22, 0.12)',
+      },
+      {
+        title: 'Marka ve teknik seçimler',
+        description:
+          'Marka isteğe bağlıdır. Merkez tipi, bobin voltajı, manuel kumanda gibi alanları listeden seçin; bilmediğiniz alanlar için “Kararsızım” kullanılabilir.',
+        icon: 'options-outline' as const,
+        iconColor: homeColors.brandBlue,
+        iconBorder: isDark ? 'rgba(96, 165, 250, 0.35)' : 'rgba(10, 22, 40, 0.2)',
+        iconBg: homeColors.checkBlueBg,
+      },
+      {
+        title: 'Kodu oluşturun',
+        description:
+          'Marka seçtiyseniz o üreticinin sipariş kodu üretilir. Seçmediyseniz aynı özelliklere uygun tüm muadil marka kodları listelenir.',
+        icon: 'construct-outline' as const,
+        iconColor: homeColors.green,
+        iconBorder: homeColors.greenBorder,
+        iconBg: homeColors.greenBg,
+      },
+      {
+        title: 'Tanımlayın',
+        description:
+          'Oluşturulan koda dokunarak tanımlama ekranına geçin; teknik detayları ve muadilleri oradan inceleyebilirsiniz.',
+        icon: 'search-outline' as const,
+        iconColor: homeColors.brandAccentBlue,
+        iconBorder: isDark ? 'rgba(56, 189, 248, 0.35)' : 'rgba(14, 116, 144, 0.25)',
+        iconBg: isDark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(224, 242, 254, 0.9)',
+      },
+    ] as const;
+  }
+
+  return [
+    {
+      title: 'Kodu gir',
+      description: 'Ürün kodunu yukarıdaki alana girin veya kamerayla okutun',
+      icon: 'keypad-outline' as const,
+      iconColor: homeColors.accent,
+      iconBorder: 'rgba(249, 115, 22, 0.35)',
+      iconBg: 'rgba(249, 115, 22, 0.12)',
+    },
+    {
+      title: 'Tanımla',
+      description: 'Uygulama kodu düzenler, marka/seri ve teknik alanları çıkarır',
+      icon: 'scan-outline' as const,
+      iconColor: homeColors.brandBlue,
+      iconBorder: isDark ? 'rgba(96, 165, 250, 0.35)' : 'rgba(10, 22, 40, 0.2)',
+      iconBg: homeColors.checkBlueBg,
+    },
+    {
+      title: 'Karşılaştır',
+      description: 'Muadil serileri ve uyumluluğu görün; Kod yarat sekmesinde kod da üretebilirsiniz',
+      icon: 'swap-horizontal-outline' as const,
+      iconColor: homeColors.green,
+      iconBorder: homeColors.greenBorder,
+      iconBg: homeColors.greenBg,
+    },
+  ] as const;
+}
+
+export function HowItWorksHelp({ compact = false, variant = 'identify' }: HowItWorksHelpProps) {
   const styles = useHomeStyles(createStyles);
   const { homeColors, isDark } = useTheme();
   const [visible, setVisible] = useState(false);
 
   const steps = useMemo(
-    () =>
-      [
-        {
-          title: 'Kodu gir',
-          description: 'Ürün kodunu yukarıdaki alana girin',
-          icon: 'keypad-outline' as const,
-          iconColor: homeColors.accent,
-          iconBorder: 'rgba(249, 115, 22, 0.35)',
-          iconBg: 'rgba(249, 115, 22, 0.12)',
-        },
-        {
-          title: 'Tanımla',
-          description: 'Uygulama kodu düzenler ve ürünü tanır',
-          icon: 'scan-outline' as const,
-          iconColor: homeColors.brandBlue,
-          iconBorder: isDark ? 'rgba(96, 165, 250, 0.35)' : 'rgba(10, 22, 40, 0.2)',
-          iconBg: homeColors.checkBlueBg,
-        },
-        {
-          title: 'Karşılaştır',
-          description: 'Muadil serileri ve uyumluluğu görün',
-          icon: 'swap-horizontal-outline' as const,
-          iconColor: homeColors.green,
-          iconBorder: homeColors.greenBorder,
-          iconBg: homeColors.greenBg,
-        },
-      ] as const,
-    [homeColors, isDark]
+    () => buildSteps(variant, homeColors, isDark),
+    [variant, homeColors, isDark]
   );
+
+  const footnote =
+    variant === 'code-creator'
+      ? 'Üretilen kodlar katalog kurallarına göre oluşturulur; sipariş öncesi üretici kataloğundan doğrulama önerilir.'
+      : 'Veri kontrolü için: Son Aramalar → Veri Kontrolü';
 
   return (
     <>
@@ -114,9 +171,7 @@ export function HowItWorksHelp({ compact = false }: HowItWorksHelpProps) {
                 ))}
               </View>
 
-              <Text style={styles.footnote}>
-                Veri kontrolü için: Son Aramalar → Veri Kontrolü
-              </Text>
+              <Text style={styles.footnote}>{footnote}</Text>
             </ScrollView>
 
             <Pressable

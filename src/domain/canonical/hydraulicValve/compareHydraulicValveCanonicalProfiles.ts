@@ -8,6 +8,7 @@ import type {
 } from '@/types/compatibility';
 import type { ProductIdentification } from '@/types/product';
 
+import { centerConditionsAreCompatibleForSimilarity } from '@/domain/categories/hydraulicValve/functionMappings/hydraulicFunctionBehavior';
 import { compareValveFunctionBehavior } from '@/domain/categories/hydraulicValve/functionMappings/compareValveFunctionBehavior';
 import {
   getHydraulicValveCheckItems,
@@ -93,6 +94,8 @@ export interface HydraulicValveCanonicalComparisonResult {
   };
   /** Both sides resolved center via matching catalog portState (no unknown Merkez tipi check). */
   portStateCenterResolved?: boolean;
+  /** Cross-brand center is a known near-match (same ways/centering); skip redundant Merkez tipi checklist. */
+  centerEquivalenceSettled?: boolean;
   mountingIsoClassMatched?: boolean;
   catalogPressureEvidencePresent?: boolean;
   catalogFlowEvidencePresent?: boolean;
@@ -213,10 +216,10 @@ function manualOverridePresenceFromProfile(
   profile: HydraulicValveCanonicalProfile
 ): 'present' | 'absent' | 'unknown' {
   const primary = manualOverrideDisplayForProfile(profile);
-  if (primary === 'Var') {
+  if (primary.startsWith('Var')) {
     return 'present';
   }
-  if (primary === 'Yok') {
+  if (primary.startsWith('Yok')) {
     return 'absent';
   }
   const value = profile.manualOverride.value;
@@ -369,6 +372,12 @@ function connectorSnapshotFromProfileField(
   };
 }
 
+const STANDARD_VALVE_COIL_CONNECTOR_TOKEN = /^(K4|N1|C4Z)$/i;
+
+function isStandardValveCoilConnectorToken(token?: string | null): boolean {
+  return Boolean(token?.trim() && STANDARD_VALVE_COIL_CONNECTOR_TOKEN.test(token.trim()));
+}
+
 function compareConnectorFields(
   source: HydraulicValveCanonicalProfile,
   target: HydraulicValveCanonicalProfile
@@ -378,6 +387,32 @@ function compareConnectorFields(
   warning?: string;
   checkReasonTr?: string;
 } {
+  if (
+    isStandardValveCoilConnectorToken(source.connectorType.rawToken) &&
+    isStandardValveCoilConnectorToken(target.connectorType.rawToken)
+  ) {
+    const sourceDisplay = connectorSnapshotFromProfileField(
+      source.connectorType,
+      source.brand,
+      source.series
+    ).displayValue;
+    const targetDisplay = connectorSnapshotFromProfileField(
+      target.connectorType,
+      target.brand,
+      target.series
+    ).displayValue;
+    return {
+      comparison: {
+        label: FIELD_LABELS.connectorType,
+        sourceDisplay,
+        targetDisplay,
+        status: 'compatible',
+      },
+      sentence:
+        'Konnektör aynı DIN/ISO valf soketi ailesi (DIN 43650 / EN 175301-803 / ISO 4400).',
+    };
+  }
+
   const sourceSnapshot = connectorSnapshotFromProfileField(
     source.connectorType,
     source.brand,
@@ -593,11 +628,7 @@ export function compareHydraulicValveCanonicalProfiles(
   });
   pushResult(result, mounting.comparison, mounting.sentence, 'critical');
 
-  if (
-    mounting.comparison.status === 'compatible' &&
-    source.mountingStandard.catalogEvidence?.isoCode?.includes('ISO 4401-03') &&
-    target.mountingStandard.catalogEvidence?.isoCode?.includes('ISO 4401-03')
-  ) {
+  if (mounting.comparison.status === 'compatible') {
     result.mountingIsoClassMatched = true;
   }
 
@@ -621,6 +652,7 @@ export function compareHydraulicValveCanonicalProfiles(
     hasCatalogPortStateEvidence(target.centerCondition);
 
   let center: { comparison: AttributeComparison; sentence: string | null };
+  let centerEnumCompatible = false;
 
   if (bothPortStateCenter) {
     const sourcePs = source.centerCondition.catalogEvidence!.portState!;
@@ -635,18 +667,35 @@ export function compareHydraulicValveCanonicalProfiles(
       Boolean(source.centerCondition.catalogEvidence?.needsReview) ||
       Boolean(target.centerCondition.catalogEvidence?.needsReview);
 
+    centerEnumCompatible =
+      crossBrand &&
+      source.centerCondition.value !== 'unknown' &&
+      target.centerCondition.value !== 'unknown' &&
+      centerConditionsAreCompatibleForSimilarity(
+        source.centerCondition.value,
+        target.centerCondition.value
+      );
+
+    const centerStatus: CompatibilityStatus = portMatch
+      ? 'compatible'
+      : centerEnumCompatible
+        ? 'unknownOrCheck'
+        : 'different';
+
     center = {
       comparison: {
         label: FIELD_LABELS.centerCondition,
         sourceDisplay: sourceCenterPortDisplay ?? display,
         targetDisplay: targetCenterPortDisplay ?? display,
-        status: portMatch ? 'compatible' : 'different',
+        status: centerStatus,
       },
       sentence: portMatch
         ? catalogReview
           ? 'Merkez tipi (port durumu) uyumlu görünüyor; katalog adayı doğrulanmalıdır.'
           : `Merkez tipi aynı: ${display}`
-        : `Merkez tipi farklı: ${sourceCenterPortDisplay ?? display} / ${targetCenterPortDisplay ?? display}`,
+        : centerEnumCompatible
+          ? 'Merkez tipi yakın görünüyor; kesin eşleşme için katalog kontrolü gerekir.'
+          : `Merkez tipi farklı: ${sourceCenterPortDisplay ?? display} / ${targetCenterPortDisplay ?? display}`,
     };
 
     if (portMatch) {
@@ -687,6 +736,19 @@ export function compareHydraulicValveCanonicalProfiles(
     crossBrand,
   });
   pushResult(result, centering.comparison, centering.sentence, 'critical');
+
+  const behaviorBasicsAligned =
+    !isUnknownCanonicalValue(source.waysPositions.value) &&
+    !isUnknownCanonicalValue(target.waysPositions.value) &&
+    source.waysPositions.value === target.waysPositions.value &&
+    !isUnknownCanonicalValue(source.centering.value) &&
+    !isUnknownCanonicalValue(target.centering.value) &&
+    source.centering.value === target.centering.value &&
+    centering.comparison.status === 'compatible';
+
+  if (result.portStateCenterResolved || (centerEnumCompatible && behaviorBasicsAligned)) {
+    result.centerEquivalenceSettled = true;
+  }
 
   const voltage = compareCanonicalEnumField({
     sourceField: source.coilVoltage,
@@ -793,7 +855,10 @@ export function compareHydraulicValveCanonicalProfiles(
     profileHasCatalogFlowEvidence(source.maxFlowLpm) ||
     profileHasCatalogFlowEvidence(target.maxFlowLpm);
 
-  if (source.sealMaterial && target.sealMaterial) {
+  const sourceSealKnown = source.sealMaterial && !isUnknownCanonicalValue(source.sealMaterial.value);
+  const targetSealKnown = target.sealMaterial && !isUnknownCanonicalValue(target.sealMaterial.value);
+
+  if (source.sealMaterial && target.sealMaterial && (sourceSealKnown || targetSealKnown)) {
     const seal = compareCanonicalEnumField({
       sourceField: source.sealMaterial,
       targetField: target.sealMaterial,
@@ -864,7 +929,8 @@ export function compareHydraulicValveCanonicalProfiles(
     if (
       functionMatch &&
       preferFunctionCheckOverPortState(functionMatch) &&
-      portStateSpool.comparison.status !== 'compatible'
+      portStateSpool.comparison.status !== 'compatible' &&
+      !centerEnumCompatible
     ) {
       spoolComparison = {
         ...functionMatch.comparison,
@@ -1033,7 +1099,11 @@ export function compareHydraulicValveCanonicalProfiles(
     pushResult(result, merkezUiComparison, merkezSentence, 'critical');
   }
 
-  if (merkezUiComparison.status === 'unknownOrCheck' && !result.portStateCenterResolved) {
+  if (
+    merkezUiComparison.status === 'unknownOrCheck' &&
+    !result.portStateCenterResolved &&
+    !result.centerEquivalenceSettled
+  ) {
     result.spoolDynamicCheck = {
       source: merkezUiComparison.sourceDisplay,
       target: merkezUiComparison.targetDisplay,
@@ -1160,6 +1230,18 @@ export function canonicalComparisonToCompatibilityResult(options: {
       return false;
     }
     if (
+      options.canonical.centerEquivalenceSettled &&
+      normalizeCheckFieldKey(item.field) === 'merkez tipi'
+    ) {
+      return false;
+    }
+    if (
+      options.canonical.centerEquivalenceSettled &&
+      normalizeCheckFieldKey(item.field) === 'merkez tipi'
+    ) {
+      return false;
+    }
+    if (
       options.canonical.catalogPressureEvidencePresent &&
       normalizeCheckFieldKey(item.field) === 'basınç'
     ) {
@@ -1180,6 +1262,12 @@ export function canonicalComparisonToCompatibilityResult(options: {
     }
     if (
       options.canonical.portStateCenterResolved &&
+      normalizeCheckFieldKey(item.field) === 'merkez tipi'
+    ) {
+      return false;
+    }
+    if (
+      options.canonical.centerEquivalenceSettled &&
       normalizeCheckFieldKey(item.field) === 'merkez tipi'
     ) {
       return false;
@@ -1252,8 +1340,17 @@ export function canonicalComparisonToCompatibilityResult(options: {
     return true;
   });
 
+  const sealWasEvaluated = comparisons.some(
+    (comparison) => normalizeCheckFieldKey(comparison.label) === 'conta'
+  );
+
   const checkItems = filterCheckItemsForResolvedIncompatibilities(
-    dedupeCheckItemsByField([...baseChecks, ...attributeChecksForMerge]),
+    dedupeCheckItemsByField([...baseChecks, ...attributeChecksForMerge]).filter((item) => {
+      if (!sealWasEvaluated && normalizeCheckFieldKey(item.field) === 'conta') {
+        return false;
+      }
+      return true;
+    }),
     comparisons
   );
 

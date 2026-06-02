@@ -1,6 +1,11 @@
 import {
+  resolveRexrothSpoolTokenForYukenFunction,
+  resolveYukenFunctionTokenForRexrothSpool,
+} from '@/domain/categories/hydraulicValve/hydraulicCenterTypeCatalogOptions';
+import { YUKEN_PREFERRED_FUNCTION_BY_CENTER } from '@/domain/categories/hydraulicValve/hydraulicValveCenterTypeSelection';
+import {
   getRexrothWE6SpoolSemantics,
-  isRexrothWE6BaseSpoolSymbol,
+  isRexrothWEOrderingSpoolSymbol,
   rexrothWE6BehaviorLookupToken,
 } from '@/domain/categories/hydraulicValve/manufacturers/rexroth/rexrothWE6SpoolSemantics';
 import type { YukenDSGSpoolFunctionCode } from '@/domain/categories/hydraulicValve/manufacturers/yuken/yukenDSGSpoolSemantics';
@@ -55,19 +60,15 @@ export function isConfidentRexrothSpoolMapping(spoolSymbol: string | null): bool
   }
 
   const base = rexrothWE6BehaviorLookupToken(spoolSymbol) ?? spoolSymbol;
-  if (!isRexrothWE6BaseSpoolSymbol(base)) {
+  if (!isRexrothWEOrderingSpoolSymbol(base)) {
     return false;
   }
 
-  if (!(base in CONFIDENT_REXROTH_TO_YUKEN_SPOOL)) {
-    return false;
+  if (resolveConfidentYukenSpoolCode(base)) {
+    return true;
   }
 
-  const semantics = getRexrothWE6SpoolSemantics(base);
-  return (
-    semantics.centerCondition === 'closed_center' ||
-    semantics.centerCondition === 'tandem_center'
-  );
+  return false;
 }
 
 export function resolveConfidentYukenSpoolCode(spoolSymbol: string | null): string | null {
@@ -76,7 +77,26 @@ export function resolveConfidentYukenSpoolCode(spoolSymbol: string | null): stri
   }
 
   const base = rexrothWE6BehaviorLookupToken(spoolSymbol) ?? spoolSymbol;
-  return CONFIDENT_REXROTH_TO_YUKEN_SPOOL[base] ?? null;
+  const fromTable = CONFIDENT_REXROTH_TO_YUKEN_SPOOL[base];
+  if (fromTable) {
+    return fromTable;
+  }
+
+  const fromCatalog = resolveYukenFunctionTokenForRexrothSpool(base);
+  if (fromCatalog && VALID_YUKEN_DSG_SPOOL_CODES.includes(fromCatalog as YukenDSGSpoolFunctionCode)) {
+    return fromCatalog;
+  }
+
+  const semantics = getRexrothWE6SpoolSemantics(base);
+  const fromSemantics =
+    semantics.centerCondition !== 'unknown'
+      ? YUKEN_PREFERRED_FUNCTION_BY_CENTER[semantics.centerCondition]
+      : undefined;
+  if (fromSemantics) {
+    return fromSemantics;
+  }
+
+  return null;
 }
 
 export function resolveConfidentRexrothSpoolCode(
@@ -87,5 +107,10 @@ export function resolveConfidentRexrothSpoolCode(
   }
 
   const key = yukenFunctionCode.trim().toUpperCase() as YukenDSGSpoolFunctionCode;
-  return CONFIDENT_YUKEN_TO_REXROTH_SPOOL[key] ?? null;
+  const fromTable = CONFIDENT_YUKEN_TO_REXROTH_SPOOL[key];
+  if (fromTable) {
+    return fromTable;
+  }
+
+  return resolveRexrothSpoolTokenForYukenFunction(key);
 }

@@ -1,3 +1,4 @@
+import { formatCenterConditionSelectionLabel } from '@/domain/presentation/formatCenterTypeDisplay';
 import {
   completeProductCode,
   shouldSuppressWeakPartialSuggestions,
@@ -21,9 +22,9 @@ describe('completeProductCode', () => {
       'spool_symbol',
       'design_series',
     ]);
-    expect(result.recognizedFields.find((field) => field.key === 'spool_symbol')?.value).toBe(
-      'Kısmi açık / katalogdan kontrol edilmeli'
-    );
+    const spoolLabel = result.recognizedFields.find((field) => field.key === 'spool_symbol')?.value;
+    expect(spoolLabel).toBeTruthy();
+    expect(spoolLabel).not.toBe('P,T,A,B Kapalı (Kapalı merkez)');
     expect(result.recognizedFields.find((field) => field.key === 'design_series')?.value).toBe('62');
     expect(result.missingFields.map((field) => field.key)).toEqual([
       'coil_voltage',
@@ -106,6 +107,16 @@ describe('completeProductCode', () => {
     expect(result.missingFields).toEqual([]);
   });
 
+  it('marks 4WE6E-6X/EG24N9K4 as already_complete without re-asking coil fields', () => {
+    const result = completeProductCode('4WE6E-6X/EG24N9K4');
+
+    expect(result.completionStatus).toBe('already_complete');
+    expect(result.missingFields).toEqual([]);
+    expect(result.recognizedFields.map((field) => field.key)).toEqual(
+      expect.arrayContaining(['coil_voltage', 'manual_override', 'connector_type'])
+    );
+  });
+
   it('keeps recognized header when all completion fields are uncertain', () => {
     const result = completeProductCode('4WE6J62', {
       coil_voltage: null,
@@ -138,10 +149,13 @@ describe('completeProductCode', () => {
     ]);
     const centerField = result.missingFields.find((field) => field.key === 'function_code');
     expect(centerField?.labelTr).toBe('Merkez Tipi');
-    expect(centerField?.options.some((option) => option.displayValue.includes('('))).toBe(false);
-    expect(centerField?.options.some((option) => option.displayValue === 'Kapalı merkez')).toBe(
-      true
-    );
+    expect(centerField?.options.some((option) => option.displayValue.includes('('))).toBe(true);
+    expect(
+      centerField?.options.some(
+        (option) =>
+          option.displayValue === formatCenterConditionSelectionLabel('closed_center')
+      )
+    ).toBe(true);
     expect(new Set(centerField?.options.map((option) => option.displayValue)).size).toBe(
       centerField?.options.length
     );
@@ -197,7 +211,7 @@ describe('completeProductCode', () => {
     expect(result.recognizedFields.some((field) => field.key === 'function_code')).toBe(true);
     const centerField = result.recognizedFields.find((field) => field.key === 'function_code');
     expect(centerField?.labelTr).toBe('Merkez Tipi');
-    expect(centerField?.value).toBe('Kapalı merkez');
+    expect(centerField?.value).toBe(formatCenterConditionSelectionLabel('closed_center'));
   });
 
   it('identifies 3WE6 as can_complete with spool and design selectors', () => {
@@ -272,7 +286,10 @@ describe('completeProductCode', () => {
     const canComplete = completeProductCode('4WE6');
     const closedCenter = canComplete.missingFields
       .find((field) => field.key === 'spool_symbol')
-      ?.options.find((option) => option.displayValue === 'Kapalı merkez');
+      ?.options.find(
+        (option) =>
+          option.displayValue === formatCenterConditionSelectionLabel('closed_center')
+      );
 
     expect(closedCenter?.token).toBe('E');
   });

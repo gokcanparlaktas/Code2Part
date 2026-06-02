@@ -53,6 +53,7 @@
     "catalog-data:backend:identify-poc": "tsx scripts/backend/identifyPocCli.ts",
     "catalog-data:backend:equivalents-poc": "tsx scripts/backend/equivalentsPocCli.ts",
     "functions:build": "npm --prefix functions run build",
+    "functions:deploy": "npm run functions:build && firebase deploy --only functions --project code2part-de0d0",
     "functions:emulator": "npm --prefix functions run build && firebase emulators:start --only functions,firestore"
   },
   "private": true,

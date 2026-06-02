@@ -1,6 +1,5 @@
-import {
-  isRexrothWE6BaseSpoolSymbol,
-} from './rexrothWE6SpoolSemantics';
+import { isRexrothWEOrderingSpoolSymbol } from './rexrothWE6SpoolSemantics';
+import { REXROTH_WE6_CATALOG_ORDERING_SPOOL_LETTERS } from './rexrothWE6CatalogSpoolSymbols';
 import {
   parseRexrothWEDesignSeriesToken,
   type RexrothWEDesignSeriesParse,
@@ -33,7 +32,7 @@ function isValidRexrothWESpoolToken(spoolToken: string): boolean {
   if (spoolToken === 'EA' || spoolToken === 'EB') {
     return true;
   }
-  if (spoolToken.length === 1 && isRexrothWE6BaseSpoolSymbol(spoolToken)) {
+  if (spoolToken.length === 1 && isRexrothWEOrderingSpoolSymbol(spoolToken)) {
     return true;
   }
   return false;
@@ -61,7 +60,7 @@ function splitRexrothWESpoolDesignToken(
   if (token.startsWith('EB')) {
     attempts.push({ spoolToken: 'EB', designPart: token.slice(2).replace(/^-/, '') });
   }
-  for (const letter of 'ABCDEGHJY') {
+  for (const letter of REXROTH_WE6_CATALOG_ORDERING_SPOOL_LETTERS) {
     if (token.startsWith(letter)) {
       attempts.push({ spoolToken: letter, designPart: token.slice(1).replace(/^-/, '') });
     }

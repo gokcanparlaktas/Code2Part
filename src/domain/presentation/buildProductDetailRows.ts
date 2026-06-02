@@ -16,9 +16,11 @@ import {
   isUnknownCanonical,
   resolveCanonicalAttribute,
 } from '@/domain/canonical/resolveCanonicalAttribute';
+import { MULTI_BRAND_LABEL_TR } from '@/domain/categories/rollingBearing/bearingDisplayLabels';
 import {
   HYDRAULIC_VALVE_CATEGORY,
   PNEUMATIC_CYLINDER_CATEGORY,
+  ROLLING_BEARING_CATEGORY,
 } from '@/types/category';
 import type { ProductIdentification, TechnicalAttribute as IdAttribute } from '@/types/product';
 import type { TechnicalAttribute } from '@/types/technicalAttribute';
@@ -290,6 +292,57 @@ export function buildProductDetailRows(
     }
 
     return rows;
+  }
+
+  if (identification.resolverCategoryKey === ROLLING_BEARING_CATEGORY) {
+    const brandRow = rowFromIdentificationAttribute('Marka', identification.brand);
+    const typeRow = rowFromIdentificationAttribute('Ürün tipi', identification.productType);
+    const categoryRow = rowFromProductCategory(identification);
+
+    const dimensionRows: ProductDetailRow[] = [
+      rowFromIdentificationAttribute('İç çap', identification.bore, 'mm'),
+    ];
+    if (identification.outsideDiameter) {
+      dimensionRows.push(
+        rowFromIdentificationAttribute('Dış çap', identification.outsideDiameter, 'mm')
+      );
+    }
+    if (identification.bearingWidth) {
+      dimensionRows.push(
+        rowFromIdentificationAttribute('Kalınlık', identification.bearingWidth, 'mm')
+      );
+    }
+
+    const rows: ProductDetailRow[] = [brandRow, typeRow, categoryRow, ...dimensionRows];
+    if (identification.sealOrShield?.value) {
+      rows.push(rowFromIdentificationAttribute('Sızdırmazlık', identification.sealOrShield));
+    }
+    rows.push(rowFromIdentificationAttribute('Seri kodu', identification.series));
+    if (identification.internalClearance?.value) {
+      rows.push(rowFromIdentificationAttribute('Boşluk', identification.internalClearance));
+    }
+
+    const brandEvidence =
+      identification.brand.value === MULTI_BRAND_LABEL_TR
+        ? 'Standart (çoklu üretici)'
+        : identification.bearingDecode?.brand.detectionType === 'explicit_brand_token'
+          ? USER_EVIDENCE_FROM_CODE_TR
+          : formatEvidence(identification.brand.evidence);
+
+    rows[0] = {
+      ...rows[0],
+      value: identification.brand.value ?? MULTI_BRAND_LABEL_TR,
+      evidence: brandEvidence,
+      requiresCheck: false,
+    };
+
+    return rows.map((row) =>
+      row.label === 'İç çap' || row.label === 'Dış çap' || row.label === 'Kalınlık'
+        ? { ...row, requiresCheck: false, evidence: 'Standart boyut (ISO)' }
+        : row.label === 'Sızdırmazlık' || row.label === 'Ürün tipi'
+          ? { ...row, requiresCheck: false }
+          : row
+    );
   }
 
   return [...baseRows, rowFromIdentificationAttribute('Standart ailesi', identification.standardFamily)];

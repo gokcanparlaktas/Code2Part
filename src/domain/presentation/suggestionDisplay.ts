@@ -41,7 +41,9 @@ export function isSeriesNameOnlySuggestion(suggestion: SuggestedProduct): boolea
 
   const hasDetectedDimension =
     suggestion.detectedAttributes.boreMm !== undefined ||
-    suggestion.detectedAttributes.strokeMm !== undefined;
+    suggestion.detectedAttributes.strokeMm !== undefined ||
+    suggestion.detectedAttributes.outsideDiameterMm !== undefined ||
+    suggestion.detectedAttributes.widthMm !== undefined;
 
   return suggestion.missingFields.length === 0 && !hasDetectedDimension;
 }

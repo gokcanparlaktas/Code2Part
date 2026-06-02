@@ -27,6 +27,10 @@ export type SuggestionMissingField =
 export interface SuggestedProductDetectedAttributes {
   boreMm?: number;
   strokeMm?: number;
+  /** Rolling bearing outside diameter (D), mm */
+  outsideDiameterMm?: number;
+  /** Rolling bearing width (B), mm */
+  widthMm?: number;
 }
 
 export interface SuggestedProduct {

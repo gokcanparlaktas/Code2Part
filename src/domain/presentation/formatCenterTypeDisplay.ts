@@ -50,6 +50,14 @@ function portCompactLineFromCenterParts(parts: CenterTypeParts): string {
       return 'A-B Bağlı, P-T Kapalı';
     case 'Ofset merkez':
       return 'P-A Bağlı, B-T Bağlı';
+    case 'P-A-T merkez':
+      return 'P-A-T Bağlı, B Kapalı';
+    case 'P-B-T merkez':
+      return 'P-B-T Bağlı, A Kapalı';
+    case 'A-T merkez':
+      return 'A-T Bağlı, P ve B Kapalı';
+    case 'Kısmen açık merkez':
+      return parts.detail;
     default:
       return parts.detail;
   }
@@ -95,7 +103,16 @@ export function formatUnifiedCenterDisplay(options: {
     portLineFromCenterCondition(options.centerConditionValue);
 
   if (portLine && parts) {
-    return `${portLine} (${parts.primary})`;
+    const compactFromPort = formatPortStatesCompactLine(options.portState);
+    const perPortLine =
+      options.portState && !compactFromPort ? formatPortStatesPerPort(options.portState) : null;
+    if (perPortLine && portLine === perPortLine && parts.primary === 'Kapalı merkez') {
+      return portLine;
+    }
+    if (compactFromPort || portLine !== perPortLine) {
+      return `${portLine} (${parts.primary})`;
+    }
+    return portLine;
   }
   if (parts) {
     return parts.primary;
@@ -241,6 +258,52 @@ export function centerTypePartsFromPortState(
     };
   }
 
+  const pToAtBBlocked =
+    isPortBlocked(B) &&
+    isPortConnected(P) &&
+    isPortConnected(T) &&
+    isPortConnected(A) &&
+    (P.includes('A') || P.includes('T')) &&
+    (T.includes('P') || T.includes('A')) &&
+    (A.includes('P') || A.includes('T'));
+
+  if (pToAtBBlocked) {
+    return {
+      primary: 'P-A-T merkez',
+      detail: 'P-A-T Bağlı, B Kapalı',
+    };
+  }
+
+  const pToBtABlocked =
+    isPortBlocked(A) &&
+    isPortConnected(P) &&
+    isPortConnected(T) &&
+    isPortConnected(B) &&
+    (P.includes('B') || P.includes('T')) &&
+    (T.includes('P') || T.includes('B')) &&
+    (B.includes('P') || B.includes('T'));
+
+  if (pToBtABlocked) {
+    return {
+      primary: 'P-B-T merkez',
+      detail: 'P-B-T Bağlı, A Kapalı',
+    };
+  }
+
+  const aToT_PBBlocked =
+    isPortBlocked(P) &&
+    isPortBlocked(B) &&
+    isPortConnected(A) &&
+    isPortConnected(T) &&
+    (A.includes('T') || T.includes('A'));
+
+  if (aToT_PBBlocked) {
+    return {
+      primary: 'A-T merkez',
+      detail: 'A-T Bağlı, P ve B Kapalı',
+    };
+  }
+
   return null;
 }
 
@@ -266,7 +329,7 @@ const CENTER_CONDITION_PRIMARY_TR: Record<string, string> = {
   open_center: 'Açık merkez',
   tandem_center: 'Tandem merkez',
   float_center: 'Yüzer merkez',
-  partially_open: 'Kapalı merkez',
+  partially_open: 'Kısmen açık merkez',
 };
 
 const CENTER_CONDITION_DETAIL_TR: Record<string, string> = {
@@ -274,8 +337,25 @@ const CENTER_CONDITION_DETAIL_TR: Record<string, string> = {
   open_center: 'P,T,A,B Açık',
   tandem_center: 'P-T Bağlı, A,B Kapalı',
   float_center: 'A-B-T Bağlı, P Kapalı',
-  partially_open: 'P,T,A,B Kapalı',
+  partially_open: 'Port bağlantıları katalogdan',
 };
+
+/** Kullanıcı seçimleri ve chip’ler için ortak merkez tipi metni (PTAB özeti). */
+export function formatCenterConditionSelectionLabel(
+  centerCondition: string | null | undefined
+): string {
+  const unified = formatUnifiedCenterDisplay({ centerConditionValue: centerCondition });
+  if (unified) {
+    return unified;
+  }
+
+  const parts = centerTypePartsFromCondition(centerCondition);
+  if (parts) {
+    return formatCenterTypeSummary(parts);
+  }
+
+  return centerCondition ?? 'Bilinmiyor';
+}
 
 export function centerTypePartsFromCondition(
   centerCondition: string | null | undefined

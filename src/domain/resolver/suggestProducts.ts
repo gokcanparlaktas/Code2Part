@@ -10,8 +10,17 @@ import {
 } from '@/domain/categories/pneumaticCylinder/pneumaticCylinderSuggestions';
 import { isEligibleTokenQuery, tokenizeForMatching } from '@/domain/categories/pneumaticCylinder/pneumaticCylinderTokenMatch';
 import { matchPercentageFromSuggestion } from '@/domain/scoring/suggestionMatchPercentage';
-import { HYDRAULIC_VALVE_CATEGORY, PNEUMATIC_CYLINDER_CATEGORY } from '@/types/category';
+import {
+  HYDRAULIC_VALVE_CATEGORY,
+  PNEUMATIC_CYLINDER_CATEGORY,
+  ROLLING_BEARING_CATEGORY,
+} from '@/types/category';
 import { computeHydraulicValveMissingFields } from '@/domain/categories/hydraulicValve/computeHydraulicValveMissingFields';
+import { MULTI_BRAND_LABEL_TR } from '@/domain/categories/rollingBearing/bearingDisplayLabels';
+import {
+  buildBearingSuggestionDetectedAttributes,
+  suggestRollingBearingVariantSuggestions,
+} from '@/domain/categories/rollingBearing/rollingBearingSuggestions';
 import { identifyProduct } from './identifyProduct';
 import { normalizeCode } from './normalizeCode';
 import type { ProductIdentification, ProductSeriesRecord } from '@/types/product';
@@ -210,10 +219,28 @@ function suggestionSortScore(suggestion: SuggestedProduct): number {
   return confidenceWeight[suggestion.confidence] + (matchedByWeight[suggestion.matchedBy] ?? 0);
 }
 
+function canSuggestExactIdentification(identification: ProductIdentification): boolean {
+  if (!identification.seriesId || identification.outcome === 'not_found') {
+    return false;
+  }
+
+  if (identification.resolverCategoryKey === ROLLING_BEARING_CATEGORY) {
+    const profile = identification.bearingDecode;
+    if (!profile?.baseCode) {
+      return false;
+    }
+    const hasSuffix =
+      profile.suffixResolutions.length > 0 || Boolean(profile.suffixBlock?.trim());
+    return identification.outcome === 'full' || hasSuffix;
+  }
+
+  return identification.outcome === 'full';
+}
+
 function buildExactIdentificationSuggestion(
   identification: ProductIdentification
 ): SuggestedProduct | null {
-  if (identification.outcome !== 'full' || !identification.seriesId) {
+  if (!canSuggestExactIdentification(identification)) {
     return null;
   }
 
@@ -233,22 +260,34 @@ function buildExactIdentificationSuggestion(
     missingFields = computeHydraulicValveMissingFields(identification);
   }
 
+  const isBearing = series.resolverCategory === ROLLING_BEARING_CATEGORY;
+
   return {
     seriesId: series.id,
-    brand: series.brand,
-    series: series.series,
-    productTypeTr: series.productType,
-    standardFamily: series.standardFamily,
+    brand: isBearing ? identification.brand.value ?? MULTI_BRAND_LABEL_TR : series.brand,
+    series: isBearing ? identification.series.value ?? series.series : series.series,
+    productTypeTr: isBearing
+      ? identification.productType.value ?? 'Rulman'
+      : series.productType,
+    standardFamily: isBearing
+      ? identification.standardFamily.value ?? series.standardFamily
+      : series.standardFamily,
     equivalenceGroup: series.equivalenceGroup ?? series.equivalenceGroupId ?? '',
     confidence: 'high',
     matchedBy: 'exact_match',
-    detectedAttributes: {
-      ...(identification.bore.value != null ? { boreMm: Number(identification.bore.value) } : {}),
-      ...(identification.stroke.value != null ? { strokeMm: Number(identification.stroke.value) } : {}),
-    },
+    detectedAttributes: isBearing
+      ? buildBearingSuggestionDetectedAttributes(identification)
+      : {
+          ...(identification.bore.value != null ? { boreMm: Number(identification.bore.value) } : {}),
+          ...(identification.stroke.value != null
+            ? { strokeMm: Number(identification.stroke.value) }
+            : {}),
+        },
     missingFields,
     exampleCodeFormat: identification.normalizedCode,
-    suggestionTextTr: `Tam kod eşleşmesi: ${series.brand} ${identification.normalizedCode}`,
+    suggestionTextTr: isBearing
+      ? `Tam kod eşleşmesi: ${identification.normalizedCode}`
+      : `Tam kod eşleşmesi: ${series.brand} ${identification.normalizedCode}`,
   };
 }
 
@@ -267,6 +306,19 @@ export function suggestProductsDetailed(
 
   const identification = identifyProduct(rawInput, normalized);
 
+  const bearingVariantSuggestions = suggestRollingBearingVariantSuggestions(
+    rawInput,
+    identification,
+    cappedLimit
+  );
+  if (bearingVariantSuggestions && bearingVariantSuggestions.length > 0) {
+    return {
+      suggestions: bearingVariantSuggestions,
+      hasMoreResults: false,
+      totalMatchedCount: bearingVariantSuggestions.length,
+    };
+  }
+
   const exactSuggestion = buildExactIdentificationSuggestion(identification);
   if (exactSuggestion) {
     return {
@@ -279,6 +331,10 @@ export function suggestProductsDetailed(
   const bestBySeries = new Map<string, MatchCandidate>();
 
   for (const series of productSeries) {
+    if (series.resolverCategory === ROLLING_BEARING_CATEGORY) {
+      continue;
+    }
+
     const candidates = [
       matchSeriesPrefix(normalized, series),
       matchBrandAlias(normalized, series),

@@ -4,6 +4,7 @@ import { getProductSeriesById } from '@/domain/resolver/productSeriesCatalog';
 import {
   HYDRAULIC_VALVE_CATEGORY,
   PNEUMATIC_CYLINDER_CATEGORY,
+  ROLLING_BEARING_CATEGORY,
 } from '@/types/category';
 import type { EquivalentGroupRecord } from '@/types/product';
 import type {
@@ -262,6 +263,43 @@ function buildPneumaticEvidenceDetailRows(
   ];
 }
 
+function buildBearingEvidenceDetailRows(
+  identification: ProductIdentification
+): EvidenceDetailRow[] {
+  const rows: EvidenceDetailRow[] = [
+    attributeRow('brand', 'Marka', identification.brand),
+    attributeRow('series', 'Seri kodu', identification.series),
+    attributeRow('productType', 'Ürün tipi', identification.productType),
+    attributeRow('standardFamily', 'Standart aile', identification.standardFamily),
+    attributeRow('bore', 'İç çap', identification.bore),
+  ];
+
+  if (identification.outsideDiameter) {
+    rows.push({
+      label: 'Dış çap',
+      value: formatAttributeValue(
+        identification.outsideDiameter.value,
+        identification.outsideDiameter.unit
+      ),
+      evidenceLabel: formatEvidenceLabel(identification.outsideDiameter.evidence, 'bore'),
+      explanation: formatEvidenceExplanation(identification.outsideDiameter.evidence, 'bore'),
+    });
+  }
+  if (identification.bearingWidth) {
+    rows.push({
+      label: 'Kalınlık',
+      value: formatAttributeValue(
+        identification.bearingWidth.value,
+        identification.bearingWidth.unit
+      ),
+      evidenceLabel: formatEvidenceLabel(identification.bearingWidth.evidence, 'stroke'),
+      explanation: formatEvidenceExplanation(identification.bearingWidth.evidence, 'stroke'),
+    });
+  }
+
+  return rows;
+}
+
 export function buildEvidenceDetailRows(
   identification: ProductIdentification
 ): EvidenceDetailRow[] {
@@ -270,12 +308,14 @@ export function buildEvidenceDetailRows(
       ? buildHydraulicEvidenceDetailRows(identification)
       : identification.resolverCategoryKey === PNEUMATIC_CYLINDER_CATEGORY
         ? buildPneumaticEvidenceDetailRows(identification)
-        : [
-            attributeRow('brand', 'Marka', identification.brand),
-            attributeRow('series', 'Seri', identification.series),
-            attributeRow('productType', 'Ürün tipi', identification.productType),
-            attributeRow('standardFamily', 'Standart aile', identification.standardFamily),
-          ];
+        : identification.resolverCategoryKey === ROLLING_BEARING_CATEGORY
+          ? buildBearingEvidenceDetailRows(identification)
+          : [
+              attributeRow('brand', 'Marka', identification.brand),
+              attributeRow('series', 'Seri', identification.series),
+              attributeRow('productType', 'Ürün tipi', identification.productType),
+              attributeRow('standardFamily', 'Standart aile', identification.standardFamily),
+            ];
 
   return [
     ...categoryRows,

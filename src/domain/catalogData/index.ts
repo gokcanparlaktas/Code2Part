@@ -1,5 +1,13 @@
 export * from '@/domain/catalogData/types';
 export * from '@/domain/catalogData/loadCatalogData';
+export * from '@/domain/catalogData/bearings/loadBearingCatalogData';
+export { extractBearingBaseCode } from '@/domain/catalogData/bearings/extractBearingBaseCode';
+export { resolveBoreCodeCandidate } from '@/domain/catalogData/bearings/resolvers/resolveBoreCodeCandidate';
+export {
+  resolveBearingDimensionByBaseCode,
+  resolveBearingDimensionFromCode,
+  type BearingDimensionResolved,
+} from '@/domain/catalogData/bearings/resolvers/resolveBearingDimensionCandidate';
 export * from '@/domain/catalogData/CatalogDataProvider';
 export * from '@/domain/catalogData/context/buildResolverContext';
 export { resolveVoltageCandidate } from '@/domain/catalogData/resolvers/resolveVoltageCandidate';

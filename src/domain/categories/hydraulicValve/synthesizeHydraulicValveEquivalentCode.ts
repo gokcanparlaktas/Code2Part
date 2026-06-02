@@ -98,7 +98,12 @@ function synthesizeRexrothWeCode(
 ): string | null {
   const prefix = targetSeries.codePrefix.replace(/-/g, '');
   const spool = resolveRexrothSpoolSymbol(tokens);
-  const design = tokens.designSeries ?? tokens.designSeriesFamily ?? '6X';
+  const design =
+    tokens.designSeries ??
+    (tokens.designSeriesFamily && !/X$/i.test(tokens.designSeriesFamily)
+      ? tokens.designSeriesFamily
+      : null) ??
+    '62';
   return `${prefix}${spool}-${design}/${buildRexrothCoilSection(tokens)}`;
 }
 
@@ -136,7 +141,7 @@ function synthesizeParkerCode(targetSeries: ProductSeriesRecord): string | null 
   return 'D1VW001CNJW';
 }
 
-function synthesizeForTargetSeries(
+export function synthesizeForTargetSeries(
   targetSeries: ProductSeriesRecord,
   tokens: HydraulicEquivalentTokens
 ): string | null {

@@ -1,4 +1,10 @@
 import { parseHydraulicValveAttributes, canFullyParseHydraulicProductCode } from '@/domain/categories/hydraulicValve/hydraulicValveIdentify';
+import { isRollingBearingCode } from '@/domain/categories/rollingBearing/isRollingBearingCode';
+import {
+  identifyRollingBearingProduct,
+  ROLLING_BEARING_SERIES_ID,
+} from '@/domain/categories/rollingBearing/rollingBearingIdentify';
+import { ROLLING_BEARING_CATEGORY } from '@/types/category';
 import { getLegacyParsingRules } from '@/domain/catalog/adapters/catalogV2Adapter';
 import { calculateProductReliability } from '@/domain/reliability/calculateProductReliability';
 import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
@@ -225,6 +231,10 @@ export function identifyProduct(
   inputCode: string,
   normalizedCode: string
 ): ProductIdentification {
+  if (isRollingBearingCode(normalizedCode)) {
+    return identifyRollingBearingProduct(inputCode, normalizedCode);
+  }
+
   const exactExample = findExactExampleCodeMatch(normalizedCode);
   if (exactExample) {
     const canonicalNormalized = normalizeCode(exactExample);
@@ -238,6 +248,13 @@ export function identifyProduct(
 
   if (!series) {
     return emptyIdentification(inputCode, normalizedCode);
+  }
+
+  if (
+    series.resolverCategory === ROLLING_BEARING_CATEGORY ||
+    series.id === ROLLING_BEARING_SERIES_ID
+  ) {
+    return identifyRollingBearingProduct(inputCode, normalizedCode);
   }
 
   if (series.resolverCategory === HYDRAULIC_VALVE_CATEGORY) {

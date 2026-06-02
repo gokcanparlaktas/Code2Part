@@ -21,15 +21,15 @@ describe('resolverConfig', () => {
     process.env = originalEnv;
   });
 
-  it('defaults to local mode', () => {
-    expect(getResolverMode()).toBe('local');
-    expect(isBackendResolverMode()).toBe(false);
-  });
-
-  it('enables backend mode from env', () => {
-    process.env.EXPO_PUBLIC_RESOLVER_MODE = 'backend';
+  it('defaults to backend mode', () => {
     expect(getResolverMode()).toBe('backend');
     expect(isBackendResolverMode()).toBe(true);
+  });
+
+  it('allows explicit local mode from env', () => {
+    process.env.EXPO_PUBLIC_RESOLVER_MODE = 'local';
+    expect(getResolverMode()).toBe('local');
+    expect(isBackendResolverMode()).toBe(false);
   });
 
   it('uses configured API base URL', () => {
@@ -42,8 +42,9 @@ describe('resolverConfig', () => {
     expect(getResolverRequestTimeoutMs()).toBe(30_000);
   });
 
-  it('allows disabling backend fallback in dev', () => {
-    process.env.EXPO_PUBLIC_RESOLVER_BACKEND_FALLBACK = 'false';
+  it('disables backend fallback unless explicitly enabled in dev', () => {
     expect(shouldFallbackToLocalResolverOnBackendError()).toBe(false);
+    process.env.EXPO_PUBLIC_RESOLVER_BACKEND_FALLBACK = 'true';
+    expect(shouldFallbackToLocalResolverOnBackendError()).toBe(true);
   });
 });

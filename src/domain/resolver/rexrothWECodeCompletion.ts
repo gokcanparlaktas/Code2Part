@@ -3,9 +3,12 @@ import { buildRexrothCenterTypeCompletionOptions, formatRexrothSpoolDisplayLabel
 import {
   isRexrothWECode,
   parseRexrothWEProductCode,
+  parseRexrothWECoilSectionTokens,
+  type RexrothWECoilSectionTokens,
 } from '@/domain/categories/hydraulicValve/manufacturers/rexroth/parseRexrothWE';
 import {
   analyzePartialRexrothWE,
+  parseRexrothWEHeaderOnly,
   parseRexrothWEPartialHeader,
   type RexrothWEPartialHeader,
 } from '@/domain/categories/hydraulicValve/manufacturers/rexroth/rexrothWEParserDiagnostics';
@@ -104,8 +107,19 @@ function buildDesignSeriesOptions(
   ];
 }
 
+function extractParsedCoilFromNormalized(
+  normalizedInput: string
+): RexrothWECoilSectionTokens | null {
+  const slashIndex = normalizedInput.indexOf('/');
+  if (slashIndex === -1) {
+    return null;
+  }
+  return parseRexrothWECoilSectionTokens(normalizedInput.slice(slashIndex + 1));
+}
+
 function buildMissingFieldDefinitions(
-  partial: RexrothWEPartialHeader
+  partial: RexrothWEPartialHeader,
+  parsedCoil: RexrothWECoilSectionTokens | null
 ): ProductCodeCompletionFieldDefinition[] {
   const fields: ProductCodeCompletionFieldDefinition[] = [];
 
@@ -125,23 +139,41 @@ function buildMissingFieldDefinitions(
     });
   }
 
-  fields.push(
-    {
-      key: 'coil_voltage',
-      labelTr: FIELD_LABELS.coil_voltage,
-      options: COIL_VOLTAGE_OPTIONS,
-    },
-    {
-      key: 'manual_override',
-      labelTr: FIELD_LABELS.manual_override,
-      options: MANUAL_OVERRIDE_OPTIONS,
-    },
-    {
-      key: 'connector_type',
-      labelTr: FIELD_LABELS.connector_type,
-      options: CONNECTOR_OPTIONS,
+  if (!parsedCoil?.voltageToken) {
+    fields.push(
+      {
+        key: 'coil_voltage',
+        labelTr: FIELD_LABELS.coil_voltage,
+        options: COIL_VOLTAGE_OPTIONS,
+      },
+      {
+        key: 'manual_override',
+        labelTr: FIELD_LABELS.manual_override,
+        options: MANUAL_OVERRIDE_OPTIONS,
+      },
+      {
+        key: 'connector_type',
+        labelTr: FIELD_LABELS.connector_type,
+        options: CONNECTOR_OPTIONS,
+      }
+    );
+  } else {
+    if (!parsedCoil.manualOverrideToken) {
+      fields.push({
+        key: 'manual_override',
+        labelTr: FIELD_LABELS.manual_override,
+        options: MANUAL_OVERRIDE_OPTIONS,
+      });
     }
-  );
+
+    if (!parsedCoil.connectorToken) {
+      fields.push({
+        key: 'connector_type',
+        labelTr: FIELD_LABELS.connector_type,
+        options: CONNECTOR_OPTIONS,
+      });
+    }
+  }
 
   return fields;
 }
@@ -228,7 +260,10 @@ function buildCoilSection(selections: ProductCodeCompletionSelections): {
   return { coilSection, uncertainFields };
 }
 
-function buildRecognizedFields(partial: RexrothWEPartialHeader): ProductCodeCompletionRecognizedField[] {
+function buildRecognizedFields(
+  partial: RexrothWEPartialHeader,
+  parsedCoil: RexrothWECoilSectionTokens | null
+): ProductCodeCompletionRecognizedField[] {
   const fields: ProductCodeCompletionRecognizedField[] = [
     { key: 'manufacturer', labelTr: 'Üretici', value: 'Rexroth' },
     { key: 'series', labelTr: 'Seri', value: partial.seriesPrefix },
@@ -248,6 +283,30 @@ function buildRecognizedFields(partial: RexrothWEPartialHeader): ProductCodeComp
       key: 'design_series',
       labelTr: 'Tasarım serisi',
       value: partial.rawDesignSeries ?? partial.designDisplay ?? '',
+    });
+  }
+
+  if (parsedCoil?.voltageToken) {
+    fields.push({
+      key: 'coil_voltage',
+      labelTr: FIELD_LABELS.coil_voltage,
+      value: parsedCoil.voltageToken,
+    });
+  }
+
+  if (parsedCoil?.manualOverrideToken) {
+    fields.push({
+      key: 'manual_override',
+      labelTr: FIELD_LABELS.manual_override,
+      value: 'Var (N9)',
+    });
+  }
+
+  if (parsedCoil?.connectorToken) {
+    fields.push({
+      key: 'connector_type',
+      labelTr: FIELD_LABELS.connector_type,
+      value: parsedCoil.connectorToken,
     });
   }
 
@@ -314,6 +373,8 @@ export function completeRexrothWEProductCode(
     return null;
   }
 
+  const parsedCoilFromInput = extractParsedCoilFromNormalized(normalizedInput);
+
   const parsedFull = parseRexrothWEProductCode(inputCode);
   if (parsedFull) {
     const partial = parseRexrothWEPartialHeader(normalizedInput)!;
@@ -323,17 +384,52 @@ export function completeRexrothWEProductCode(
       manufacturer: 'Rexroth',
       family: parsedFull.sourceFamily,
       completionStatus: 'already_complete',
-      recognizedFields: buildRecognizedFields({
-        ...partial,
-        spoolToken: parsedFull.functionToken,
-        spoolSymbol: parsedFull.spoolSymbol,
-        rawDesignSeries: parsedFull.rawDesignSeries,
-        componentSeriesFamily: parsedFull.componentSeriesFamily,
-        designDisplay: parsedFull.rawDesignSeries ?? parsedFull.componentSeriesFamily,
-      }),
+      recognizedFields: buildRecognizedFields(
+        {
+          ...partial,
+          spoolToken: parsedFull.functionToken,
+          spoolSymbol: parsedFull.spoolSymbol,
+          rawDesignSeries: parsedFull.rawDesignSeries,
+          componentSeriesFamily: parsedFull.componentSeriesFamily,
+          designDisplay: parsedFull.rawDesignSeries ?? parsedFull.componentSeriesFamily,
+        },
+        parsedCoilFromInput
+      ),
       missingFields: [],
       uncertainFields: [],
       completedCode: normalizedInput.includes('/') ? normalizedInput : inputCode.trim(),
+      checkNotes: [],
+    };
+  }
+
+  const headerOnly = parseRexrothWEHeaderOnly(normalizedInput);
+  if (
+    headerOnly &&
+    parsedCoilFromInput?.voltageToken &&
+    parsedCoilFromInput.connectorToken &&
+    identifyProduct(normalizedInput, normalizeCode(normalizedInput)).outcome === 'full'
+  ) {
+    const partial = parseRexrothWEPartialHeader(normalizedInput)!;
+    return {
+      inputCode,
+      normalizedInput,
+      manufacturer: 'Rexroth',
+      family: headerOnly.sourceFamily,
+      completionStatus: 'already_complete',
+      recognizedFields: buildRecognizedFields(
+        {
+          ...partial,
+          spoolToken: headerOnly.spoolToken,
+          spoolSymbol: headerOnly.spoolSymbol,
+          rawDesignSeries: headerOnly.rawDesignSeries,
+          componentSeriesFamily: headerOnly.componentSeriesFamily,
+          designDisplay: headerOnly.designDisplay,
+        },
+        parsedCoilFromInput
+      ),
+      missingFields: [],
+      uncertainFields: [],
+      completedCode: normalizedInput,
       checkNotes: [],
     };
   }
@@ -357,8 +453,8 @@ export function completeRexrothWEProductCode(
     };
   }
 
-  const recognizedFields = buildRecognizedFields(partial);
-  const missingFields = buildMissingFieldDefinitions(partial);
+  const recognizedFields = buildRecognizedFields(partial, parsedCoilFromInput);
+  const missingFields = buildMissingFieldDefinitions(partial, parsedCoilFromInput);
 
   if (!selections) {
     return {

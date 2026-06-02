@@ -1,6 +1,7 @@
 import {
   HYDRAULIC_VALVE_CATEGORY,
   PNEUMATIC_CYLINDER_CATEGORY,
+  ROLLING_BEARING_CATEGORY,
 } from '@/types/category';
 import type { ProductIdentification } from '@/types/product';
 import { formatAttributeValue } from '@/utils/formatConfidence';
@@ -38,6 +39,24 @@ function formatPneumaticSummary(identification: ProductIdentification): string {
   return `${name} · ${standard} · ${dimensions}`;
 }
 
+function formatBearingSummary(identification: ProductIdentification): string {
+  const type = identification.productType.value ?? 'Rulman';
+  const code = identification.series.value ?? identification.normalizedCode;
+  const d = identification.bore.value;
+  const outer = identification.outsideDiameter?.value;
+  const width = identification.bearingWidth?.value;
+
+  if (d !== null && outer != null && width != null) {
+    return `${type} · ${code} · ${formatAttributeValue(d, 'mm')} x ${formatAttributeValue(outer, 'mm')} x ${formatAttributeValue(width, 'mm')}`;
+  }
+
+  if (d !== null) {
+    return `${type} · ${code} · iç çap ${formatAttributeValue(d, 'mm')}`;
+  }
+
+  return `${type} · ${code}`;
+}
+
 export function buildProductSummaryText(identification: ProductIdentification): string {
   if (identification.resolverCategoryKey === HYDRAULIC_VALVE_CATEGORY) {
     return formatHydraulicSummary(identification);
@@ -45,6 +64,10 @@ export function buildProductSummaryText(identification: ProductIdentification): 
 
   if (identification.resolverCategoryKey === PNEUMATIC_CYLINDER_CATEGORY) {
     return formatPneumaticSummary(identification);
+  }
+
+  if (identification.resolverCategoryKey === ROLLING_BEARING_CATEGORY) {
+    return formatBearingSummary(identification);
   }
 
   const brand = identification.brand.value ?? 'Bilinmiyor';

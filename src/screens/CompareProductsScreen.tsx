@@ -1,10 +1,10 @@
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useCallback, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AppBrandHeader } from '@/components/AppBrandHeader';
 import { ProductCodeFieldWithSuggestions } from '@/components/ProductCodeFieldWithSuggestions';
 import { ProductCompareResultView } from '@/components/ProductCompareResultView';
-import { ThemeModeToggle } from '@/components/ThemeModeToggle';
 import { usePendingProductCodeScan } from '@/hooks/usePendingProductCodeScan';
 import type { CompatibilityResult } from '@/types/compatibility';
 import {
@@ -13,8 +13,6 @@ import {
 } from '@/services/resolverService';
 import type { HomeColorPalette } from '@/theme/homePalettes';
 import { useHomeStyles } from '@/theme/useHomeStyles';
-
-const ICON = require('../../assets/images/icon.png');
 
 export function CompareProductsScreen() {
   const styles = useHomeStyles(createStyles);
@@ -64,19 +62,7 @@ export function CompareProductsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.root}>
-          <View style={styles.headerRow}>
-            <View style={styles.headerSide}>
-              <Image source={ICON} style={styles.logoIcon} accessibilityLabel="Code2Part logo" />
-            </View>
-            <Text style={styles.brandName}>
-              <Text style={styles.brandNamePrimary}>Code</Text>
-              <Text style={styles.brandNameBlue}>2</Text>
-              <Text style={styles.brandNameOrange}>Part</Text>
-            </Text>
-            <View style={styles.headerSideRight}>
-              <ThemeModeToggle compact />
-            </View>
-          </View>
+          <AppBrandHeader showHowItWorks={false} />
 
           <Text style={styles.description}>
             İki ürün kodunu girin; uyum yüzdesi ve farklı alanları birlikte görün.
@@ -164,46 +150,6 @@ const createStyles = (c: HomeColorPalette) =>
     root: {
       flex: 1,
       gap: 16,
-    },
-    headerRow: {
-      alignItems: 'center',
-      flexDirection: 'row',
-      marginBottom: 16,
-    },
-    headerSide: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: 44,
-    },
-    headerSideRight: {
-      alignItems: 'center',
-      justifyContent: 'flex-end',
-      minWidth: 44,
-      width: 44,
-    },
-    logoIcon: {
-      backgroundColor: c.cardBg,
-      borderColor: c.border,
-      borderRadius: 10,
-      borderWidth: 1,
-      height: 44,
-      resizeMode: 'cover',
-      width: 44,
-    },
-    brandName: {
-      flex: 1,
-      fontSize: 20,
-      fontWeight: '500',
-      textAlign: 'center',
-    },
-    brandNamePrimary: {
-      color: c.headerTitle,
-    },
-    brandNameBlue: {
-      color: c.brandAccentBlue,
-    },
-    brandNameOrange: {
-      color: c.accent,
     },
     description: {
       color: c.textDim,

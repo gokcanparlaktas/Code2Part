@@ -4,7 +4,7 @@ import {
   type HydraulicEquivalentTokens,
 } from '@/domain/categories/hydraulicValve/extractHydraulicEquivalentTokens';
 import {
-  isRexrothWE6BaseSpoolSymbol,
+  isRexrothWEOrderingSpoolSymbol,
   rexrothWE6BehaviorLookupToken,
 } from '@/domain/categories/hydraulicValve/manufacturers/rexroth/rexrothWE6SpoolSemantics';
 import { identifyProduct } from '@/domain/resolver/identifyProduct';
@@ -284,7 +284,7 @@ function resolveYukenSpoolAlternatives(tokens: HydraulicEquivalentTokens): {
   }
 
   const base = rexrothWE6BehaviorLookupToken(spool) ?? spool;
-  if (!isRexrothWE6BaseSpoolSymbol(base)) {
+  if (!isRexrothWEOrderingSpoolSymbol(base)) {
     return {
       functionCodes: [...VALID_YUKEN_DSG_SPOOL_CODES],
       spoolConfident: false,

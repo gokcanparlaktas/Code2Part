@@ -41,6 +41,12 @@ export interface ProductIdentification {
   cetopNgSize?: TechnicalAttribute<string>;
   valveCoilVoltage?: TechnicalAttribute<string>;
   valveSpoolFunction?: TechnicalAttribute<string>;
+  outsideDiameter?: TechnicalAttribute<number>;
+  bearingWidth?: TechnicalAttribute<number>;
+  sealOrShield?: TechnicalAttribute<string>;
+  internalClearance?: TechnicalAttribute<string>;
+  bearingBaseCode?: TechnicalAttribute<string>;
+  bearingDecode?: import('@/domain/categories/rollingBearing/types').BearingDecodedProfile;
   confidence: ConfidenceLevel;
 }
 

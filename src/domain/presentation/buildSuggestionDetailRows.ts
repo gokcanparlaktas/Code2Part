@@ -50,11 +50,23 @@ export function buildSuggestionDetailRows(suggestion: SuggestedProduct): Suggest
     rows.push({ label: 'Örnek kod', value: suggestion.exampleCodeFormat.trim() });
   }
 
-  const { boreMm, strokeMm } = suggestion.detectedAttributes;
+  const { boreMm, strokeMm, outsideDiameterMm, widthMm } = suggestion.detectedAttributes;
+  const isBearingSuggestion =
+    outsideDiameterMm !== undefined || widthMm !== undefined;
+
   if (boreMm !== undefined) {
-    rows.push({ label: 'Algılanan çap', value: `${boreMm} mm` });
+    rows.push({
+      label: isBearingSuggestion ? 'İç çap' : 'Algılanan çap',
+      value: `${boreMm} mm`,
+    });
   }
-  if (strokeMm !== undefined) {
+  if (outsideDiameterMm !== undefined) {
+    rows.push({ label: 'Dış çap', value: `${outsideDiameterMm} mm` });
+  }
+  if (widthMm !== undefined) {
+    rows.push({ label: 'Kalınlık', value: `${widthMm} mm` });
+  }
+  if (!isBearingSuggestion && strokeMm !== undefined) {
     rows.push({ label: 'Algılanan strok', value: `${strokeMm} mm` });
   }
 

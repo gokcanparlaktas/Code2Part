@@ -50,8 +50,11 @@ const GENERIC_PROFILE_WARNING =
 const CRITICAL_LABEL_KEYWORDS = [
   'KATEGOR',
   'ÇAP',
+  'KALIN',
   'BORE',
   'STROK',
+  'DIŞ',
+  'DIS',
   'STANDART',
   'ISO',
   'CETOP',

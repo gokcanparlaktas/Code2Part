@@ -2,13 +2,13 @@ export const CATALOG_DATA_SCHEMA_VERSION = 'catalog-data-v1';
 
 export const MAX_PAYLOAD_BYTES = 900 * 1024;
 
-export type CatalogManufacturer = 'rexroth' | 'yuken';
+export type CatalogManufacturer = 'rexroth' | 'yuken' | 'bearings';
 
-export type CatalogCategory = 'directional-controls';
+export type CatalogCategory = 'directional-controls' | 'rolling-bearings';
 
 export type CatalogScope = 'shared' | 'family' | 'index';
 
-export type CatalogFamilyId = 'we' | 'dsg' | 'dshg';
+export type CatalogFamilyId = 'we' | 'dsg' | 'dshg' | 'standard-series';
 
 export type CatalogDocumentType =
   | 'family_index'
@@ -19,7 +19,15 @@ export type CatalogDocumentType =
   | 'parser_spec_candidate'
   | 'mapping_candidates'
   | 'catalog_source'
-  | 'unknown_or_review';
+  | 'unknown_or_review'
+  | 'bearing_family_index'
+  | 'bearing_manufacturer_index'
+  | 'brand_detection_candidates'
+  | 'bore_code_candidates'
+  | 'dimension_candidates'
+  | 'series_candidates'
+  | 'suffix_candidates'
+  | 'generation_spec_candidate';
 
 export interface ChecksumManifestEntry {
   documentKey: string;

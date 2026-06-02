@@ -8,7 +8,7 @@ describe('validateCatalogV2', () => {
     const result = validateCatalogV2();
     expect(result.isValid).toBe(true);
     expect(result.errors).toHaveLength(0);
-    expect(result.summary.productSeriesCount).toBe(22);
+    expect(result.summary.productSeriesCount).toBe(23);
     expect(result.summary.functionMappingsCount).toBeGreaterThan(0);
     expect(result.summary.checkRulesCount).toBeGreaterThan(0);
   });

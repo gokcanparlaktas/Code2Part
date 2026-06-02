@@ -31,21 +31,25 @@ export function calculateHydraulicValveReliability(
   const base: ConfidenceLevel =
     hasCetop(identification) && hasCodeSignals ? 'high' : hasCetop(identification) ? 'medium' : 'low';
 
-  // Even when optional checks exist (spool/voltage/connector), avoid marking the identification itself as low.
-  // Keep caution via a notice message instead.
-  const notice =
+  const partialNotice =
     'Bu ürün hidrolik valf olarak tanımlandı. Sembol, bobin, konnektör ve katalog değerleri kontrol edilmelidir.';
+
+  if (identification.outcome === 'full' && hasCodeSignals) {
+    return {
+      confidence: base,
+    };
+  }
 
   if (base === 'low') {
     return {
       confidence: 'medium',
-      seriesOnlyNoticeTr: notice,
+      seriesOnlyNoticeTr: partialNotice,
     };
   }
 
   return {
     confidence: base,
-    seriesOnlyNoticeTr: identification.outcome === 'series_only' ? notice : undefined,
+    seriesOnlyNoticeTr: identification.outcome === 'series_only' ? partialNotice : undefined,
   };
 }
 
