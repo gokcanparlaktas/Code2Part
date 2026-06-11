@@ -16,6 +16,6 @@ describe('findEquivalents', () => {
     expect(cp96?.brand).toBe('SMC');
     expect(equivalents.every((e) => e.seriesId !== source.seriesId)).toBe(true);
     expect(equivalents.every((e) => e.series !== 'DSBC')).toBe(true);
-    expect(cp96?.suggestedCode).toBe('CP96-50-100');
+    expect(cp96?.suggestedCode).toBe('CP96SDB50-100C');
   });
 });

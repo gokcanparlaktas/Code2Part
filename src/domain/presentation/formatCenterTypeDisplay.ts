@@ -104,7 +104,7 @@ function portCompactLineFromCenterParts(parts: CenterTypeParts): string {
     case 'A-B merkez':
       return 'A-B Bağlı, P-T Kapalı';
     case 'Ofset merkez':
-      return 'P-A Bağlı, B-T Bağlı';
+      return parts.detail;
     case 'P-A-T merkez':
       return 'P-A-T Bağlı, B Kapalı';
     case 'P-B-T merkez':
@@ -247,19 +247,24 @@ export function centerTypePartsFromPortState(
     };
   }
 
-  const openCenter =
+  const crossPairOffsetCenter =
+    portConnectsOnlyTo(P, 'B') &&
+    portConnectsOnlyTo(B, 'P') &&
+    portConnectsOnlyTo(T, 'A') &&
+    portConnectsOnlyTo(A, 'T');
+
+  if (crossPairOffsetCenter) {
+    return {
+      primary: 'Ofset merkez',
+      detail: 'P-B Bağlı, T-A Bağlı',
+    };
+  }
+
+  const allPortsConnected =
     isPortConnected(P) &&
     isPortConnected(T) &&
     isPortConnected(A) &&
-    isPortConnected(B) &&
-    parsePortConnectionTargets(P).length >= 3 &&
-    parsePortConnectionTargets(T).length >= 3 &&
-    parsePortConnectionTargets(A).length >= 3 &&
-    parsePortConnectionTargets(B).length >= 3;
-
-  if (openCenter) {
-    return { primary: 'Açık merkez', detail: 'P,T,A,B Açık' };
-  }
+    isPortConnected(B);
 
   const tandemCenter =
     isPortConnected(P) &&
@@ -411,6 +416,10 @@ export function centerTypePartsFromPortState(
     };
   }
 
+  if (allPortsConnected) {
+    return { primary: 'Açık merkez', detail: 'P,T,A,B Açık' };
+  }
+
   return null;
 }
 
@@ -437,6 +446,7 @@ const CENTER_CONDITION_PRIMARY_TR: Record<string, string> = {
   tandem_center: 'Tandem merkez',
   float_center: 'Yüzer merkez',
   partially_open: 'Kısmen açık merkez',
+  offset_p_b_a_t_connected: 'Ofset merkez',
 };
 
 const CENTER_CONDITION_DETAIL_TR: Record<string, string> = {
@@ -445,6 +455,7 @@ const CENTER_CONDITION_DETAIL_TR: Record<string, string> = {
   tandem_center: 'P-T Bağlı, A,B Kapalı',
   float_center: 'A-B-T Bağlı, P Kapalı',
   partially_open: 'Port bağlantıları katalogdan',
+  offset_p_b_a_t_connected: 'P-B Bağlı, T-A Bağlı',
 };
 
 /** Kullanıcı seçimleri ve chip’ler için ortak merkez tipi metni (PTAB özeti). */

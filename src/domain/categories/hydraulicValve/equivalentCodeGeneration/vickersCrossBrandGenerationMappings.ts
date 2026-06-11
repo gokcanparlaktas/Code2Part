@@ -1,4 +1,5 @@
 import type { HydraulicEquivalentTokens } from '@/domain/categories/hydraulicValve/extractHydraulicEquivalentTokens';
+import { resolveVickersFunctionTokenForRexrothSpool } from '@/domain/categories/hydraulicValve/hydraulicCenterTypeCatalogOptions';
 import {
   isVickersDG4VClosedCenterSpoolType,
   parseVickersDG4VSpoolFunctionCode,
@@ -9,12 +10,14 @@ import {
   CONFIDENT_YUKEN_TO_REXROTH_SPOOL,
 } from './rexrothYukenGenerationMappings';
 
-/** Vickers spool function code → Rexroth WE base spool letter. */
+/** Vickers spool function code → Rexroth WE base spool letter (port-state verified). */
 export const VICKERS_FUNCTION_TO_REXROTH_SPOOL: Record<string, string> = {
   '2A': 'E',
-  '2C': 'C',
-  '2B': 'J',
-  '2D': 'D',
+  '0A': 'H',
+  '4A': 'G',
+  '6B': 'J',
+  '24A': 'D',
+  '24C': 'C46',
 };
 
 /** Catalog-backed closed-center spool types → Rexroth E. */
@@ -27,9 +30,10 @@ export const VICKERS_SPOOL_TYPE_TO_REXROTH_SPOOL: Record<string, string> = {
 /** Vickers spool function code → Yuken DSG function token. */
 export const VICKERS_FUNCTION_TO_YUKEN_SPOOL: Record<string, string> = {
   '2A': '3C2',
-  '2C': '3C4',
-  '2B': '3C60',
-  '2D': '3C9',
+  '0A': '3C3',
+  '4A': '3C60',
+  '6B': '3C40',
+  '24A': '3C9',
 };
 
 /** Catalog-backed closed-center spool types → Yuken 3C2. */
@@ -39,12 +43,14 @@ export const VICKERS_SPOOL_TYPE_TO_YUKEN_SPOOL: Record<string, string> = {
   '35': '3C2',
 };
 
-/** Rexroth WE base spool → Vickers spool function code. */
+/** Rexroth WE base spool → Vickers spool function code (fallback when port-state ingest misses). */
 export const REXROTH_SPOOL_TO_VICKERS_FUNCTION: Record<string, string> = {
   E: '2A',
-  C: '2C',
-  J: '2B',
-  D: '2D',
+  G: '4A',
+  H: '0A',
+  J: '6B',
+  D: '24A',
+  C46: '24A',
 };
 
 export const VICKERS_UNRESOLVED_SPOOL_NOTE_TR =
@@ -107,6 +113,11 @@ export function resolveConfidentVickersFunctionFromRexroth(
   }
 
   const base = spoolSymbol.trim().toUpperCase();
+  const fromCatalog = resolveVickersFunctionTokenForRexrothSpool(base);
+  if (fromCatalog) {
+    return fromCatalog;
+  }
+
   return REXROTH_SPOOL_TO_VICKERS_FUNCTION[base] ?? null;
 }
 

@@ -66,7 +66,7 @@ describe('compareProducts', () => {
     const source = identifyProduct(input, normalizeCode(input));
     const equivalents = findEquivalents(source);
     const cp96 = equivalents.find((e) => e.series === 'CP96');
-    expect(cp96?.suggestedCode).toBe('CP96-50-100');
+    expect(cp96?.suggestedCode).toBe('CP96SDB50-100C');
 
     const targetCode = 'CP96-50-80';
     const candidate = {

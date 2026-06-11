@@ -102,7 +102,7 @@ describe('findEquivalentCandidates', () => {
 
       const cp96 = discoveries.find((d) => d.candidate.series === 'CP96');
       expect(cp96).toBeDefined();
-      expect(cp96?.candidate.suggestedCode).toBe('CP96-50-100');
+      expect(cp96?.candidate.suggestedCode).toBe('CP96SDB50-100C');
       expect(['equivalence_group', 'same_standard_family', 'same_dimensions']).toContain(
         cp96?.reason,
       );

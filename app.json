@@ -46,6 +46,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "./plugins/withAndroidSingleTask.js",
       "expo-router",
       [
         "expo-camera",

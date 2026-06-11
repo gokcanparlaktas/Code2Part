@@ -8,6 +8,9 @@ import { PNEUMATIC_CYLINDER_CATEGORY } from '@/types/category';
 import type { CatalogKnownToken, CatalogSeries } from '@/types/catalog';
 import type { TechnicalAttributeResult } from '@/types/technicalAttributeResult';
 
+import { enrichPneumaticAttributesFromCatalogData } from '@/domain/catalogData/pneumatics/pneumaticCatalogDataBridge';
+import { parsePneumaticCylinderRawAttributes } from '@/domain/catalogData/pneumatics/parsePneumaticCylinderRawAttributes';
+
 import {
   attributeDefLabel,
   buildAttributeResult,
@@ -99,6 +102,8 @@ export function extractPneumaticAttributes(
     );
   }
 
+  const catalogParsed = parsePneumaticCylinderRawAttributes(options.inputCode);
+
   const fromRules = series
     ? extractBoreStrokeFromPatterns(
         normalized,
@@ -113,8 +118,8 @@ export function extractPneumaticAttributes(
       ? catalogFallbackPatterns
       : FALLBACK_BORE_STROKE_PATTERNS;
   const fallback = extractBoreStrokeFallback(normalized, fallbackPatterns);
-  const boreMm = fromRules.boreMm ?? fallback.boreMm;
-  const strokeMm = fromRules.strokeMm ?? fallback.strokeMm;
+  const boreMm = fromRules.boreMm ?? catalogParsed?.boreMm ?? fallback.boreMm;
+  const strokeMm = fromRules.strokeMm ?? catalogParsed?.strokeMm ?? fallback.strokeMm;
 
   results.push(
     buildAttributeResult({
@@ -178,5 +183,10 @@ export function extractPneumaticAttributes(
     );
   }
 
-  return results;
+  return enrichPneumaticAttributesFromCatalogData({
+    inputCode: options.inputCode,
+    brand: series?.brand,
+    series: series?.series,
+    existing: results,
+  });
 }

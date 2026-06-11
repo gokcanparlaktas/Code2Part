@@ -29,7 +29,9 @@ export type CodeCreatorFieldKey =
   | 'bore'
   | 'stroke'
   | 'cushioning_type'
-  | 'variant_suffix';
+  | 'sensor_option'
+  | 'rod_end_option'
+  | 'extra_option';
 
 export interface CodeCreatorFieldOption {
   value: string;

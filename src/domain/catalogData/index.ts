@@ -1,5 +1,21 @@
 export * from '@/domain/catalogData/types';
 export * from '@/domain/catalogData/loadCatalogData';
+export * from '@/domain/catalogData/pneumatics/loadPneumaticCylinderCatalogData';
+export * from '@/domain/catalogData/pneumatics/types';
+export { parsePneumaticCylinderRawAttributes } from '@/domain/catalogData/pneumatics/parsePneumaticCylinderRawAttributes';
+export {
+  resolveComparableOptionCandidate,
+  resolveParkerP1DToken,
+} from '@/domain/catalogData/pneumatics/resolveComparableOptionCandidate';
+export {
+  generatePneumaticCodeCandidates,
+  pickPreferredPneumaticCodeCandidate,
+} from '@/domain/catalogData/pneumatics/generatePneumaticCodeCandidate';
+export {
+  enrichPneumaticAttributesFromCatalogData,
+  getCatalogCushioningCandidateMeaning,
+  resolvePneumaticCatalogOption,
+} from '@/domain/catalogData/pneumatics/pneumaticCatalogDataBridge';
 export * from '@/domain/catalogData/bearings/loadBearingCatalogData';
 export { extractBearingBaseCode } from '@/domain/catalogData/bearings/extractBearingBaseCode';
 export { resolveBoreCodeCandidate } from '@/domain/catalogData/bearings/resolvers/resolveBoreCodeCandidate';

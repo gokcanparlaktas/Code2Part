@@ -19,6 +19,11 @@ import type {
   ProductSeriesRecord,
 } from '@/types/product';
 
+import {
+  buildPneumaticCylinderSuggestedCodeResult,
+  buildPneumaticEquivalentGenerationMetadata,
+} from '@/domain/categories/pneumaticCylinder/pneumaticCylinderSuggestedCode';
+
 import { buildSuggestedEquivalentCode } from './buildSuggestedEquivalentCode';
 import {
   hydraulicMountingRelation,
@@ -223,6 +228,21 @@ function buildEquivalentCandidatesForTargetSeries(
         .map((entry) => buildEquivalentCandidateFromGenerated(source, targetSeries, entry))
         .filter((candidate): candidate is EquivalentCandidate => candidate !== null);
     }
+  }
+
+  if (source.resolverCategoryKey === PNEUMATIC_CYLINDER_CATEGORY) {
+    const buildResult = buildPneumaticCylinderSuggestedCodeResult(source, targetSeries);
+    if (!buildResult.suggestedCode) {
+      return [];
+    }
+    const generation = buildPneumaticEquivalentGenerationMetadata(buildResult);
+    const candidate = buildEquivalentCandidate(
+      source,
+      targetSeries,
+      buildResult.suggestedCode,
+      generation
+    );
+    return candidate ? [candidate] : [];
   }
 
   const candidate = buildEquivalentCandidate(source, targetSeries);

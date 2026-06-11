@@ -536,6 +536,10 @@
     "codePrefix": "CP96",
     "matchPrefixes": [
       "CP96SDB",
+      "CP96KDB",
+      "CP96KB",
+      "CP96KD",
+      "CP96K",
       "CP96"
     ],
     "suggestedCodeTemplate": "CP96-{bore}-{stroke}",
@@ -552,6 +556,9 @@
     "exampleCodes": [
       "CP96-50-100",
       "CP96SDB50-100",
+      "CP96SDB50-100C",
+      "CP96KB32-100CW",
+      "CP96KDB50-100C",
       "CP96-63-200",
       "CP96SDB32-80",
       "CP96-40-160"
@@ -579,20 +586,6 @@
     ],
     "knownTokens": [
       {
-        "token": "PPVA",
-        "meaningTr": "Sönümleme seçeneği",
-        "confidence": "medium",
-        "requiresCatalogCheck": true,
-        "role": "cushioning"
-      },
-      {
-        "token": "PPSA",
-        "meaningTr": "Sönümleme seçeneği",
-        "confidence": "medium",
-        "requiresCatalogCheck": true,
-        "role": "cushioning"
-      },
-      {
         "token": "N3",
         "meaningTr": "Sensör yuvası / seçenek",
         "confidence": "low",
@@ -615,10 +608,17 @@
       },
       {
         "token": "SDB",
-        "meaningTr": "Montaj / sensör yuvası varyantı (SDB)",
-        "confidence": "low",
+        "meaningTr": "CP96SD + Basic montaj (resmi order-key: SD seri + B montaj)",
+        "confidence": "medium",
         "requiresCatalogCheck": true,
         "role": "options"
+      },
+      {
+        "token": "C",
+        "meaningTr": "Sönümleme (strok sonrası C: hava sönümleme + tampon)",
+        "confidence": "medium",
+        "requiresCatalogCheck": true,
+        "role": "cushioning"
       }
     ],
     "checkRuleRefs": [
@@ -651,6 +651,18 @@
       }
     ],
     "parsingRules": [
+      {
+        "id": "smc_cp96k-order-key",
+        "pattern": "^CP96K(D)?([BLFGCDV])(\\d+)-(\\d+)",
+        "boreGroup": 3,
+        "strokeGroup": 4
+      },
+      {
+        "id": "smc_cp96-order-key",
+        "pattern": "^CP96S(D)?([BLFGCDV])(\\d+)-(\\d+)",
+        "boreGroup": 3,
+        "strokeGroup": 4
+      },
       {
         "id": "smc_cp96-sdb",
         "pattern": "^CP96SDB(\\d+)-(\\d+)",
@@ -763,20 +775,6 @@
       }
     ],
     "knownTokens": [
-      {
-        "token": "PPVA",
-        "meaningTr": "Sönümleme seçeneği",
-        "confidence": "medium",
-        "requiresCatalogCheck": true,
-        "role": "cushioning"
-      },
-      {
-        "token": "PPSA",
-        "meaningTr": "Sönümleme seçeneği",
-        "confidence": "medium",
-        "requiresCatalogCheck": true,
-        "role": "cushioning"
-      },
       {
         "token": "N3",
         "meaningTr": "Sensör yuvası / seçenek",
@@ -950,20 +948,6 @@
     ],
     "knownTokens": [
       {
-        "token": "PPVA",
-        "meaningTr": "Sönümleme seçeneği",
-        "confidence": "medium",
-        "requiresCatalogCheck": true,
-        "role": "cushioning"
-      },
-      {
-        "token": "PPSA",
-        "meaningTr": "Sönümleme seçeneği",
-        "confidence": "medium",
-        "requiresCatalogCheck": true,
-        "role": "cushioning"
-      },
-      {
         "token": "N3",
         "meaningTr": "Sensör yuvası / seçenek",
         "confidence": "low",
@@ -1123,20 +1107,6 @@
     ],
     "knownTokens": [
       {
-        "token": "PPVA",
-        "meaningTr": "Sönümleme seçeneği",
-        "confidence": "medium",
-        "requiresCatalogCheck": true,
-        "role": "cushioning"
-      },
-      {
-        "token": "PPSA",
-        "meaningTr": "Sönümleme seçeneği",
-        "confidence": "medium",
-        "requiresCatalogCheck": true,
-        "role": "cushioning"
-      },
-      {
         "token": "N3",
         "meaningTr": "Sensör yuvası / seçenek",
         "confidence": "low",
@@ -1295,20 +1265,6 @@
       }
     ],
     "knownTokens": [
-      {
-        "token": "PPVA",
-        "meaningTr": "Sönümleme seçeneği",
-        "confidence": "medium",
-        "requiresCatalogCheck": true,
-        "role": "cushioning"
-      },
-      {
-        "token": "PPSA",
-        "meaningTr": "Sönümleme seçeneği",
-        "confidence": "medium",
-        "requiresCatalogCheck": true,
-        "role": "cushioning"
-      },
       {
         "token": "N3",
         "meaningTr": "Sensör yuvası / seçenek",
@@ -1473,20 +1429,6 @@
     ],
     "knownTokens": [
       {
-        "token": "PPVA",
-        "meaningTr": "Sönümleme seçeneği",
-        "confidence": "medium",
-        "requiresCatalogCheck": true,
-        "role": "cushioning"
-      },
-      {
-        "token": "PPSA",
-        "meaningTr": "Sönümleme seçeneği",
-        "confidence": "medium",
-        "requiresCatalogCheck": true,
-        "role": "cushioning"
-      },
-      {
         "token": "N3",
         "meaningTr": "Sensör yuvası / seçenek",
         "confidence": "low",
@@ -1644,20 +1586,6 @@
       }
     ],
     "knownTokens": [
-      {
-        "token": "PPVA",
-        "meaningTr": "Sönümleme seçeneği",
-        "confidence": "medium",
-        "requiresCatalogCheck": true,
-        "role": "cushioning"
-      },
-      {
-        "token": "PPSA",
-        "meaningTr": "Sönümleme seçeneği",
-        "confidence": "medium",
-        "requiresCatalogCheck": true,
-        "role": "cushioning"
-      },
       {
         "token": "N3",
         "meaningTr": "Sensör yuvası / seçenek",

@@ -49,6 +49,36 @@ export interface VickersDG4VSpoolSemantics {
 }
 
 const SPOOL_SEMANTICS: Record<string, VickersDG4VSpoolSemantics> = {
+  '0A': {
+    spoolFunctionCode: '0A',
+    spoolType: '0',
+    springCode: 'A',
+    numberOfPositions: 3,
+    centering: 'spring_centered',
+    centerCondition: 'open_center',
+    requiresCatalogCheck: true,
+    behaviorNoteTr: `Sürgü tipi 0, yay A, açık merkez (tahmini). ${VICKERS_DG4V_CATALOG_NOTE_TR}`,
+  },
+  '4A': {
+    spoolFunctionCode: '4A',
+    spoolType: '4',
+    springCode: 'A',
+    numberOfPositions: 3,
+    centering: 'spring_centered',
+    centerCondition: 'tandem_center',
+    requiresCatalogCheck: true,
+    behaviorNoteTr: `Sürgü tipi 4, yay A, tandem / tahliye merkez (tahmini). ${VICKERS_DG4V_CATALOG_NOTE_TR}`,
+  },
+  '24A': {
+    spoolFunctionCode: '24A',
+    spoolType: '24',
+    springCode: 'A',
+    numberOfPositions: 3,
+    centering: 'spring_centered',
+    centerCondition: 'unknown',
+    requiresCatalogCheck: true,
+    behaviorNoteTr: `Sürgü tipi 24, yay A, ofset merkez (tahmini). ${VICKERS_DG4V_CATALOG_NOTE_TR}`,
+  },
   '2A': {
     spoolFunctionCode: '2A',
     spoolType: '2',

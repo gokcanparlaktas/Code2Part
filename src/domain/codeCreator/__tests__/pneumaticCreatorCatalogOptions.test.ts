@@ -1,7 +1,12 @@
 import {
   buildPneumaticCushioningOptions,
-  buildPneumaticVariantOptions,
+  buildPneumaticExtraOptions,
+  buildPneumaticRodEndOptions,
+  buildPneumaticSensorOptions,
   resolveSeriesCushioningToken,
+  resolveSeriesExtraToken,
+  resolveSeriesRodEndToken,
+  resolveSeriesSensorToken,
 } from '@/domain/codeCreator/pneumaticCreatorCatalogOptions';
 import { buildHydraulicCoilVoltageOptions } from '@/domain/codeCreator/hydraulicCoilVoltageCatalogOptions';
 import { getCodeCreatorFields } from '@/domain/codeCreator/getCodeCreatorSchema';
@@ -16,23 +21,51 @@ describe('code creator field options', () => {
     expect(options.every((option) => !option.labelTr.includes('D24'))).toBe(true);
   });
 
-  it('lists pneumatic cushioning as Yok/Var only and variant tokens when needed', () => {
-    const cushioning = buildPneumaticCushioningOptions();
-    const variants = buildPneumaticVariantOptions();
-
-    expect(cushioning).toEqual([
+  it('lists pneumatic cushioning and sensor as Yok/Var; rod end as thread types', () => {
+    expect(buildPneumaticCushioningOptions()).toEqual([
       { value: 'none', labelTr: 'Yok' },
       { value: 'with', labelTr: 'Var' },
     ]);
-    expect(variants.some((option) => option.value === 'N3')).toBe(true);
+    expect(buildPneumaticSensorOptions()).toEqual([
+      { value: 'none', labelTr: 'Yok' },
+      { value: 'with', labelTr: 'Var' },
+    ]);
+    expect(buildPneumaticRodEndOptions()).toEqual([
+      { value: 'none', labelTr: 'Belirtilmedi' },
+      { value: 'male_external', labelTr: 'Dış diş (erkek)' },
+      { value: 'female_internal', labelTr: 'İç diş (dişi)' },
+    ]);
+  });
+
+  it('lists extra options with descriptive labels and hides ambiguous D/A tokens', () => {
+    const extras = buildPneumaticExtraOptions();
+
+    expect(extras[0]).toEqual({ value: 'none', labelTr: 'Yok' });
+    expect(extras.some((option) => option.value === 'SDB')).toBe(true);
+    expect(extras.every((option) => !['D', 'A'].includes(option.value))).toBe(true);
+    expect(extras.find((option) => option.value === 'SDB')?.labelTr).toContain('SDB —');
   });
 
   it('resolves cushioning token per series when Var is selected', () => {
     expect(resolveSeriesCushioningToken('festo_dsbc', 'with')).toBe('PPVA');
-    expect(resolveSeriesCushioningToken('smc_cp96', 'with')).toBe('PPVA');
+    expect(resolveSeriesCushioningToken('festo_adn', 'with')).toBe('P');
+    expect(resolveSeriesCushioningToken('smc_cp96', 'with')).toBe('C');
+    expect(resolveSeriesCushioningToken('parker_p1d', 'with')).toBeNull();
     expect(resolveSeriesCushioningToken('festo_dsbc', 'none')).toBeNull();
     expect(resolveSeriesCushioningToken('festo_dsbc', 'PPSA')).toBe('PPSA');
     expect(resolveSeriesCushioningToken('festo_dsbc', 'PPVA')).toBe('PPVA');
+  });
+
+  it('resolves sensor and rod end tokens per series', () => {
+    expect(resolveSeriesSensorToken('festo_dsbc', 'with')).toBe('N3');
+    expect(resolveSeriesSensorToken('festo_adn', 'with')).toBe('A');
+    expect(resolveSeriesSensorToken('smc_cp96', 'with')).toBeNull();
+    expect(resolveSeriesRodEndToken('festo_adn', 'female_internal')).toBe('I');
+    expect(resolveSeriesRodEndToken('parker_p1d', 'male_external')).toBe('N');
+    expect(resolveSeriesRodEndToken('festo_dsbc', 'male_external')).toBeNull();
+    expect(resolveSeriesRodEndToken('festo_adn', 'none')).toBeNull();
+    expect(resolveSeriesExtraToken('smc_cp96', 'SDB')).toBe('SDB');
+    expect(resolveSeriesExtraToken('festo_dsbc', 'SDB')).toBeNull();
   });
 
   it('shows Rexroth/Yuken design fields only when that brand is selected', () => {

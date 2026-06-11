@@ -21,7 +21,10 @@ export interface HydraulicCenterTypeOption {
   centerCondition: string | null;
   rexrothSpoolToken: string | null;
   yukenFunctionToken: string | null;
+  /** DG4V sipariş fonksiyon kodu (ör. 2A, 24A). */
   vickersFunctionToken: string | null;
+  /** Eaton katalog sürgü tipi (ör. 2, 24, 6) — yay harfi ayrı eklenir. */
+  vickersSpoolTypeToken: string | null;
 }
 
 type SpoolCatalogRow = {
@@ -130,12 +133,53 @@ function isPreferredYukenDsgRow(row: SpoolCatalogRow): boolean {
   return /^[0-9][CBD]\d{1,2}$/.test(token);
 }
 
-function isVickersFunctionRow(row: SpoolCatalogRow, manufacturer: 'rexroth' | 'yuken' | 'eaton'): boolean {
-  if (manufacturer !== 'eaton') {
-    return false;
+function isSupportedSpoolCatalogRow(
+  row: SpoolCatalogRow,
+  manufacturer: 'rexroth' | 'yuken' | 'eaton'
+): boolean {
+  if (!row.attributeKey) {
+    return true;
   }
-  const token = row.rawToken?.trim().toUpperCase() ?? '';
-  return /^[0-9][A-Z]$/.test(token);
+  if (manufacturer === 'eaton') {
+    return row.attributeKey === 'spool_type' || row.attributeKey === 'spool_symbol';
+  }
+  return row.attributeKey === 'spool_symbol';
+}
+
+function isVickersOrderingFunctionToken(token: string | null | undefined): boolean {
+  return Boolean(token?.trim() && /^\d{1,3}[ABCD]$/i.test(token.trim()));
+}
+
+function isEatonSpoolTypeToken(token: string | null | undefined): boolean {
+  return Boolean(token?.trim() && /^\d{1,3}$/.test(token.trim()));
+}
+
+export function formatVickersOrderingFunctionCode(
+  spoolType: string,
+  springCode: 'A' | 'B' | 'C' | 'D' = 'A'
+): string {
+  return `${spoolType.trim()}${springCode.toUpperCase()}`;
+}
+
+function preferredVickersSpringForRexrothSpool(
+  rexrothSpoolToken: string
+): 'A' | 'B' | 'C' | 'D' {
+  const token = rexrothSpoolToken.trim().toUpperCase();
+  if (token === 'J') {
+    return 'B';
+  }
+  if (token === 'C' || token === 'C46') {
+    return 'C';
+  }
+  return 'A';
+}
+
+function pickPreferredEatonSpoolType(tokens: string[]): string | null {
+  const ranked = [...tokens]
+    .map((token) => token.trim())
+    .filter(Boolean)
+    .sort((a, b) => a.length - b.length || a.localeCompare(b, 'en'));
+  return ranked[0] ?? null;
 }
 
 function upsertOption(
@@ -160,7 +204,10 @@ function upsertOption(
       centerCondition: row.centerCondition ?? null,
       rexrothSpoolToken: manufacturer === 'rexroth' ? token : null,
       yukenFunctionToken: manufacturer === 'yuken' ? token : null,
-      vickersFunctionToken: isVickersFunctionRow(row, manufacturer) ? token : null,
+      vickersFunctionToken:
+        manufacturer === 'eaton' && isVickersOrderingFunctionToken(token) ? token : null,
+      vickersSpoolTypeToken:
+        manufacturer === 'eaton' && isEatonSpoolTypeToken(token) ? token : null,
     });
     return;
   }
@@ -191,8 +238,15 @@ function upsertOption(
       existing.yukenFunctionToken = token;
     }
   }
-  if (isVickersFunctionRow(row, manufacturer) && token) {
-    existing.vickersFunctionToken = token;
+  if (manufacturer === 'eaton' && token) {
+    if (isVickersOrderingFunctionToken(token)) {
+      existing.vickersFunctionToken = token;
+    } else if (isEatonSpoolTypeToken(token)) {
+      const candidates = [existing.vickersSpoolTypeToken, token].filter(
+        (entry): entry is string => Boolean(entry)
+      );
+      existing.vickersSpoolTypeToken = pickPreferredEatonSpoolType(candidates);
+    }
   }
 }
 
@@ -202,7 +256,7 @@ function ingestCatalog(
   manufacturer: 'rexroth' | 'yuken' | 'eaton'
 ): void {
   for (const row of rows ?? []) {
-    if (row.attributeKey && row.attributeKey !== 'spool_symbol') {
+    if (!isSupportedSpoolCatalogRow(row, manufacturer)) {
       continue;
     }
     upsertOption(map, row, manufacturer);
@@ -232,7 +286,17 @@ function canonicalCreatorLabel(option: HydraulicCenterTypeOption): string | null
     return null;
   }
 
+  if (isPerPortOnlyCenterLabel(label)) {
+    return null;
+  }
+
   return label;
+}
+
+function isPerPortOnlyCenterLabel(label: string): boolean {
+  return /^[PTAB] (?:Bağlı|Kapalı|Belirsiz)(?:, [PTAB] (?:Bağlı|Kapalı|Belirsiz)){3}$/.test(
+    label
+  );
 }
 
 function creatorOptionScore(option: HydraulicCenterTypeOption): number {
@@ -274,7 +338,11 @@ function creatorOptionScore(option: HydraulicCenterTypeOption): number {
 
 function pickBestToken(
   group: HydraulicCenterTypeOption[],
-  field: 'rexrothSpoolToken' | 'yukenFunctionToken' | 'vickersFunctionToken',
+  field:
+    | 'rexrothSpoolToken'
+    | 'yukenFunctionToken'
+    | 'vickersFunctionToken'
+    | 'vickersSpoolTypeToken',
   prefer: (token: string) => number
 ): string | null {
   const ranked = group
@@ -309,6 +377,7 @@ function mergeCenterTypeOptions(group: HydraulicCenterTypeOption[]): HydraulicCe
       isYukenDsgOrderingFunctionToken(token) ? 10 : 1
     ),
     vickersFunctionToken: pickBestToken(group, 'vickersFunctionToken', () => 1),
+    vickersSpoolTypeToken: pickBestToken(group, 'vickersSpoolTypeToken', (token) => -token.length),
   };
 }
 
@@ -377,15 +446,7 @@ function isYukenDsgOrderingFunctionToken(token: string | null | undefined): bool
 export function resolveYukenFunctionTokenForRexrothSpool(
   rexrothSpoolToken: string
 ): string | null {
-  const token = rexrothSpoolToken.trim().toUpperCase();
-  let rexrothOption = buildHydraulicCenterTypeCatalogOptions().find(
-    (entry) => entry.rexrothSpoolToken === token
-  );
-  if (!rexrothOption && token === 'C') {
-    rexrothOption = buildHydraulicCenterTypeCatalogOptions().find(
-      (entry) => entry.rexrothSpoolToken === 'C46'
-    );
-  }
+  const rexrothOption = findRexrothCenterTypeOption(rexrothSpoolToken);
   if (!rexrothOption?.portState) {
     return null;
   }
@@ -406,6 +467,54 @@ export function resolveYukenFunctionTokenForRexrothSpool(
   }
 
   return samePortOptions[0]?.yukenFunctionToken ?? null;
+}
+
+function findRexrothCenterTypeOption(rexrothSpoolToken: string): HydraulicCenterTypeOption | null {
+  const token = rexrothSpoolToken.trim().toUpperCase();
+  let rexrothOption = buildHydraulicCenterTypeCatalogOptions().find(
+    (entry) => entry.rexrothSpoolToken === token
+  );
+  if (!rexrothOption && token === 'C') {
+    rexrothOption = buildHydraulicCenterTypeCatalogOptions().find(
+      (entry) => entry.rexrothSpoolToken === 'C46'
+    );
+  }
+  return rexrothOption ?? null;
+}
+
+/** Rexroth WE sipariş sürgü harfi → aynı PTAB port durumuna sahip Vickers DG4V fonksiyon kodu. */
+export function resolveVickersFunctionTokenForRexrothSpool(
+  rexrothSpoolToken: string
+): string | null {
+  const rexrothOption = findRexrothCenterTypeOption(rexrothSpoolToken);
+  if (!rexrothOption?.portState) {
+    return null;
+  }
+
+  const portKey = serializePortStateKey(rexrothOption.portState);
+  const samePortOptions = buildHydraulicCenterTypeCatalogOptions().filter(
+    (entry) =>
+      entry.portState &&
+      serializePortStateKey(entry.portState) === portKey &&
+      (entry.vickersFunctionToken || entry.vickersSpoolTypeToken)
+  );
+
+  const orderingMatch = samePortOptions.find((entry) =>
+    isVickersOrderingFunctionToken(entry.vickersFunctionToken)
+  );
+  if (orderingMatch?.vickersFunctionToken) {
+    return orderingMatch.vickersFunctionToken.toUpperCase();
+  }
+
+  const spoolTypeMatch = samePortOptions.find((entry) => entry.vickersSpoolTypeToken);
+  if (spoolTypeMatch?.vickersSpoolTypeToken) {
+    return formatVickersOrderingFunctionCode(
+      spoolTypeMatch.vickersSpoolTypeToken,
+      preferredVickersSpringForRexrothSpool(rexrothSpoolToken)
+    );
+  }
+
+  return null;
 }
 
 /** Yuken DSG fonksiyon kodu → aynı PTAB port durumuna sahip Rexroth WE sürgü harfi. */

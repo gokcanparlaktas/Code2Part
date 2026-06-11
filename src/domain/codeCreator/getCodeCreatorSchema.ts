@@ -3,7 +3,9 @@ import { WAYS_POSITIONS_DICTIONARY } from '@/domain/canonical/hydraulicValve/hyd
 import { buildHydraulicCoilVoltageOptions } from '@/domain/codeCreator/hydraulicCoilVoltageCatalogOptions';
 import {
   buildPneumaticCushioningOptions,
-  buildPneumaticVariantOptions,
+  buildPneumaticExtraOptions,
+  buildPneumaticRodEndOptions,
+  buildPneumaticSensorOptions,
 } from '@/domain/codeCreator/pneumaticCreatorCatalogOptions';
 import { buildRexrothDesignSeriesOptions } from '@/domain/codeCreator/rexrothDesignSeriesOptions';
 import type {
@@ -44,7 +46,7 @@ export const CODE_CREATOR_CATEGORIES: CodeCreatorCategoryDefinition[] = [
     key: 'pneumatic_cylinder',
     labelTr: 'Pnömatik silindir (ISO 15552)',
     descriptionTr:
-      'Çap, strok, yastıklama ve mil ucu / seçenekleri girerek marka kodlarını oluşturun.',
+      'Çap, strok, yastıklama, sensör, mil ucu ve ek seçenekleri girerek marka kodlarını oluşturun.',
     brands: [
       { key: null, labelTr: 'Tüm markalar' },
       { key: 'festo', labelTr: 'Festo' },
@@ -209,11 +211,27 @@ function buildPneumaticCylinderFields(): CodeCreatorFieldDefinition[] {
       options: buildPneumaticCushioningOptions(),
     },
     {
-      key: 'variant_suffix',
-      labelTr: 'Mil ucu / sensör / seçenek',
-      hintTr: 'Diş ucu, sensör yuvası veya strok sonu seçenekleri.',
+      key: 'sensor_option',
+      labelTr: 'Sensör / konum algılama',
+      hintTr:
+        'Sensör yuvası veya yakınlık anahtarı. Var seçildiğinde markanın katalog kodu eklenir (ör. Festo N3).',
       control: 'select',
-      options: buildPneumaticVariantOptions(),
+      options: buildPneumaticSensorOptions(),
+    },
+    {
+      key: 'rod_end_option',
+      labelTr: 'Mil ucu / diş tipi',
+      hintTr:
+        'Dış diş (erkek) veya iç diş (dişi). Seçilen tipe göre markanın katalog kodu eklenir.',
+      control: 'select',
+      options: buildPneumaticRodEndOptions(),
+    },
+    {
+      key: 'extra_option',
+      labelTr: 'Ek seçenek',
+      hintTr: 'Montaj veya seriye özel ek kodlar (ör. SMC SDB).',
+      control: 'select',
+      options: buildPneumaticExtraOptions(),
     },
   ];
 }

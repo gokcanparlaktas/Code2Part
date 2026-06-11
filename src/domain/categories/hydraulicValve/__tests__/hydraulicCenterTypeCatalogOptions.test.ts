@@ -25,7 +25,7 @@ describe('hydraulicCenterTypeCatalogOptions', () => {
     expect(labels.every((label) => !/Belirsiz/i.test(label))).toBe(true);
     expect(labels.filter((label) => label.includes('Açık merkez'))).toHaveLength(1);
     expect(labels.filter((label) => label.includes('Basınç merkez'))).toHaveLength(1);
-    expect(labels.filter((label) => label.includes('Ofset merkez'))).toHaveLength(1);
+    expect(labels.filter((label) => label.includes('Ofset merkez'))).toHaveLength(2);
   });
 
   it('includes closed center WE6 mapping for code generation', () => {
@@ -42,5 +42,19 @@ describe('hydraulicCenterTypeCatalogOptions', () => {
     const creator = hydraulicCenterTypeOptionsForCreator();
 
     expect(creator.every((option) => !/Belirsiz/i.test(option.labelTr))).toBe(true);
+  });
+
+  it('creator options never show raw per-port Bağlı labels', () => {
+    const creator = hydraulicCenterTypeOptionsForCreator();
+
+    expect(
+      creator.every(
+        (option) =>
+          !/^[PTAB] Bağlı, [PTAB] Bağlı, [PTAB] Bağlı, [PTAB] Bağlı$/.test(option.labelTr)
+      )
+    ).toBe(true);
+    expect(creator.some((option) => option.labelTr.includes('P-B Bağlı, T-A Bağlı'))).toBe(
+      true
+    );
   });
 });

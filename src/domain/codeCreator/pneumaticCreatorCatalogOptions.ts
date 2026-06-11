@@ -4,21 +4,49 @@ import type { CodeCreatorFieldOption } from '@/types/productCodeCreator';
 
 const PNEUMATIC_ISO_GROUP_ID = 'pneumatic_iso_15552_cylinder';
 
-const FALLBACK_VARIANTS: CodeCreatorFieldOption[] = [
-  { value: 'N3', labelTr: 'Var (N3 — sensör yuvası)' },
-  { value: 'D', labelTr: 'Var (D — strok sonu)' },
-  { value: 'A', labelTr: 'Var (A — strok sonu)' },
-];
+/** Festo sipariş kodu sönümleme tokenları; diğer markalara uygulanmaz. */
+const FESTO_CUSHIONING_TOKENS = new Set(['PPVA', 'PPSA', 'PPV', 'PPS', 'P']);
 
-const PREFERRED_CUSHIONING_ORDER = ['PPVA', 'PPSA'];
+/** Tek harfli strok sonu tokenları; ayrı alanlarda marka kodu ile çözülür. */
+const AMBIGUOUS_EXTRA_TOKENS = new Set(['D', 'A']);
 
-function aggregateKnownTokens(role: CatalogKnownToken['role']): CodeCreatorFieldOption[] {
+/**
+ * Kod üreticide "Sönümleme: Var" seçildiğinde seriye özgü varsayılan suffix.
+ * Tanımsız serilerde basit suffix yoktur; katalog sipariş anahtarı ayrıca doğrulanmalıdır.
+ */
+const SERIES_CUSHIONING_SUFFIX_TOKEN: Record<string, string> = {
+  festo_dsbc: 'PPVA',
+  festo_adn: 'P',
+  festo_dsnu: 'P',
+  smc_cp96: 'C',
+};
+
+/** Sensör yuvası / konum algılama — yalnızca basit tire-suffix şablonunda. */
+const SERIES_SENSOR_SUFFIX_TOKEN: Record<string, string> = {
+  festo_dsbc: 'N3',
+  festo_adn: 'A',
+  festo_dsnu: 'A',
+};
+
+/** Kod üreticide seçilen mil ucu tipi. */
+export type PneumaticRodEndCreatorKey = 'none' | 'male_external' | 'female_internal';
+
+/** Seri + mil ucu tipi → sipariş kodu token (yalnızca basit tire-suffix şablonunda). */
+const SERIES_ROD_END_TOKEN_BY_TYPE: Record<
+  string,
+  Partial<Record<Exclude<PneumaticRodEndCreatorKey, 'none'>, string>>
+> = {
+  festo_adn: { female_internal: 'I' },
+  parker_p1d: { male_external: 'N' },
+};
+
+function aggregateKnownTokens(role: CatalogKnownToken['role']): CatalogKnownToken[] {
   const group = getCatalogEquivalenceGroups().find((entry) => entry.id === PNEUMATIC_ISO_GROUP_ID);
   if (!group) {
     return [];
   }
 
-  const byToken = new Map<string, CodeCreatorFieldOption>();
+  const byToken = new Map<string, CatalogKnownToken>();
 
   for (const seriesId of group.seriesIds) {
     const series = getCatalogSeriesById(seriesId);
@@ -27,34 +55,51 @@ function aggregateKnownTokens(role: CatalogKnownToken['role']): CodeCreatorField
         continue;
       }
       if (!byToken.has(known.token)) {
-        byToken.set(known.token, {
-          value: known.token,
-          labelTr: `Var (${known.token} — ${known.meaningTr})`,
-        });
+        byToken.set(known.token, known);
       }
     }
   }
 
-  return [...byToken.values()].sort((a, b) => a.labelTr.localeCompare(b.labelTr, 'tr'));
+  return [...byToken.values()].sort((a, b) => a.token.localeCompare(b.token, 'tr'));
 }
 
-/** UI: yalnızca Var / Yok — sipariş kodu seri kataloğundan seçilir. */
-export function buildPneumaticCushioningOptions(): CodeCreatorFieldOption[] {
+function yesNoOptions(): CodeCreatorFieldOption[] {
   return [
     { value: 'none', labelTr: 'Yok' },
     { value: 'with', labelTr: 'Var' },
   ];
 }
 
-export function buildPneumaticVariantOptions(): CodeCreatorFieldOption[] {
-  const sensor = aggregateKnownTokens('sensor');
-  const options = aggregateKnownTokens('options');
-  const merged = new Map<string, CodeCreatorFieldOption>();
-  for (const entry of [...sensor, ...options, ...FALLBACK_VARIANTS]) {
-    merged.set(entry.value, entry);
-  }
+/** UI: yalnızca Var / Yok — sipariş kodu seri kataloğundan seçilir. */
+export function buildPneumaticCushioningOptions(): CodeCreatorFieldOption[] {
+  return yesNoOptions();
+}
 
-  return [{ value: 'none', labelTr: 'Yok' }, ...merged.values()];
+/** Sensör yuvası veya konum algılama (manyetik piston dahil). */
+export function buildPneumaticSensorOptions(): CodeCreatorFieldOption[] {
+  return yesNoOptions();
+}
+
+/** Mil ucu / diş tipi — Var/Yok değil, bağlantı tipi seçilir. */
+export function buildPneumaticRodEndOptions(): CodeCreatorFieldOption[] {
+  return [
+    { value: 'none', labelTr: 'Belirtilmedi' },
+    { value: 'male_external', labelTr: 'Dış diş (erkek)' },
+    { value: 'female_internal', labelTr: 'İç diş (dişi)' },
+  ];
+}
+
+/** Montaj ve diğer net adlandırılmış ek seçenekler (SDB vb.). */
+export function buildPneumaticExtraOptions(): CodeCreatorFieldOption[] {
+  const extras = aggregateKnownTokens('options')
+    .filter((known) => !AMBIGUOUS_EXTRA_TOKENS.has(known.token))
+    .map((known) => ({
+      value: known.token,
+      labelTr: `${known.token} — ${known.meaningTr ?? 'Ek seçenek'}`,
+    }))
+    .sort((a, b) => a.labelTr.localeCompare(b.labelTr, 'tr'));
+
+  return [{ value: 'none', labelTr: 'Yok' }, ...extras];
 }
 
 function cushioningTokensForSeries(seriesId: string): CatalogKnownToken[] {
@@ -62,9 +107,14 @@ function cushioningTokensForSeries(seriesId: string): CatalogKnownToken[] {
   return (series?.knownTokens ?? []).filter((known) => known.role === 'cushioning');
 }
 
+function seriesHasKnownToken(seriesId: string, token: string, role: CatalogKnownToken['role']): boolean {
+  const series = getCatalogSeriesById(seriesId);
+  return (series?.knownTokens ?? []).some((known) => known.role === role && known.token === token);
+}
+
 /**
- * Kullanıcı "Var" seçtiğinde o serinin katalog sönümleme kodunu döner (ör. Festo PPVA, SMC PPVA).
- * Eski doğrudan token seçimi (PPVA) yalnızca seri o kodu destekliyorsa kabul edilir.
+ * Kullanıcı "Var" seçildiğinde o serinin katalog sönümleme kodunu döner (ör. Festo PPVA, SMC C).
+ * Eski doğrudan token seçimi yalnızca seri o kodu destekliyorsa kabul edilir.
  */
 export function resolveSeriesCushioningToken(
   seriesId: string,
@@ -81,16 +131,55 @@ export function resolveSeriesCushioningToken(
     return explicit?.token ?? null;
   }
 
-  if (seriesTokens.length === 0) {
-    return PREFERRED_CUSHIONING_ORDER[0] ?? null;
+  const mapped = SERIES_CUSHIONING_SUFFIX_TOKEN[seriesId];
+  if (mapped) {
+    return mapped;
   }
 
-  for (const preferred of PREFERRED_CUSHIONING_ORDER) {
-    const match = seriesTokens.find((known) => known.token === preferred);
-    if (match) {
-      return match.token;
-    }
+  const brandSpecific = seriesTokens.find((known) => !FESTO_CUSHIONING_TOKENS.has(known.token));
+  return brandSpecific?.token ?? null;
+}
+
+export function resolveSeriesSensorToken(
+  seriesId: string,
+  sensorSelection: string | null | undefined
+): string | null {
+  if (!sensorSelection || sensorSelection === 'none') {
+    return null;
   }
 
-  return seriesTokens[0]?.token ?? null;
+  if (sensorSelection !== 'with') {
+    return seriesHasKnownToken(seriesId, sensorSelection, 'sensor') ? sensorSelection : null;
+  }
+
+  return SERIES_SENSOR_SUFFIX_TOKEN[seriesId] ?? null;
+}
+
+export function resolveSeriesRodEndToken(
+  seriesId: string,
+  rodEndSelection: string | null | undefined
+): string | null {
+  if (!rodEndSelection || rodEndSelection === 'none') {
+    return null;
+  }
+
+  if (
+    rodEndSelection !== 'male_external' &&
+    rodEndSelection !== 'female_internal'
+  ) {
+    return null;
+  }
+
+  return SERIES_ROD_END_TOKEN_BY_TYPE[seriesId]?.[rodEndSelection] ?? null;
+}
+
+export function resolveSeriesExtraToken(
+  seriesId: string,
+  extraSelection: string | null | undefined
+): string | null {
+  if (!extraSelection || extraSelection === 'none') {
+    return null;
+  }
+
+  return seriesHasKnownToken(seriesId, extraSelection, 'options') ? extraSelection : null;
 }

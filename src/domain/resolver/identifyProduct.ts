@@ -16,6 +16,8 @@ import type {
   TechnicalAttribute,
 } from '@/types/product';
 
+import { parsePneumaticCylinderRawAttributes } from '@/domain/catalogData/pneumatics/parsePneumaticCylinderRawAttributes';
+
 import { findExactExampleCodeMatch } from './exactExampleCodeMatch';
 import { getAllProductSeries } from './productSeriesCatalog';
 import { normalizeCode } from './normalizeCode';
@@ -91,6 +93,18 @@ function parseDimensions(
     return {
       bore: attributeFromCode(boreValue, 'mm'),
       stroke: attributeFromCode(strokeValue, 'mm'),
+      parsed: true,
+    };
+  }
+
+  const catalogParsed = parsePneumaticCylinderRawAttributes(normalizedCode);
+  if (
+    catalogParsed?.boreMm !== undefined &&
+    catalogParsed.strokeMm !== undefined
+  ) {
+    return {
+      bore: attributeFromCode(catalogParsed.boreMm, 'mm'),
+      stroke: attributeFromCode(catalogParsed.strokeMm, 'mm'),
       parsed: true,
     };
   }

@@ -155,6 +155,17 @@ describe('centerTypePartsFromPortState', () => {
     ).toBe('P Kapalı, T Kapalı, A Bağlı, B Kapalı');
   });
 
+  it('describes cross-pair offset center instead of per-port Bağlı labels', () => {
+    expect(
+      portStateBehaviorSummary({
+        P: 'connected_to_B',
+        T: 'connected_to_A',
+        A: 'connected_to_T',
+        B: 'connected_to_P',
+      })
+    ).toBe('P-B Bağlı, T-A Bağlı (Ofset merkez)');
+  });
+
 
 
   it('resolveCenterDisplayFromCatalogEvidence uses unified port format without spool prefix', () => {

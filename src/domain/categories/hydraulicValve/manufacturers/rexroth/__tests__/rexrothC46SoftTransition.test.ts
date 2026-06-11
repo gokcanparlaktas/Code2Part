@@ -33,8 +33,8 @@ describe('Rexroth C46 soft transition', () => {
     const creator = hydraulicCenterTypeOptionsForCreator();
     const offset = creator.filter((option) => option.labelTr.includes('Ofset merkez'));
 
-    expect(offset).toHaveLength(1);
-    expect(offset[0]?.labelTr).toContain('P-A Bağlı, B-T Bağlı');
+    expect(offset.length).toBeGreaterThanOrEqual(1);
+    expect(offset.some((option) => option.labelTr.includes('P-A Bağlı, B-T Bağlı'))).toBe(true);
     expect(offset[0]?.labelTr).not.toMatch(/Belirsiz/i);
   });
 

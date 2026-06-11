@@ -1,8 +1,6 @@
 import { SplashScreen, Stack } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-
 import { FirstLaunchDisclaimerModal } from '@/components/FirstLaunchDisclaimerModal';
 import {
   acceptAppDisclaimer,
@@ -100,7 +98,6 @@ const createStackStyles = (c: HomeColorPalette) =>
   });
 
 export default function RootLayout() {
-  const [appReady, setAppReady] = useState(false);
   const [disclaimerVisible, setDisclaimerVisible] = useState(false);
 
   useEffect(() => {
@@ -111,7 +108,7 @@ export default function RootLayout() {
           setDisclaimerVisible(true);
         }
       } finally {
-        setAppReady(true);
+        await SplashScreen.hideAsync();
       }
     }
     void prepare();
@@ -122,25 +119,13 @@ export default function RootLayout() {
     setDisclaimerVisible(false);
   }, []);
 
-  const onRootLayout = useCallback(async () => {
-    if (appReady) {
-      await SplashScreen.hideAsync();
-    }
-  }, [appReady]);
-
-  if (!appReady) {
-    return null;
-  }
-
   return (
-    <SafeAreaProvider onLayout={onRootLayout}>
-      <ThemeProvider>
-        <FirstLaunchDisclaimerModal
-          visible={disclaimerVisible}
-          onAccept={handleAcceptDisclaimer}
-        />
-        <ThemedStack />
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <ThemeProvider>
+      <FirstLaunchDisclaimerModal
+        visible={disclaimerVisible}
+        onAccept={handleAcceptDisclaimer}
+      />
+      <ThemedStack />
+    </ThemeProvider>
   );
 }

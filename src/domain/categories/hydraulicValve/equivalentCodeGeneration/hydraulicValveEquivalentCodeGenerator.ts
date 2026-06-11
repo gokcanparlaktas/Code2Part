@@ -540,14 +540,17 @@ function resolveVickersFunctionAlternatives(tokens: HydraulicEquivalentTokens): 
 } {
   const rexrothSpool =
     tokens.spoolSymbol ?? rexrothWE6BehaviorLookupToken(tokens.functionCode ?? '');
-  const fromRexroth = resolveConfidentVickersFunctionFromRexroth(rexrothSpool);
-  if (fromRexroth && rexrothSpool && isConfidentRexrothSpoolMapping(rexrothSpool)) {
-    return {
-      functionCodes: [fromRexroth],
-      spoolConfident: true,
-      checkNotes: [],
-      unresolvedFields: [],
-    };
+
+  if (rexrothSpool) {
+    const fromPortStateOrTable = resolveConfidentVickersFunctionFromRexroth(rexrothSpool);
+    if (fromPortStateOrTable) {
+      return {
+        functionCodes: [fromPortStateOrTable],
+        spoolConfident: true,
+        checkNotes: [],
+        unresolvedFields: [],
+      };
+    }
   }
 
   const fromYuken = resolveConfidentVickersFunctionFromYuken(tokens.functionCode);
@@ -571,8 +574,21 @@ function resolveVickersFunctionAlternatives(tokens: HydraulicEquivalentTokens): 
     };
   }
 
+  const yukenFromRexroth = rexrothSpool
+    ? resolveConfidentYukenSpoolCode(rexrothSpool)
+    : null;
+  const vickersFromYukenBridge = resolveConfidentVickersFunctionFromYuken(yukenFromRexroth);
+  if (vickersFromYukenBridge) {
+    return {
+      functionCodes: [vickersFromYukenBridge],
+      spoolConfident: true,
+      checkNotes: [],
+      unresolvedFields: [],
+    };
+  }
+
   return {
-    functionCodes: ['2A'],
+    functionCodes: [],
     spoolConfident: false,
     checkNotes: [VICKERS_UNRESOLVED_SPOOL_NOTE_TR],
     unresolvedFields: ['function_code'],

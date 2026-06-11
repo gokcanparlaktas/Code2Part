@@ -31,6 +31,8 @@ export const CONFIDENT_REXROTH_TO_YUKEN_SPOOL: Partial<
 > = {
   E: '3C2',
   D: '3C9',
+  /** Tahliye / tandem merkez (P-T bağlı, A-B kapalı). */
+  G: '3C60',
   /** Ofset merkez (P-A / B-T) + yumuşak geçiş sipariş kodu. */
   C46: '3C9',
 };
@@ -40,6 +42,7 @@ export const CONFIDENT_YUKEN_TO_REXROTH_SPOOL: Partial<Record<YukenDSGSpoolFunct
   {
     '3C2': 'E',
     '3C4': 'C',
+    '3C60': 'G',
     /** Ofset merkez karşılığı; muadil Rexroth kodunda C46 kullanılır. */
     '3C9': 'C46',
   };
