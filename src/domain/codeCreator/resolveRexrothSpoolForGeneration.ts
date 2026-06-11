@@ -1,6 +1,4 @@
 import type { HydraulicCenterTypeOption } from '@/domain/categories/hydraulicValve/hydraulicCenterTypeCatalogOptions';
-import type { HydraulicFunctionCenterCondition } from '@/domain/categories/hydraulicValve/functionMappings/hydraulicFunctionBehavior';
-import { REXROTH_PREFERRED_SPOOL_BY_CENTER } from '@/domain/categories/hydraulicValve/hydraulicValveCenterTypeSelection';
 import {
   isRexrothWEOrderingSpoolSymbol,
   rexrothWE6BehaviorLookupToken,
@@ -26,13 +24,6 @@ export function resolveRexrothSpoolForGeneration(
     if (letter && isRexrothWEOrderingSpoolSymbol(letter)) {
       return letter;
     }
-  }
-
-  const center = centerOption?.centerCondition as
-    | HydraulicFunctionCenterCondition
-    | undefined;
-  if (center && REXROTH_PREFERRED_SPOOL_BY_CENTER[center]) {
-    return REXROTH_PREFERRED_SPOOL_BY_CENTER[center]!;
   }
 
   return null;

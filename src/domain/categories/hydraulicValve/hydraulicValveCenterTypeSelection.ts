@@ -1,4 +1,5 @@
 import type { HydraulicFunctionCenterCondition } from '@/domain/categories/hydraulicValve/functionMappings/hydraulicFunctionBehavior';
+import { buildHydraulicCenterTypeCreatorOptions } from '@/domain/categories/hydraulicValve/hydraulicCenterTypeCatalogOptions';
 import {
   getRexrothWE6SpoolSemantics,
   type RexrothWE6BaseSpoolSymbol,
@@ -18,34 +19,35 @@ export const HYDRAULIC_CENTER_TYPE_SELECTION_ORDER: HydraulicFunctionCenterCondi
   'float_center',
 ];
 
-/** Best Rexroth spool letter for cross-brand equivalent generation. */
-export const REXROTH_PREFERRED_SPOOL_BY_CENTER: Partial<
-  Record<HydraulicFunctionCenterCondition, RexrothWE6BaseSpoolSymbol>
-> = {
-  closed_center: 'E',
-  tandem_center: 'C',
-  open_center: 'D',
-  partially_open: 'J',
-  float_center: 'H',
-};
+function creatorOptionsByCenterCondition(): Map<
+  HydraulicFunctionCenterCondition,
+  (typeof buildHydraulicCenterTypeCreatorOptions extends () => infer R ? R : never)[number]
+> {
+  const map = new Map<
+    HydraulicFunctionCenterCondition,
+    ReturnType<typeof buildHydraulicCenterTypeCreatorOptions>[number]
+  >();
 
-/** Best Yuken function code for cross-brand equivalent generation. */
-export const YUKEN_PREFERRED_FUNCTION_BY_CENTER: Partial<
-  Record<HydraulicFunctionCenterCondition, YukenDSGSpoolFunctionCode>
-> = {
-  closed_center: '3C2',
-  tandem_center: '3C4',
-  open_center: '3C60',
-  partially_open: '3C9',
-  float_center: '3C40',
-};
+  for (const option of buildHydraulicCenterTypeCreatorOptions()) {
+    const center = option.centerCondition as HydraulicFunctionCenterCondition | null;
+    if (!center || map.has(center)) {
+      continue;
+    }
+    map.set(center, option);
+  }
+
+  return map;
+}
 
 export function buildRexrothCenterTypeCompletionOptions(): Array<{
   token: string;
   displayValue: string;
 }> {
+  const byCenter = creatorOptionsByCenterCondition();
+
   return HYDRAULIC_CENTER_TYPE_SELECTION_ORDER.flatMap((centerCondition) => {
-    const token = REXROTH_PREFERRED_SPOOL_BY_CENTER[centerCondition];
+    const option = byCenter.get(centerCondition);
+    const token = option?.rexrothSpoolToken;
     if (!token) {
       return [];
     }
@@ -64,13 +66,12 @@ export function buildRexrothCenterTypeCompletionOptions(): Array<{
 }
 
 export function formatRexrothSpoolDisplayLabel(token: string): string {
-  const fromPreferred = (
-    Object.entries(REXROTH_PREFERRED_SPOOL_BY_CENTER) as Array<
-      [HydraulicFunctionCenterCondition, RexrothWE6BaseSpoolSymbol]
-    >
-  ).find(([, spool]) => spool === token);
-  if (fromPreferred) {
-    return formatCenterConditionSelectionLabel(fromPreferred[0]);
+  for (const option of buildHydraulicCenterTypeCreatorOptions()) {
+    if (option.rexrothSpoolToken === token && option.centerCondition) {
+      return formatCenterConditionSelectionLabel(
+        option.centerCondition as HydraulicFunctionCenterCondition
+      );
+    }
   }
 
   const semantics = getRexrothWE6SpoolSemantics(token);
@@ -85,8 +86,11 @@ export function buildYukenCenterTypeCompletionOptions(): Array<{
   token: string;
   displayValue: string;
 }> {
+  const byCenter = creatorOptionsByCenterCondition();
+
   return HYDRAULIC_CENTER_TYPE_SELECTION_ORDER.flatMap((centerCondition) => {
-    const token = YUKEN_PREFERRED_FUNCTION_BY_CENTER[centerCondition];
+    const option = byCenter.get(centerCondition);
+    const token = option?.yukenFunctionToken;
     if (!token) {
       return [];
     }
@@ -103,4 +107,32 @@ export function buildYukenCenterTypeCompletionOptions(): Array<{
       },
     ];
   });
+}
+
+/** Catalog-derived Rexroth spool for a center condition (portState ingest). */
+export function rexrothSpoolTokenForCenterCondition(
+  centerCondition: HydraulicFunctionCenterCondition
+): RexrothWE6BaseSpoolSymbol | null {
+  const option = creatorOptionsByCenterCondition().get(centerCondition);
+  const token = option?.rexrothSpoolToken;
+  if (!token || !getRexrothWE6SpoolSemantics(token)) {
+    return null;
+  }
+  return token as RexrothWE6BaseSpoolSymbol;
+}
+
+/** Catalog-derived Yuken function for a center condition (portState ingest). */
+export function yukenFunctionTokenForCenterCondition(
+  centerCondition: HydraulicFunctionCenterCondition
+): YukenDSGSpoolFunctionCode | null {
+  const option = creatorOptionsByCenterCondition().get(centerCondition);
+  const token = option?.yukenFunctionToken;
+  if (!token) {
+    return null;
+  }
+  const semantics = getYukenDSGSpoolSemantics(token);
+  if (!semantics || semantics.centerCondition !== centerCondition) {
+    return null;
+  }
+  return token as YukenDSGSpoolFunctionCode;
 }

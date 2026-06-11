@@ -1,13 +1,13 @@
 import { generateBestHydraulicValveEquivalentCode } from '@/domain/categories/hydraulicValve/equivalentCodeGeneration/hydraulicValveEquivalentCodeGenerator';
 import {
-  mapVickersCoilToRexroth,
-  mapVickersCoilToYuken,
-  mapVickersConnectorToRexroth,
-  mapVickersConnectorToYuken,
-  resolveConfidentRexrothSpoolFromVickers,
-  resolveConfidentYukenSpoolFromVickers,
-  REXROTH_SPOOL_TO_VICKERS_FUNCTION,
+  resolveRexrothSpoolFromVickers,
+  resolveYukenSpoolFromVickers,
 } from '@/domain/categories/hydraulicValve/equivalentCodeGeneration/vickersCrossBrandGenerationMappings';
+import {
+  resolveTargetCoilToken,
+  resolveTargetConnectorToken,
+} from '@/domain/categories/hydraulicValve/equivalentCodeGeneration/resolveTargetHydraulicAttributeToken';
+import { resolveTargetSpoolTokenByPortState } from '@/domain/categories/hydraulicValve/resolveSpoolTokenByPortState';
 import { identifyProduct } from '@/domain/resolver/identifyProduct';
 import { normalizeCode } from '@/domain/resolver/normalizeCode';
 import type { ProductIdentification, ProductSeriesRecord } from '@/types/product';
@@ -17,48 +17,41 @@ import {
   type HydraulicEquivalentTokens,
 } from './extractHydraulicEquivalentTokens';
 
-const REXROTH_SPOOL_TO_YUKEN_FUNCTION: Record<string, string> = {
-  E: '3C2',
-  C: '3C4',
-  J: '3C60',
-  D: '3C9',
-};
-
 function isYukenFunctionToken(token: string | null): boolean {
   return Boolean(token && /^\d[CBD]\d{1,2}$/i.test(token));
 }
 
-function resolveYukenFunctionCode(tokens: HydraulicEquivalentTokens): string {
+function resolveYukenFunctionCode(tokens: HydraulicEquivalentTokens): string | null {
   if (isYukenFunctionToken(tokens.functionCode)) {
     return tokens.functionCode!.toUpperCase();
   }
 
-  const fromVickers = resolveConfidentYukenSpoolFromVickers(tokens);
+  const fromVickers = resolveYukenSpoolFromVickers(tokens);
   if (fromVickers) {
     return fromVickers;
   }
 
-  if (tokens.spoolSymbol && REXROTH_SPOOL_TO_YUKEN_FUNCTION[tokens.spoolSymbol]) {
-    return REXROTH_SPOOL_TO_YUKEN_FUNCTION[tokens.spoolSymbol];
+  if (tokens.spoolSymbol) {
+    return resolveTargetSpoolTokenByPortState('rexroth', tokens.spoolSymbol, 'yuken');
   }
 
-  return '3C2';
+  return null;
 }
 
-function resolveVickersSpoolCode(tokens: HydraulicEquivalentTokens): string {
+function resolveVickersSpoolCode(tokens: HydraulicEquivalentTokens): string | null {
   if (tokens.functionCode && /^[0-9][A-Z]$/i.test(tokens.functionCode)) {
     return tokens.functionCode.toUpperCase();
   }
 
-  if (tokens.spoolSymbol && REXROTH_SPOOL_TO_VICKERS_FUNCTION[tokens.spoolSymbol]) {
-    return REXROTH_SPOOL_TO_VICKERS_FUNCTION[tokens.spoolSymbol];
+  if (tokens.spoolSymbol) {
+    return resolveTargetSpoolTokenByPortState('rexroth', tokens.spoolSymbol, 'vickers');
   }
 
-  return '2A';
+  return null;
 }
 
-function resolveRexrothSpoolSymbol(tokens: HydraulicEquivalentTokens): string {
-  const fromVickers = resolveConfidentRexrothSpoolFromVickers(tokens);
+function resolveRexrothSpoolSymbol(tokens: HydraulicEquivalentTokens): string | null {
+  const fromVickers = resolveRexrothSpoolFromVickers(tokens);
   if (fromVickers) {
     return fromVickers;
   }
@@ -67,29 +60,37 @@ function resolveRexrothSpoolSymbol(tokens: HydraulicEquivalentTokens): string {
     return tokens.spoolSymbol;
   }
 
-  return 'E';
+  if (tokens.functionCode) {
+    return resolveTargetSpoolTokenByPortState('yuken', tokens.functionCode, 'rexroth');
+  }
+
+  return null;
 }
 
 function mapCoilToYukenDsg(coilRating: string | null): string | null {
-  return mapVickersCoilToYuken(coilRating);
+  return resolveTargetCoilToken(coilRating, 'rexroth', 'yuken');
 }
 
 function mapConnectorToYuken(connector: string | null): string | null {
   if (!connector) {
     return null;
   }
-  return mapVickersConnectorToYuken(connector);
+  return resolveTargetConnectorToken(connector, 'rexroth', 'yuken');
 }
 
 function buildRexrothCoilSection(tokens: HydraulicEquivalentTokens): string {
-  let coil = mapVickersCoilToRexroth(tokens.coilRating) ?? tokens.coilRating ?? 'EG24';
-  if (coil === 'G24') {
-    coil = 'EG24';
-  }
+  const coil =
+    resolveTargetCoilToken(tokens.coilRating, 'yuken', 'rexroth') ??
+    tokens.coilRating ??
+    'EG24';
+  const normalizedCoil = coil === 'G24' ? 'EG24' : coil;
 
-  const manual = tokens.manualOverride ?? (/(?:EG24|CG24|HG24|G24)/i.test(coil) ? 'N9' : '');
-  const connector = mapVickersConnectorToRexroth(tokens.connector);
-  return `${coil}${manual}${connector}`;
+  const manual =
+    tokens.manualOverride ??
+    (/(?:EG24|CG24|HG24|G24)/i.test(normalizedCoil) ? 'N9' : '');
+  const connector =
+    resolveTargetConnectorToken(tokens.connector, 'yuken', 'rexroth') ?? 'K4';
+  return `${normalizedCoil}${manual}${connector}`;
 }
 
 function synthesizeRexrothWeCode(
@@ -98,6 +99,9 @@ function synthesizeRexrothWeCode(
 ): string | null {
   const prefix = targetSeries.codePrefix.replace(/-/g, '');
   const spool = resolveRexrothSpoolSymbol(tokens);
+  if (!spool) {
+    return null;
+  }
   const design =
     tokens.designSeries ??
     (tokens.designSeriesFamily && !/X$/i.test(tokens.designSeriesFamily)
@@ -113,6 +117,9 @@ function synthesizeYukenDsgCode(
 ): string | null {
   const size = targetSeries.id === 'yuken_dsg03' ? '03' : '01';
   const fn = resolveYukenFunctionCode(tokens);
+  if (!fn) {
+    return null;
+  }
   const coil = mapCoilToYukenDsg(tokens.coilRating) ?? 'D24';
   const connector = mapConnectorToYuken(tokens.connector) ?? 'N1';
   return `DSG-${size}-${fn}-${coil}-${connector}-70`;
@@ -124,6 +131,9 @@ function synthesizeVickersDg4vCode(
 ): string | null {
   const size = targetSeries.id === 'vickers_dg4v5' ? '5' : '3';
   const spool = resolveVickersSpoolCode(tokens);
+  if (!spool) {
+    return null;
+  }
   return `DG4V-${size}-${spool}-M-U-H7-60`;
 }
 

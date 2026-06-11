@@ -167,6 +167,6 @@ describe("behavior profile integration scoring", () => {
     });
 
     expect(calculateMatchPercentage(result).percentage).toBeLessThan(100);
-    expect(result.checkItems.length).toBeGreaterThan(0);
+    expect(result.warnings.length).toBeGreaterThan(0);
   });
 });

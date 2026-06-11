@@ -18,13 +18,17 @@ import type {
 import type { ProductIdentification, ProductSeriesRecord } from '@/types/product';
 
 import {
+  resolveTargetCoilToken,
+  resolveTargetConnectorToken,
+  type HydraulicTargetBrand,
+} from './resolveTargetHydraulicAttributeToken';
+import {
   CONNECTOR_CHECK_NOTE_TR,
-  isConfidentRexrothSpoolMapping,
   MISSING_VOLTAGE_NOTE_TR,
   REXROTH_WE10_DEFAULT_DESIGN_SERIES,
   REXROTH_WE6_DEFAULT_DESIGN_SERIES,
-  resolveConfidentRexrothSpoolCode,
-  resolveConfidentYukenSpoolCode,
+  resolveRexrothSpoolCodeFromYuken,
+  resolveYukenSpoolCodeFromRexroth,
   softTransitionInfoNotesForSpool,
   UNRESOLVED_SPOOL_MAPPING_NOTE_TR,
   UNKNOWN_SOURCE_SPOOL_NOTE_TR,
@@ -32,15 +36,10 @@ import {
   YUKEN_DSG_DEFAULT_DESIGN_NUMBER,
 } from './rexrothYukenGenerationMappings';
 import {
-  isConfidentVickersSpoolType,
-  mapVickersCoilToRexroth,
-  mapVickersCoilToYuken,
-  mapVickersConnectorToRexroth,
-  mapVickersConnectorToYuken,
-  resolveConfidentRexrothSpoolFromVickers,
-  resolveConfidentVickersFunctionFromRexroth,
-  resolveConfidentVickersFunctionFromYuken,
-  resolveConfidentYukenSpoolFromVickers,
+  resolveRexrothSpoolFromVickers,
+  resolveVickersFunctionFromRexroth,
+  resolveVickersFunctionFromYuken,
+  resolveYukenSpoolFromVickers,
   resolveVickersSpoolType,
   VICKERS_UNRESOLVED_SPOOL_NOTE_TR,
 } from './vickersCrossBrandGenerationMappings';
@@ -61,57 +60,55 @@ function isVickersDg4vSeries(seriesId: string): boolean {
   return seriesId === 'vickers_dg4v3' || seriesId === 'vickers_dg4v5';
 }
 
-function mapCoilToYukenDsg(coilRating: string | null): string | null {
-  return mapVickersCoilToYuken(coilRating) ?? mapGenericCoilToYukenDsg(coilRating);
-}
-
-function mapGenericCoilToYukenDsg(coilRating: string | null): string | null {
-  if (!coilRating) {
-    return null;
+function sourceBrandFromSeriesId(seriesId: string): HydraulicTargetBrand | null {
+  if (isRexrothWeSeries(seriesId)) {
+    return 'rexroth';
   }
-  const upper = coilRating.toUpperCase();
-  if (upper === 'G24' || upper === 'EG24' || upper === 'CG24' || upper === 'HG24') {
-    return 'D24';
+  if (isYukenDsgSeries(seriesId)) {
+    return 'yuken';
   }
-  if (/^D\d+$/.test(upper)) {
-    return upper;
+  if (isVickersDg4vSeries(seriesId)) {
+    return 'vickers';
   }
   return null;
 }
 
-function mapCoilToRexroth(coilRating: string | null): string | null {
-  return mapVickersCoilToRexroth(coilRating) ?? mapGenericCoilToRexroth(coilRating);
-}
-
-function mapGenericCoilToRexroth(coilRating: string | null): string | null {
-  if (!coilRating) {
+function mapCoilToYukenDsg(
+  coilRating: string | null,
+  sourceSeriesId: string
+): string | null {
+  const sourceBrand = sourceBrandFromSeriesId(sourceSeriesId);
+  if (!sourceBrand || !coilRating) {
     return null;
   }
-  const upper = coilRating.toUpperCase();
-  if (upper.includes('D24') || upper.includes('EG24')) {
-    return 'EG24';
-  }
-  if (upper.includes('CG24')) {
-    return 'CG24';
-  }
-  if (upper.includes('G24')) {
-    return 'G24';
-  }
-  if (upper.includes('G12')) {
-    return 'G12';
-  }
-  if (/^D\d+$/.test(upper)) {
-    return 'EG24';
-  }
-  return null;
+  return resolveTargetCoilToken(coilRating, sourceBrand, 'yuken');
 }
 
-function mapConnectorToYuken(connector: string | null): string {
-  return mapVickersConnectorToYuken(connector);
+function mapCoilToRexroth(
+  coilRating: string | null,
+  sourceSeriesId: string
+): string | null {
+  const sourceBrand = sourceBrandFromSeriesId(sourceSeriesId);
+  if (!sourceBrand || !coilRating) {
+    return null;
+  }
+  return resolveTargetCoilToken(coilRating, sourceBrand, 'rexroth');
 }
 
-function mapConnectorToRexroth(connector: string | null): string {
-  return mapVickersConnectorToRexroth(connector);
+function mapConnectorToYuken(connector: string | null, sourceSeriesId: string): string {
+  const sourceBrand = sourceBrandFromSeriesId(sourceSeriesId);
+  if (!sourceBrand || !connector) {
+    return 'N1';
+  }
+  return resolveTargetConnectorToken(connector, sourceBrand, 'yuken') ?? 'N1';
+}
+
+function mapConnectorToRexroth(connector: string | null, sourceSeriesId: string): string {
+  const sourceBrand = sourceBrandFromSeriesId(sourceSeriesId);
+  if (!sourceBrand || !connector) {
+    return 'K4';
+  }
+  return resolveTargetConnectorToken(connector, sourceBrand, 'rexroth') ?? 'K4';
 }
 
 function buildYukenCode(
@@ -163,6 +160,7 @@ function resolveRexrothDesignSeries(
 }
 
 function buildRexrothCode(
+  sourceSeriesId: string,
   targetSeries: ProductSeriesRecord,
   tokens: HydraulicEquivalentTokens,
   spool: string
@@ -170,16 +168,19 @@ function buildRexrothCode(
   const prefix = targetSeries.codePrefix.replace(/-/g, '');
   const design = resolveRexrothDesignSeries(targetSeries, tokens);
 
-  const coil = mapCoilToRexroth(tokens.coilRating) ?? 'EG24';
+  const coil = mapCoilToRexroth(tokens.coilRating, sourceSeriesId) ?? 'EG24';
   let manual = resolveRexrothManualOverride(tokens.manualOverride);
   if (!manual && /(?:EG24|CG24|HG24|G24)/i.test(coil)) {
     manual = 'N9';
   }
-  const connector = mapConnectorToRexroth(tokens.connector);
+  const connector = mapConnectorToRexroth(tokens.connector, sourceSeriesId);
   return `${prefix}${spool}-${design}/${coil}${manual}${connector}`;
 }
 
-function resolveVickersCoilSegment(coilRating: string | null): {
+function resolveVickersCoilSegment(
+  coilRating: string | null,
+  sourceSeriesId: string
+): {
   segment: string;
   confident: boolean;
 } {
@@ -187,24 +188,13 @@ function resolveVickersCoilSegment(coilRating: string | null): {
     return { segment: 'H7', confident: false };
   }
 
-  const upper = coilRating.toUpperCase();
-  if (upper === 'H') {
-    return { segment: 'H7', confident: true };
-  }
-  if (upper === 'D24') {
-    return { segment: 'D24', confident: true };
-  }
-  if (upper === 'D12') {
-    return { segment: 'D12', confident: true };
-  }
-  if (upper === 'D48') {
-    return { segment: 'D48', confident: true };
-  }
-  if (upper.includes('D24') || upper === 'EG24' || upper === 'G24' || upper === 'CG24') {
-    return { segment: 'H7', confident: true };
-  }
-  if (upper.includes('D12') || upper.includes('G12')) {
-    return { segment: 'D12', confident: true };
+  const mapped = resolveTargetCoilToken(
+    coilRating,
+    sourceBrandFromSeriesId(sourceSeriesId) ?? 'rexroth',
+    'vickers'
+  );
+  if (mapped) {
+    return { segment: mapped, confident: true };
   }
 
   return { segment: 'H7', confident: false };
@@ -255,28 +245,30 @@ function finalizeCandidate(
   return markExactKnownExample(candidate);
 }
 
-function resolveYukenSpoolAlternatives(tokens: HydraulicEquivalentTokens): {
+function resolveYukenSpoolAlternatives(
+  sourceSeriesId: string,
+  tokens: HydraulicEquivalentTokens
+): {
   functionCodes: string[];
   spoolConfident: boolean;
   checkNotes: string[];
   infoNotes: string[];
   unresolvedFields: string[];
 } {
-  const vickersSpoolType = resolveVickersSpoolType(tokens);
-  const confidentVickersYuken = resolveConfidentYukenSpoolFromVickers(tokens);
-  if (confidentVickersYuken && isConfidentVickersSpoolType(vickersSpoolType)) {
-    return {
-      functionCodes: [confidentVickersYuken],
-      spoolConfident: true,
-      checkNotes: [],
-      infoNotes: [],
-      unresolvedFields: [],
-    };
+  if (isVickersDg4vSeries(sourceSeriesId)) {
+    const mapped = resolveYukenSpoolFromVickers(tokens);
+    if (mapped) {
+      return {
+        functionCodes: [mapped],
+        spoolConfident: true,
+        checkNotes: [],
+        infoNotes: [],
+        unresolvedFields: [],
+      };
+    }
   }
 
   const spool = tokens.spoolSymbol ?? rexrothWE6BehaviorLookupToken(tokens.functionCode ?? '');
-  const checkNotes: string[] = [];
-  const unresolvedFields: string[] = [];
   const infoNotes = softTransitionInfoNotesForSpool(spool ?? tokens.functionCode);
 
   if (!spool) {
@@ -289,19 +281,19 @@ function resolveYukenSpoolAlternatives(tokens: HydraulicEquivalentTokens): {
     };
   }
 
-  const base = rexrothWE6BehaviorLookupToken(spool) ?? spool;
-  if (!isRexrothWEOrderingSpoolSymbol(base)) {
-    return {
-      functionCodes: [...VALID_YUKEN_DSG_SPOOL_CODES],
-      spoolConfident: false,
-      checkNotes: [`Kaynak sürgü sembolü ${spool} çözümlenemedi.`, UNKNOWN_SOURCE_SPOOL_NOTE_TR],
-      infoNotes: [],
-      unresolvedFields: ['spool_symbol'],
-    };
-  }
+  if (isRexrothWeSeries(sourceSeriesId)) {
+    const base = rexrothWE6BehaviorLookupToken(spool) ?? spool;
+    if (!isRexrothWEOrderingSpoolSymbol(base)) {
+      return {
+        functionCodes: [...VALID_YUKEN_DSG_SPOOL_CODES],
+        spoolConfident: false,
+        checkNotes: [`Kaynak sürgü sembolü ${spool} çözümlenemedi.`, UNKNOWN_SOURCE_SPOOL_NOTE_TR],
+        infoNotes: [],
+        unresolvedFields: ['spool_symbol'],
+      };
+    }
 
-  if (isConfidentRexrothSpoolMapping(spool)) {
-    const mapped = resolveConfidentYukenSpoolCode(spool);
+    const mapped = resolveYukenSpoolCodeFromRexroth(spool);
     if (mapped) {
       return {
         functionCodes: [mapped],
@@ -322,31 +314,31 @@ function resolveYukenSpoolAlternatives(tokens: HydraulicEquivalentTokens): {
   };
 }
 
-function resolveRexrothSpoolAlternatives(tokens: HydraulicEquivalentTokens): {
+function resolveRexrothSpoolAlternatives(
+  sourceSeriesId: string,
+  tokens: HydraulicEquivalentTokens
+): {
   spoolSymbols: string[];
   spoolConfident: boolean;
   checkNotes: string[];
   infoNotes: string[];
   unresolvedFields: string[];
 } {
-  const confidentVickersRexroth = resolveConfidentRexrothSpoolFromVickers(tokens);
-  if (
-    confidentVickersRexroth &&
-    isConfidentVickersSpoolType(resolveVickersSpoolType(tokens))
-  ) {
-    const ordering =
-      rexrothWE6OrderingSpoolTokenForEquivalent(confidentVickersRexroth) ??
-      confidentVickersRexroth;
-    return {
-      spoolSymbols: [ordering],
-      spoolConfident: true,
-      checkNotes: [],
-      infoNotes: softTransitionInfoNotesForSpool(ordering),
-      unresolvedFields: [],
-    };
+  if (isVickersDg4vSeries(sourceSeriesId)) {
+    const mapped = resolveRexrothSpoolFromVickers(tokens);
+    if (mapped) {
+      const ordering = rexrothWE6OrderingSpoolTokenForEquivalent(mapped) ?? mapped;
+      return {
+        spoolSymbols: [ordering],
+        spoolConfident: true,
+        checkNotes: [],
+        infoNotes: softTransitionInfoNotesForSpool(ordering),
+        unresolvedFields: [],
+      };
+    }
   }
 
-  const confident = resolveConfidentRexrothSpoolCode(tokens.functionCode);
+  const confident = resolveRexrothSpoolCodeFromYuken(tokens.functionCode);
   if (confident) {
     return {
       spoolSymbols: [confident],
@@ -384,9 +376,9 @@ function generateRexrothToYuken(
   tokens: HydraulicEquivalentTokens
 ): GeneratedEquivalentCandidate[] {
   const steps: CodeGenerationTraceStep[] = [];
-  const coil = mapCoilToYukenDsg(tokens.coilRating);
-  const connector = mapConnectorToYuken(tokens.connector);
-  const spoolResolution = resolveYukenSpoolAlternatives(tokens);
+  const coil = mapCoilToYukenDsg(tokens.coilRating, source.seriesId ?? '');
+  const connector = mapConnectorToYuken(tokens.connector, source.seriesId ?? '');
+  const spoolResolution = resolveYukenSpoolAlternatives(source.seriesId ?? '', tokens);
   const checkNotes = [...spoolResolution.checkNotes, CONNECTOR_CHECK_NOTE_TR];
   const unresolvedFields = [...spoolResolution.unresolvedFields];
   const mappedFields = ['mounting', 'target_family', 'connector', 'design_number'];
@@ -465,8 +457,8 @@ function generateYukenToRexroth(
   targetSeries: ProductSeriesRecord,
   tokens: HydraulicEquivalentTokens
 ): GeneratedEquivalentCandidate[] {
-  const spoolResolution = resolveRexrothSpoolAlternatives(tokens);
-  const coil = mapCoilToRexroth(tokens.coilRating);
+  const spoolResolution = resolveRexrothSpoolAlternatives(source.seriesId ?? '', tokens);
+  const coil = mapCoilToRexroth(tokens.coilRating, source.seriesId ?? '');
   const checkNotes = [...spoolResolution.checkNotes, CONNECTOR_CHECK_NOTE_TR];
   const unresolvedFields = [...spoolResolution.unresolvedFields];
   const mappedFields = ['mounting', 'target_family', 'connector'];
@@ -481,7 +473,7 @@ function generateYukenToRexroth(
   const results: GeneratedEquivalentCandidate[] = [];
 
   for (const spool of spoolResolution.spoolSymbols) {
-    const generatedCode = buildRexrothCode(targetSeries, tokens, spool);
+    const generatedCode = buildRexrothCode(source.seriesId ?? '', targetSeries, tokens, spool);
     const isFull = spoolResolution.spoolConfident && Boolean(coil);
 
     const candidate: GeneratedEquivalentCandidate = {
@@ -532,7 +524,10 @@ function generateYukenToRexroth(
   return results;
 }
 
-function resolveVickersFunctionAlternatives(tokens: HydraulicEquivalentTokens): {
+function resolveVickersFunctionAlternatives(
+  sourceSeriesId: string,
+  tokens: HydraulicEquivalentTokens
+): {
   functionCodes: string[];
   spoolConfident: boolean;
   checkNotes: string[];
@@ -541,11 +536,11 @@ function resolveVickersFunctionAlternatives(tokens: HydraulicEquivalentTokens): 
   const rexrothSpool =
     tokens.spoolSymbol ?? rexrothWE6BehaviorLookupToken(tokens.functionCode ?? '');
 
-  if (rexrothSpool) {
-    const fromPortStateOrTable = resolveConfidentVickersFunctionFromRexroth(rexrothSpool);
-    if (fromPortStateOrTable) {
+  if (rexrothSpool && isRexrothWeSeries(sourceSeriesId)) {
+    const fromPortState = resolveVickersFunctionFromRexroth(rexrothSpool);
+    if (fromPortState) {
       return {
-        functionCodes: [fromPortStateOrTable],
+        functionCodes: [fromPortState],
         spoolConfident: true,
         checkNotes: [],
         unresolvedFields: [],
@@ -553,34 +548,21 @@ function resolveVickersFunctionAlternatives(tokens: HydraulicEquivalentTokens): 
     }
   }
 
-  const fromYuken = resolveConfidentVickersFunctionFromYuken(tokens.functionCode);
-  if (fromYuken) {
-    return {
-      functionCodes: [fromYuken],
-      spoolConfident: true,
-      checkNotes: [],
-      unresolvedFields: [],
-    };
+  if (isYukenDsgSeries(sourceSeriesId) && tokens.functionCode) {
+    const fromYuken = resolveVickersFunctionFromYuken(tokens.functionCode);
+    if (fromYuken) {
+      return {
+        functionCodes: [fromYuken],
+        spoolConfident: true,
+        checkNotes: [],
+        unresolvedFields: [],
+      };
+    }
   }
 
-  const rexrothFromYuken = resolveConfidentRexrothSpoolCode(tokens.functionCode);
-  const vickersFromMappedRexroth = resolveConfidentVickersFunctionFromRexroth(rexrothFromYuken);
-  if (vickersFromMappedRexroth && rexrothFromYuken) {
+  if (isVickersDg4vSeries(sourceSeriesId) && tokens.functionCode) {
     return {
-      functionCodes: [vickersFromMappedRexroth],
-      spoolConfident: true,
-      checkNotes: [],
-      unresolvedFields: [],
-    };
-  }
-
-  const yukenFromRexroth = rexrothSpool
-    ? resolveConfidentYukenSpoolCode(rexrothSpool)
-    : null;
-  const vickersFromYukenBridge = resolveConfidentVickersFunctionFromYuken(yukenFromRexroth);
-  if (vickersFromYukenBridge) {
-    return {
-      functionCodes: [vickersFromYukenBridge],
+      functionCodes: [tokens.functionCode.trim().toUpperCase()],
       spoolConfident: true,
       checkNotes: [],
       unresolvedFields: [],
@@ -600,8 +582,8 @@ function generateToVickers(
   targetSeries: ProductSeriesRecord,
   tokens: HydraulicEquivalentTokens
 ): GeneratedEquivalentCandidate[] {
-  const spoolResolution = resolveVickersFunctionAlternatives(tokens);
-  const coilResolution = resolveVickersCoilSegment(tokens.coilRating);
+  const spoolResolution = resolveVickersFunctionAlternatives(source.seriesId ?? '', tokens);
+  const coilResolution = resolveVickersCoilSegment(tokens.coilRating, source.seriesId ?? '');
   const checkNotes = [...spoolResolution.checkNotes, CONNECTOR_CHECK_NOTE_TR];
   const unresolvedFields = [...spoolResolution.unresolvedFields];
   const mappedFields = ['mounting', 'target_family', 'connector'];

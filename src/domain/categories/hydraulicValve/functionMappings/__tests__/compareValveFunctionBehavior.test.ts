@@ -173,10 +173,12 @@ describe("compareValveFunctionBehavior", () => {
       result.compatible.some((c) => c.label === FIELD_LABELS.spoolFunctionCode),
     ).toBe(true);
     expect(
+      result.compatible.some((c) => c.label === FIELD_LABELS.connectorType)
+    ).toBe(true);
+    expect(
       result.warnings.some((w) =>
         w.includes("Sipariş öncesi katalog, uygulama basıncı/debisi")
       )
     ).toBe(true);
-    expect(result.checkItems.some((c) => c.field === "Konnektör tipi")).toBe(true);
   });
 });

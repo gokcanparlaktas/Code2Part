@@ -2,11 +2,6 @@ import { getHydraulicCenterTypeOption } from '@/domain/categories/hydraulicValve
 import { resolveRexrothSpoolForGeneration } from '@/domain/codeCreator/resolveRexrothSpoolForGeneration';
 import { synthesizeForTargetSeries } from '@/domain/categories/hydraulicValve/synthesizeHydraulicValveEquivalentCode';
 import type { HydraulicEquivalentTokens } from '@/domain/categories/hydraulicValve/extractHydraulicEquivalentTokens';
-import {
-  REXROTH_PREFERRED_SPOOL_BY_CENTER,
-  YUKEN_PREFERRED_FUNCTION_BY_CENTER,
-} from '@/domain/categories/hydraulicValve/hydraulicValveCenterTypeSelection';
-import type { HydraulicFunctionCenterCondition } from '@/domain/categories/hydraulicValve/functionMappings/hydraulicFunctionBehavior';
 import { defaultRexrothDesignSeries } from '@/domain/codeCreator/rexrothDesignSeriesOptions';
 import { mapUnifiedCoilToRexroth } from '@/domain/codeCreator/hydraulicCoilVoltageCatalogOptions';
 import { getWaysPositionsDisplay } from '@/domain/canonical/hydraulicValve/hydraulicValveCanonicalDictionary';
@@ -58,16 +53,6 @@ function mapConnectorToken(selection: string | null | undefined): string | null 
   return 'K4';
 }
 
-function fallbackTokensFromCenterCondition(
-  centerCondition: string | null
-): Pick<HydraulicEquivalentTokens, 'spoolSymbol' | 'functionCode'> {
-  const center = centerCondition as HydraulicFunctionCenterCondition;
-  return {
-    spoolSymbol: REXROTH_PREFERRED_SPOOL_BY_CENTER[center] ?? null,
-    functionCode: YUKEN_PREFERRED_FUNCTION_BY_CENTER[center] ?? null,
-  };
-}
-
 function buildHydraulicTokens(
   selections: CodeCreatorSelections,
   mountingGroup: HydraulicValveMountingGroupKey
@@ -84,13 +69,6 @@ function buildHydraulicTokens(
       if (!functionCode && centerOption.vickersFunctionToken) {
         functionCode = centerOption.vickersFunctionToken;
       }
-      const fallback = fallbackTokensFromCenterCondition(centerOption.centerCondition);
-      spool = spool ?? fallback.spoolSymbol;
-      functionCode = functionCode ?? fallback.functionCode;
-    } else {
-      const fallback = fallbackTokensFromCenterCondition(centerSelection);
-      spool = fallback.spoolSymbol;
-      functionCode = fallback.functionCode;
     }
   }
 
