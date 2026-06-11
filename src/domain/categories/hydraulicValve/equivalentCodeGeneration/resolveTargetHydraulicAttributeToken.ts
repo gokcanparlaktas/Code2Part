@@ -5,45 +5,25 @@ import {
 } from '@/domain/canonical/resolveCanonicalAttribute';
 import {
   mapUnifiedCoilToRexroth,
+  mapUnifiedCoilToVickers,
   mapUnifiedCoilToYuken,
+  unifiedKeyFromOrderingToken,
   type UnifiedCoilVoltageKey,
 } from '@/domain/codeCreator/hydraulicCoilVoltageCatalogOptions';
 import { HYDRAULIC_VALVE_CATEGORY } from '@/types/category';
 
 export type HydraulicTargetBrand = 'rexroth' | 'yuken' | 'vickers';
 
-const VICKERS_COIL_BY_UNIFIED: Partial<Record<UnifiedCoilVoltageKey, string>> = {
-  dc_12v: 'D12',
-  dc_24v: 'H7',
-  dc_48v: 'D48',
+const CANONICAL_COIL_TO_UNIFIED: Partial<Record<string, UnifiedCoilVoltageKey>> = {
+  DC_12V: 'dc_12v',
+  DC_24V: 'dc_24v',
+  DC_48V: 'dc_48v',
+  DC_96V: 'dc_96v',
+  DC_110V: 'dc_110v',
+  DC_125V: 'dc_125v',
+  DC_205V: 'dc_205v',
+  DC_220V: 'dc_220v',
 };
-
-function parseVoltsFromOrderingToken(token: string): number | null {
-  const upper = token.trim().toUpperCase();
-  if (upper === 'H' || upper === 'H7') {
-    return 24;
-  }
-  const match = upper.match(/(\d{2,3})/);
-  if (!match) {
-    return null;
-  }
-  const value = Number.parseInt(match[1], 10);
-  return Number.isFinite(value) ? value : null;
-}
-
-function unifiedKeyFromVolts(volts: number): UnifiedCoilVoltageKey | null {
-  const map: Record<number, UnifiedCoilVoltageKey> = {
-    12: 'dc_12v',
-    24: 'dc_24v',
-    48: 'dc_48v',
-    96: 'dc_96v',
-    110: 'dc_110v',
-    125: 'dc_125v',
-    205: 'dc_205v',
-    220: 'dc_220v',
-  };
-  return map[volts] ?? null;
-}
 
 function resolveUnifiedCoilKeyFromToken(
   coilToken: string,
@@ -58,19 +38,11 @@ function resolveUnifiedCoilKeyFromToken(
     series,
   });
 
-  if (resolved.resolved && resolved.canonicalKey === 'DC_24V') {
-    return 'dc_24v';
-  }
-  if (resolved.resolved && resolved.canonicalKey === 'DC_12V') {
-    return 'dc_12v';
+  if (resolved.resolved && resolved.canonicalKey in CANONICAL_COIL_TO_UNIFIED) {
+    return CANONICAL_COIL_TO_UNIFIED[resolved.canonicalKey] ?? null;
   }
 
-  const volts = parseVoltsFromOrderingToken(coilToken);
-  if (volts !== null) {
-    return unifiedKeyFromVolts(volts);
-  }
-
-  return null;
+  return unifiedKeyFromOrderingToken(coilToken);
 }
 
 /** Maps any supported coil ordering token to the target brand via canonical voltage class. */
@@ -100,7 +72,7 @@ export function resolveTargetCoilToken(
     case 'yuken':
       return mapUnifiedCoilToYuken(unified);
     case 'vickers':
-      return VICKERS_COIL_BY_UNIFIED[unified] ?? null;
+      return mapUnifiedCoilToVickers(unified);
     default:
       return null;
   }
@@ -134,7 +106,6 @@ export function resolveTargetConnectorToken(
     return null;
   }
 
-  const sourceSeries = seriesLabelForBrand(sourceBrand, options?.sourceSeries);
   const targetSeries = seriesLabelForBrand(targetBrand, options?.targetSeries);
   const sourceResolved = resolveCanonicalAttribute({
     category: HYDRAULIC_VALVE_CATEGORY,

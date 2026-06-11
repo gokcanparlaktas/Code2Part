@@ -391,26 +391,36 @@ function compareConnectorFields(
     isStandardValveCoilConnectorToken(source.connectorType.rawToken) &&
     isStandardValveCoilConnectorToken(target.connectorType.rawToken)
   ) {
-    const sourceDisplay = connectorSnapshotFromProfileField(
-      source.connectorType,
-      source.brand,
-      source.series
-    ).displayValue;
-    const targetDisplay = connectorSnapshotFromProfileField(
-      target.connectorType,
-      target.brand,
-      target.series
-    ).displayValue;
-    return {
-      comparison: {
-        label: FIELD_LABELS.connectorType,
-        sourceDisplay,
-        targetDisplay,
-        status: 'compatible',
-      },
-      sentence:
-        'Konnektör aynı DIN/ISO valf soketi ailesi (DIN 43650 / EN 175301-803 / ISO 4400).',
-    };
+    const sourceCanonical = source.connectorType.value;
+    const targetCanonical = target.connectorType.value;
+    if (
+      sourceCanonical &&
+      targetCanonical &&
+      !isUnknownCanonicalValue(sourceCanonical) &&
+      !isUnknownCanonicalValue(targetCanonical) &&
+      sourceCanonical === targetCanonical
+    ) {
+      const sourceDisplay = connectorSnapshotFromProfileField(
+        source.connectorType,
+        source.brand,
+        source.series
+      ).displayValue;
+      const targetDisplay = connectorSnapshotFromProfileField(
+        target.connectorType,
+        target.brand,
+        target.series
+      ).displayValue;
+      return {
+        comparison: {
+          label: FIELD_LABELS.connectorType,
+          sourceDisplay,
+          targetDisplay,
+          status: 'compatible',
+        },
+        sentence:
+          'Konnektör aynı DIN/ISO valf soketi ailesi (DIN 43650 / EN 175301-803 / ISO 4400).',
+      };
+    }
   }
 
   const sourceSnapshot = connectorSnapshotFromProfileField(

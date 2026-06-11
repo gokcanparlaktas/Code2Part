@@ -40,7 +40,8 @@ import type {
 } from './hydraulicValveCanonicalTypes';
 import type { EvidenceLevel } from '@/types/product';
 
-export const UNRESOLVED_VOLTAGE_CODES = new Set(['H7', 'H6', 'H5']);
+/** Legacy coil codes without registry/catalog mapping yet. */
+export const UNRESOLVED_VOLTAGE_CODES = new Set<string>();
 
 const VOLTAGE_DISPLAY_PATTERN =
   /^(?:(\d+)\s*V?\s*(DC|AC)|(?:DC|AC)\s*(\d+)\s*V?|(\d+)\s*(DC|AC))$/i;

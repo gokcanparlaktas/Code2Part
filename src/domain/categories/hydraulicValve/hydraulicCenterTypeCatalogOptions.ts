@@ -161,17 +161,37 @@ export function formatVickersOrderingFunctionCode(
   return `${spoolType.trim()}${springCode.toUpperCase()}`;
 }
 
-function preferredVickersSpringForRexrothSpool(
+function parseVickersSpringLetter(
+  functionToken: string | null | undefined
+): 'A' | 'B' | 'C' | 'D' | null {
+  const token = functionToken?.trim().toUpperCase();
+  if (!token || !isVickersOrderingFunctionToken(token)) {
+    return null;
+  }
+  const spring = token.slice(-1);
+  if (spring === 'A' || spring === 'B' || spring === 'C' || spring === 'D') {
+    return spring;
+  }
+  return null;
+}
+
+function pickVickersSpringFromCatalogOptions(
+  samePortOptions: HydraulicCenterTypeOption[],
   rexrothSpoolToken: string
 ): 'A' | 'B' | 'C' | 'D' {
+  const springs = samePortOptions
+    .map((option) => parseVickersSpringLetter(option.vickersFunctionToken))
+    .filter((spring): spring is 'A' | 'B' | 'C' | 'D' => spring !== null);
+
   const token = rexrothSpoolToken.trim().toUpperCase();
-  if (token === 'J') {
-    return 'B';
+  const preferred =
+    token === 'J' ? 'B' : token === 'C' || token === 'C46' ? 'C' : 'A';
+
+  if (springs.includes(preferred)) {
+    return preferred;
   }
-  if (token === 'C' || token === 'C46') {
-    return 'C';
-  }
-  return 'A';
+
+  return springs[0] ?? preferred;
 }
 
 function pickPreferredEatonSpoolType(tokens: string[]): string | null {
@@ -381,7 +401,7 @@ function mergeCenterTypeOptions(group: HydraulicCenterTypeOption[]): HydraulicCe
   };
 }
 
-function buildHydraulicCenterTypeCreatorOptions(): HydraulicCenterTypeOption[] {
+export function buildHydraulicCenterTypeCreatorOptions(): HydraulicCenterTypeOption[] {
   if (cachedCreatorOptions) {
     return cachedCreatorOptions;
   }
@@ -510,7 +530,7 @@ export function resolveVickersFunctionTokenForRexrothSpool(
   if (spoolTypeMatch?.vickersSpoolTypeToken) {
     return formatVickersOrderingFunctionCode(
       spoolTypeMatch.vickersSpoolTypeToken,
-      preferredVickersSpringForRexrothSpool(rexrothSpoolToken)
+      pickVickersSpringFromCatalogOptions(samePortOptions, rexrothSpoolToken)
     );
   }
 

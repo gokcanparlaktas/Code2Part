@@ -105,13 +105,13 @@ describe("compareHydraulicValveBehaviorProfiles", () => {
     ).toBe("different");
   });
 
-  it("Vickers H-derived 24V DC stays unknown/check vs confirmed 24V DC", () => {
+  it("Vickers H7 and Rexroth EG24 resolve to compatible 24V DC", () => {
     const vickers = buildProfile("DG4V-3-2A-M-U-H7-60");
     const rexroth = buildProfile("4WE6E-7X/HG24N9K4");
     const result = compareHydraulicValveBehaviorProfiles(vickers, rexroth);
     expect(
       result.comparisons.find((c) => c.label === "Bobin voltajı")?.status,
-    ).toBe("unknownOrCheck");
+    ).toBe("compatible");
   });
 
   it("cross-brand same behavior requires catalog check and cautious spool message", () => {

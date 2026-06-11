@@ -98,8 +98,8 @@ describe('hydraulicValveComparison (attribute-based)', () => {
     expect(result.compatible.some((c) => c.label === 'Bobin voltajı')).toBe(true);
     expect(result.compatible.some((c) => c.label === 'Merkez tipi')).toBe(true);
 
-    expect(result.compatible.some((c) => c.label === 'Konnektör tipi')).toBe(true);
-    expect(result.checkItems.find((c) => c.field === 'Konnektör tipi')).toBeUndefined();
+    expect(result.checkItems.some((c) => c.field === 'Konnektör tipi')).toBe(true);
+    expect(result.compatible.some((c) => c.label === 'Konnektör tipi')).toBe(false);
 
     expect(result.different.some((c) => c.label === 'Merkez tipi')).toBe(false);
     expect(result.checkItems.some((c) => c.field === 'Merkez tipi')).toBe(false);

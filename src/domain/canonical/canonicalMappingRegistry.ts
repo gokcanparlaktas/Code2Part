@@ -8,22 +8,30 @@ import type { CanonicalMappingEntry } from '@/types/canonicalAttribute';
 function coilRatingEntry(options: {
   id: string;
   rawToken: string;
+  canonicalKey?: 'DC_24V' | 'DC_12V' | 'DC_48V';
+  displayValue?: string;
   manufacturer?: string;
   series?: string;
+  seriesFamily?: string;
   confidence?: CanonicalMappingEntry['confidence'];
   requiresCatalogCheck?: boolean;
   notes?: string[];
 }): CanonicalMappingEntry {
+  const canonicalKey = options.canonicalKey ?? 'DC_24V';
+  const displayValue =
+    options.displayValue ??
+    (canonicalKey === 'DC_12V' ? '12V DC' : canonicalKey === 'DC_48V' ? '48V DC' : '24V DC');
   return {
     id: options.id,
     category: HYDRAULIC_VALVE_CATEGORY,
     manufacturer: options.manufacturer,
     series: options.series,
+    seriesFamily: options.seriesFamily,
     attributeKey: 'coil_rating',
     rawToken: options.rawToken,
-    canonicalKey: 'DC_24V',
-    canonicalValue: 'DC_24V',
-    displayValue: '24V DC',
+    canonicalKey,
+    canonicalValue: canonicalKey,
+    displayValue,
     evidence: 'code',
     confidence: options.confidence ?? 'high',
     requiresCatalogCheck: options.requiresCatalogCheck ?? false,
@@ -33,19 +41,7 @@ function coilRatingEntry(options: {
 }
 
 function coilRating12VEntry(id: string, rawToken: string): CanonicalMappingEntry {
-  return {
-    id,
-    category: HYDRAULIC_VALVE_CATEGORY,
-    attributeKey: 'coil_rating',
-    rawToken,
-    canonicalKey: 'DC_12V',
-    canonicalValue: 'DC_12V',
-    displayValue: '12V DC',
-    evidence: 'code',
-    confidence: 'high',
-    requiresCatalogCheck: false,
-    resolvedAttributeKey: 'coil_voltage',
-  };
+  return coilRatingEntry({ id, rawToken, canonicalKey: 'DC_12V' });
 }
 
 function cushioningEntry(
@@ -113,9 +109,36 @@ export const CANONICAL_MAPPING_ENTRIES: CanonicalMappingEntry[] = [
     id: 'coil_rating_vickers_h',
     rawToken: 'H',
     manufacturer: 'Vickers',
+    seriesFamily: 'DG4V',
     confidence: 'medium',
     requiresCatalogCheck: true,
     notes: ['Vickers DG4V coil rating segment; catalog verification required.'],
+  }),
+  coilRatingEntry({
+    id: 'coil_rating_vickers_h7',
+    rawToken: 'H7',
+    manufacturer: 'Vickers',
+    seriesFamily: 'DG4V',
+    confidence: 'medium',
+    requiresCatalogCheck: true,
+    notes: ['Vickers DG4V H7 coil segment from Eaton catalog-data.'],
+  }),
+  coilRatingEntry({
+    id: 'coil_rating_vickers_d24',
+    rawToken: 'D24',
+    manufacturer: 'Vickers',
+    seriesFamily: 'DG4V',
+    confidence: 'high',
+    requiresCatalogCheck: false,
+  }),
+  coilRatingEntry({
+    id: 'coil_rating_vickers_d48',
+    rawToken: 'D48',
+    manufacturer: 'Vickers',
+    seriesFamily: 'DG4V',
+    canonicalKey: 'DC_48V',
+    confidence: 'high',
+    requiresCatalogCheck: false,
   }),
 
   coilRating12VEntry('coil_rating_g12', 'G12'),

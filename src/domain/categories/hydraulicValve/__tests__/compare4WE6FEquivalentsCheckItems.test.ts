@@ -29,7 +29,7 @@ describe('4WE6F equivalent check items', () => {
     expect(result.compatible.some((c) => c.label === 'Bobin voltajı')).toBe(true);
 
     expect(fields.some((f) => f.includes('merkez tipi'))).toBe(false);
-    expect(fields.some((f) => f.includes('konnektör'))).toBe(false);
+    expect(fields.some((f) => f.includes('konnektör'))).toBe(true);
     expect(fields.some((f) => f.includes('manuel'))).toBe(false);
     expect(fields.some((f) => f.includes('montaj arayüz'))).toBe(false);
     expect(fields.some((f) => f.includes('merkezleme'))).toBe(false);

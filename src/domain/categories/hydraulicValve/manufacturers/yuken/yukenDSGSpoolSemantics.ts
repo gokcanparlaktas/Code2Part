@@ -112,6 +112,28 @@ export function getYukenDSGSpoolSemantics(
   return SPOOL_SEMANTICS[key] ?? null;
 }
 
+/** Preferred DSG-01 ordering function code for a user-facing center condition chip. */
+export function yukenOrderingTokenForCenterCondition(
+  centerCondition: HydraulicFunctionCenterCondition
+): string | null {
+  const matches = Object.entries(SPOOL_SEMANTICS).filter(
+    ([, semantics]) => semantics.centerCondition === centerCondition
+  );
+  if (matches.length === 0) {
+    return null;
+  }
+
+  const preferredOrder = ['3C2', '3C4', '3C3', '3C40', '3C12', '3C60', '3C9'];
+  for (const token of preferredOrder) {
+    const hit = matches.find(([candidate]) => candidate === token);
+    if (hit) {
+      return hit[0];
+    }
+  }
+
+  return matches[0]?.[0] ?? null;
+}
+
 export function springCodeToCentering(springCode: string): HydraulicFunctionCentering {
   switch (springCode.toUpperCase()) {
     case 'C':

@@ -37,6 +37,7 @@ const VOLTAGE_TOKEN_DISPLAY: Record<string, string> = {
   D48: '48V DC',
   D110: '110V DC',
   H: '24V DC',
+  H7: '24V DC',
   '24DC': '24V DC',
   DC24: '24V DC',
   DC12: '12V DC',
@@ -53,6 +54,7 @@ const VOLTAGE_TOKEN_PRIORITY = [
   'D48',
   'D24',
   'D12',
+  'H7',
   'H',
   '24DC',
   'DC24',
@@ -121,8 +123,8 @@ function extractVoltageToken(candidate?: string | null): string | null {
     return null;
   }
   const compact = compactToken(candidate);
-  if (compact === 'H') {
-    return 'H';
+  if (compact === 'H' || compact === 'H7') {
+    return compact;
   }
   for (const token of VOLTAGE_TOKEN_PRIORITY) {
     if (compact === token) {

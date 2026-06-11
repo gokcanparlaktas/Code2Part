@@ -135,6 +135,12 @@
     "noteTr": "Rexroth WE yumuşak geçişli ofset merkez; katalog portState ile doğrulanmalıdır."
   },
   {
+    "verificationStatus": "manual_unverified",
+    "sourceType": "manual",
+    "sourceUrl": null,
+    "lastReviewedAt": null,
+    "notesTr": null,
+    "id": "yuken_3c12_tandem",
     "manufacturer": "Yuken",
     "seriesFamily": "DSG",
     "token": "3C12",

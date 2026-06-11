@@ -1,4 +1,5 @@
 import {
+  getEatonDg4vConnectorVoltageCatalog,
   getRexrothConnectorVoltageCatalog,
   getYukenDsgConnectorVoltageCatalog,
 } from '@/domain/catalogData/loadCatalogData';
@@ -46,6 +47,29 @@ const YUKEN_COIL_BY_UNIFIED: Partial<Record<UnifiedCoilVoltageKey, string>> = {
   dc_48v: 'D48',
 };
 
+/** Parseable DG4V coil suffixes when catalog only lists shorthand (e.g. H → H7). */
+const VICKERS_PARSEABLE_COIL_BY_UNIFIED: Partial<Record<UnifiedCoilVoltageKey, string>> = {
+  dc_12v: 'D12',
+  dc_24v: 'H7',
+  dc_48v: 'D48',
+};
+
+const VICKERS_PARSEABLE_COIL_PATTERN = /^(?:H[4-7]|D12|D24|D48)$/;
+
+function toParseableVickersCoilToken(
+  unified: UnifiedCoilVoltageKey,
+  catalogToken: string | undefined
+): string | null {
+  const upper = catalogToken?.trim().toUpperCase();
+  if (upper === 'H' && unified === 'dc_24v') {
+    return 'H7';
+  }
+  if (upper && VICKERS_PARSEABLE_COIL_PATTERN.test(upper)) {
+    return upper;
+  }
+  return VICKERS_PARSEABLE_COIL_BY_UNIFIED[unified] ?? null;
+}
+
 function parseVoltsFromOrderingToken(token: string): number | null {
   const upper = token.trim().toUpperCase();
   const match = upper.match(/(\d{2,3})/);
@@ -65,12 +89,88 @@ function unifiedKeyFromVolts(volts: number): UnifiedCoilVoltageKey | null {
   return entry?.[0] ?? null;
 }
 
-function unifiedKeyFromOrderingToken(token: string): UnifiedCoilVoltageKey | null {
-  const volts = parseVoltsFromOrderingToken(token);
+export function unifiedKeyFromOrderingToken(token: string): UnifiedCoilVoltageKey | null {
+  const upper = token.trim().toUpperCase();
+  if (upper === 'H' || upper === 'H7') {
+    return 'dc_24v';
+  }
+  const volts = parseVoltsFromOrderingToken(upper);
   if (volts === null) {
     return null;
   }
   return unifiedKeyFromVolts(volts);
+}
+
+function rankVickersVoltageToken(token: string, unified: UnifiedCoilVoltageKey): number {
+  const upper = token.trim().toUpperCase();
+  if (unified === 'dc_24v' && upper === 'H7') {
+    return 10;
+  }
+  if (unified === 'dc_24v' && upper === 'H') {
+    return 8;
+  }
+  if (unified === 'dc_24v' && upper === 'D24') {
+    return 6;
+  }
+  return upper.length;
+}
+
+function buildVickersCoilByUnifiedFromCatalog(): Partial<Record<UnifiedCoilVoltageKey, string>> {
+  const ranked = new Map<UnifiedCoilVoltageKey, { token: string; score: number }>();
+  const catalog = getEatonDg4vConnectorVoltageCatalog();
+
+  for (const entry of catalog.voltageTokenMeanings ?? []) {
+    const rawToken = entry.rawVoltageToken?.trim().toUpperCase();
+    if (!rawToken) {
+      continue;
+    }
+
+    const dcUsage = entry.contextualUsages?.find((usage) => usage.voltage != null) ?? null;
+    const voltageValue = entry.voltage ?? dcUsage?.voltage;
+    const voltageKind = entry.baseVoltageKind ?? entry.voltageKind;
+    if (voltageKind !== 'DC' || voltageValue == null) {
+      continue;
+    }
+
+    const unified = unifiedKeyFromVolts(voltageValue);
+    if (!unified) {
+      continue;
+    }
+
+    const score = rankVickersVoltageToken(rawToken, unified);
+    const current = ranked.get(unified);
+    if (!current || score > current.score) {
+      ranked.set(unified, { token: rawToken, score });
+    }
+  }
+
+  const map: Partial<Record<UnifiedCoilVoltageKey, string>> = {};
+  for (const [key, value] of ranked.entries()) {
+    map[key] = value.token;
+  }
+  return map;
+}
+
+let cachedVickersCoilByUnified: Partial<Record<UnifiedCoilVoltageKey, string>> | null = null;
+
+function getVickersCoilByUnified(): Partial<Record<UnifiedCoilVoltageKey, string>> {
+  if (!cachedVickersCoilByUnified) {
+    const fromCatalog = buildVickersCoilByUnifiedFromCatalog();
+    const merged: Partial<Record<UnifiedCoilVoltageKey, string>> = {};
+    for (const key of Object.keys(UNIFIED_VOLTAGE_CATALOG) as UnifiedCoilVoltageKey[]) {
+      const token = toParseableVickersCoilToken(key, fromCatalog[key]);
+      if (token) {
+        merged[key] = token;
+      }
+    }
+    cachedVickersCoilByUnified = merged;
+  }
+  return cachedVickersCoilByUnified;
+}
+
+/** Clears cached Eaton-derived Vickers coil map (tests). */
+export function clearVickersCoilByUnifiedCache(): void {
+  cachedVickersCoilByUnified = null;
 }
 
 function collectOrderingTokensFromCatalogs(): string[] {
@@ -92,6 +192,14 @@ function collectOrderingTokensFromCatalogs(): string[] {
   const yuken = getYukenDsgConnectorVoltageCatalog();
   for (const entry of yuken.voltageTokenMeanings ?? []) {
     if (entry.voltageKind !== 'DC' || !entry.rawVoltageToken) {
+      continue;
+    }
+    tokens.add(entry.rawVoltageToken.toUpperCase());
+  }
+
+  const eaton = getEatonDg4vConnectorVoltageCatalog();
+  for (const entry of eaton.voltageTokenMeanings ?? []) {
+    if (!entry.rawVoltageToken) {
       continue;
     }
     tokens.add(entry.rawVoltageToken.toUpperCase());
@@ -159,6 +267,20 @@ export function mapUnifiedCoilToYuken(selection: string | null): string | null {
   }
   if (/^D\d+$/.test(upper)) {
     return upper;
+  }
+  return null;
+}
+
+export function mapUnifiedCoilToVickers(selection: string | null): string | null {
+  if (!selection) {
+    return null;
+  }
+  if (isUnifiedCoilVoltageKey(selection)) {
+    return getVickersCoilByUnified()[selection] ?? null;
+  }
+  const unified = unifiedKeyFromOrderingToken(selection);
+  if (unified) {
+    return getVickersCoilByUnified()[unified] ?? null;
   }
   return null;
 }

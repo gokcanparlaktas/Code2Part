@@ -173,7 +173,7 @@ describe("compareValveFunctionBehavior", () => {
       result.compatible.some((c) => c.label === FIELD_LABELS.spoolFunctionCode),
     ).toBe(true);
     expect(
-      result.compatible.some((c) => c.label === FIELD_LABELS.connectorType)
+      result.checkItems.some((c) => c.field === FIELD_LABELS.connectorType)
     ).toBe(true);
     expect(
       result.warnings.some((w) =>
